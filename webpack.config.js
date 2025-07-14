@@ -98,9 +98,7 @@ var options = {
             loader: require.resolve('ts-loader'),
             options: {
               getCustomTransformers: () => ({
-                before: [isDevelopment && ReactRefreshTypeScript()].filter(
-                  Boolean
-                ),
+                before: [isDevelopment && ReactRefreshTypeScript.default && ReactRefreshTypeScript.default()].filter(Boolean),
               }),
               transpileOnly: isDevelopment,
             },

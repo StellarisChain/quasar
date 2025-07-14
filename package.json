@@ -13,10 +13,18 @@
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
   },
   "dependencies": {
+    "next": "^14.2.3",
+    "@material-tailwind/react": "^2.0.0",
+    "@heroicons/react": "^2.0.18",
+    "deepmerge": "^4.3.1",
+    "react-apexcharts": "^1.4.0",
+    "apexcharts": "^3.41.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.4.3"
   },
   "devDependencies": {
+    "@types/deepmerge": "^2.2.0",
     "@babel/core": "^7.20.12",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/preset-env": "^7.20.2",
@@ -25,6 +33,7 @@
     "@types/chrome": "^0.0.202",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.10",
+    "@types/react-router-dom": "^5.3.3",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^9.1.2",
     "babel-preset-react-app": "^10.0.1",
@@ -57,5 +66,11 @@
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.11.1",
     "zip-webpack-plugin": "^4.0.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js-pure"
+    ]
   }
 }
