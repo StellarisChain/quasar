@@ -150,48 +150,48 @@ const Popup = () => {
   ];
 
   return (
-    <div className="min-w-[350px] max-w-[400px] p-4 bg-white rounded-lg shadow-lg">
+    <div className="min-w-[350px] max-w-[400px] p-4 rounded-2xl shadow-xl bg-gradient-to-br from-[#232136] via-[#2d2346] to-[#3c246e] text-white">
       {/* Wallet Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="Wallet Logo" className="w-8 h-8" />
-          <Typography variant="h6" color="blue-gray">Quasar Wallet</Typography>
+          <img src={logo} alt="Wallet Logo" className="w-9 h-9 drop-shadow-lg" />
+          <Typography variant="h6" className="text-purple-300 font-bold tracking-wide">Quasar Wallet</Typography>
         </div>
-        <Button size="sm" color="gray" variant="outlined">Mainnet</Button>
+        <Button size="sm" className="bg-[#3c246e] text-purple-200 border border-purple-500 rounded-lg shadow" variant="outlined">Mainnet</Button>
       </div>
 
       {/* Account Info */}
-      <Card className="mb-4 border border-gray-200">
+      <Card className="mb-4 bg-[#28243d] border-none shadow-lg rounded-xl">
         <CardBody className="flex flex-col items-center">
-          <Typography variant="small" color="gray" className="mb-1">Account</Typography>
-          <Typography variant="h5" color="blue-gray" className="mb-1">{account.balance}</Typography>
-          <Typography variant="small" color="gray" className="mb-2">{account.fiat}</Typography>
-          <div className="flex items-center gap-2 bg-gray-100 rounded px-2 py-1 text-xs text-gray-700">
-            <span>{account.address}</span>
-            <Button size="sm" color="gray" variant="text" className="p-1">Copy</Button>
+          <Typography variant="small" className="mb-1 text-purple-200">Account</Typography>
+          <Typography variant="h5" className="mb-1 text-white font-mono">{account.balance}</Typography>
+          <Typography variant="small" className="mb-2 text-purple-300">{account.fiat}</Typography>
+          <div className="flex items-center gap-2 bg-[#232136] rounded px-2 py-1 text-xs text-purple-200">
+            <span className="font-mono">{account.address}</span>
+            <Button size="sm" className="p-1 text-purple-300 hover:bg-[#3c246e]" variant="text">Copy</Button>
           </div>
         </CardBody>
       </Card>
 
       {/* Action Buttons */}
       <div className="flex justify-between mb-4">
-        <Button color="blue" className="flex-1 mx-1">Send</Button>
-        <Button color="green" className="flex-1 mx-1">Receive</Button>
-        <Button color="amber" className="flex-1 mx-1">Buy</Button>
+        <Button className="flex-1 mx-1 bg-gradient-to-r from-purple-600 to-purple-400 text-white font-semibold rounded-lg shadow hover:from-purple-700 hover:to-purple-500">Send</Button>
+        <Button className="flex-1 mx-1 bg-gradient-to-r from-[#4f3c8e] to-[#7c3aed] text-white font-semibold rounded-lg shadow hover:from-[#5a3fa3] hover:to-[#8b5cf6]">Receive</Button>
+        <Button className="flex-1 mx-1 bg-gradient-to-r from-[#3c246e] to-purple-600 text-white font-semibold rounded-lg shadow hover:from-[#4b2e8c] hover:to-purple-700">Buy</Button>
       </div>
 
       {/* Activity List */}
-      <Card className="mb-4 border border-gray-200">
-        <CardHeader shadow={false} floated={false} className="rounded-none pb-0">
-          <Typography variant="small" color="gray">Activity</Typography>
+      <Card className="mb-4 bg-[#28243d] border-none shadow-lg rounded-xl">
+        <CardHeader shadow={false} floated={false} className="rounded-none pb-0 bg-transparent">
+          <Typography variant="small" className="text-purple-200">Activity</Typography>
         </CardHeader>
         <CardBody className="p-2">
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-[#3c246e]">
             {activities.map((act, idx) => (
               <li key={idx} className="py-2 flex justify-between items-center text-sm">
-                <span className="font-medium text-gray-700">{act.type}</span>
-                <span className={act.amount.startsWith('-') ? 'text-red-500' : 'text-green-500'}>{act.amount}</span>
-                <span className="text-gray-400">{act.date}</span>
+                <span className="font-medium text-purple-100">{act.type}</span>
+                <span className={act.amount.startsWith('-') ? 'text-red-400' : 'text-green-400'}>{act.amount}</span>
+                <span className="text-purple-400">{act.date}</span>
               </li>
             ))}
           </ul>
@@ -199,17 +199,19 @@ const Popup = () => {
       </Card>
 
       {/* Chart & Stats (minimized, optional) */}
-      <Card className="border border-gray-200">
-        <CardHeader shadow={false} floated={false} className="rounded-none pb-0">
-          <Typography variant="small" color="gray">Balance Trend</Typography>
+      <Card className="bg-[#28243d] border-none shadow-lg rounded-xl">
+        <CardHeader shadow={false} floated={false} className="rounded-none pb-0 bg-transparent">
+          <Typography variant="small" className="text-purple-200">Balance Trend</Typography>
         </CardHeader>
         <CardBody className="p-2">
           <AreaChart
-            colors={["#4CAF50"]}
+            colors={["#7c3aed"]}
             options={{
               xaxis: {
                 categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
               },
+              grid: { borderColor: "#3c246e" },
+              tooltip: { theme: "dark" },
             }}
             series={[{ name: "ETH", data: [2, 2.1, 2.3, 2.5, 2.2, 2.4, 2.3, 2.5, 2.6, 2.7, 2.8, 2.9] }]}
             height={120}
