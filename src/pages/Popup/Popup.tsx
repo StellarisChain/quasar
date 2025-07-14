@@ -253,40 +253,36 @@ const WalletSelector = ({ wallets, selectedWallet, onWalletChange }: {
 };
 
 const Popup = () => {
-  // Mock wallet data
-  const wallets: Wallet[] = [
+
+  // LocalStorage keys
+  const WALLET_STORAGE_KEY = 'quasar_wallets';
+
+  // Default wallet data (structure only, no price values)
+  const defaultWallets: Wallet[] = [
     {
       id: '1',
       name: 'Main Wallet',
       address: '0xA1b2...C3d4',
       chains: [
         {
-          name: 'Ethereum',
-          symbol: 'ETH',
-          balance: '2.345',
-          fiatValue: 7123.45,
-          change24h: -2.42,
-          color: '#627EEA',
-          chartData: [2100, 2150, 2200, 2180, 2220, 2300, 2250, 2280, 2320, 2350, 2400, 2380],
-          tokens: [
-            { symbol: 'USDC', name: 'USD Coin', balance: '1,250.00', price: 1.00, change24h: 0.1 },
-            { symbol: 'UNI', name: 'Uniswap', balance: '45.2', price: 6.80, change24h: -2.3 },
-            { symbol: 'LINK', name: 'Chainlink', balance: '12.8', price: 14.50, change24h: 5.7 },
+          name: 'Ethereum', symbol: 'ETH', balance: '2.345', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100,2150,2200,2180,2220,2300,2250,2280,2320,2350,2400,2380], tokens: [
+            { symbol: 'USDC', name: 'USD Coin', balance: '1,250.00', price: 0, change24h: 0 },
+            { symbol: 'UNI', name: 'Uniswap', balance: '45.2', price: 0, change24h: 0 },
+            { symbol: 'LINK', name: 'Chainlink', balance: '12.8', price: 0, change24h: 0 },
           ],
         },
         {
-          name: 'Solana',
-          symbol: 'SOL',
-          balance: '15.67',
-          fiatValue: 1245.30,
-          change24h: -1.8,
-          color: '#9945FF',
-          chartData: [80, 82, 78, 85, 88, 84, 86, 89, 87, 90, 88, 85],
-          tokens: [
-            { symbol: 'USDC', name: 'USD Coin (Solana)', balance: '500.00', price: 1.00, change24h: 0.0 },
-            { symbol: 'RAY', name: 'Raydium', balance: '230.5', price: 0.85, change24h: 4.2 },
-            { symbol: 'BONK', name: 'Bonk', balance: '1,000,000', price: 0.000012, change24h: -8.5 },
+          name: 'Solana', symbol: 'SOL', balance: '15.67', fiatValue: 0, change24h: 0, color: '#9945FF', chartData: [80,82,78,85,88,84,86,89,87,90,88,85], tokens: [
+            { symbol: 'USDC', name: 'USD Coin (Solana)', balance: '500.00', price: 0, change24h: 0 },
+            { symbol: 'RAY', name: 'Raydium', balance: '230.5', price: 0, change24h: 0 },
+            { symbol: 'BONK', name: 'Bonk', balance: '1,000,000', price: 0, change24h: 0 },
           ],
+        },
+        {
+          name: 'Stellaris', symbol: 'STE', balance: '158.67', fiatValue: 0, change24h: 0, color: '#9945FF', chartData: [80,82,78,85,88,84,86,89,87,90,88,85], tokens: [],
+        },
+        {
+          name: 'Halogen', symbol: 'HAL', balance: '2759.65', fiatValue: 0, change24h: 0, color: '#ff4545ff', chartData: [80,60,40,150,230,184,416,380,259,210,313,185,180], tokens: [],
         },
       ],
     },
@@ -296,28 +292,85 @@ const Popup = () => {
       address: '0xF1e2...B3c4',
       chains: [
         {
-          name: 'Ethereum',
-          symbol: 'ETH',
-          balance: '0.892',
-          fiatValue: 2710.80,
-          change24h: 3.2,
-          color: '#627EEA',
-          chartData: [2100, 2150, 2200, 2180, 2220, 2300, 2250, 2280, 2320, 2350, 2400, 2380],
-          tokens: [
-            { symbol: 'WETH', name: 'Wrapped Ethereum', balance: '0.5', price: 3040.00, change24h: 3.2 },
-            { symbol: 'USDT', name: 'Tether', balance: '5,000.00', price: 1.00, change24h: -0.1 },
+          name: 'Ethereum', symbol: 'ETH', balance: '0.892', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100,2150,2200,2180,2220,2300,2250,2280,2320,2350,2400,2380], tokens: [
+            { symbol: 'WETH', name: 'Wrapped Ethereum', balance: '0.5', price: 0, change24h: 0 },
+            { symbol: 'USDT', name: 'Tether', balance: '5,000.00', price: 0, change24h: 0 },
           ],
         },
       ],
     },
   ];
 
-  const [selectedWallet, setSelectedWallet] = useState<Wallet>(wallets[0]);
+  // Load wallets from localStorage
+  const getStoredWallets = () => {
+    try {
+      const raw = localStorage.getItem(WALLET_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return defaultWallets;
+  };
+
+  // Save wallets to localStorage
+  const saveWallets = (wallets: Wallet[]) => {
+    localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(wallets));
+  };
+
+  // State
+  const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
+  const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
+  const [loadingPrices, setLoadingPrices] = useState(false);
+
+  // Fetch price data from API
+  React.useEffect(() => {
+    const fetchPrices = async () => {
+      setLoadingPrices(true);
+      // Collect all symbols to fetch
+      const symbols = Array.from(new Set(wallets.flatMap(w => w.chains.flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
+      try {
+        // Fetch prices for all symbols
+        const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
+        const priceData = await res.json();
+        // Update wallets with price info
+        const updatedWallets = wallets.map(wallet => ({
+          ...wallet,
+          chains: wallet.chains.map(chain => {
+            const chainPrice = priceData[chain.symbol]?.price ?? 0;
+            const chainChange = priceData[chain.symbol]?.change24h ?? 0;
+            // Calculate fiatValue for chain
+            const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
+            return {
+              ...chain,
+              fiatValue,
+              change24h: chainChange,
+              tokens: chain.tokens.map(token => {
+                const tokenPrice = priceData[token.symbol]?.price ?? 0;
+                const tokenChange = priceData[token.symbol]?.change24h ?? 0;
+                return {
+                  ...token,
+                  price: tokenPrice,
+                  change24h: tokenChange,
+                };
+              })
+            };
+          })
+        }));
+        setWallets(updatedWallets);
+        // If selectedWallet changed, update it too
+        setSelectedWallet(updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]);
+        saveWallets(updatedWallets);
+      } catch (e) {
+        // fallback: keep old prices
+      }
+      setLoadingPrices(false);
+    };
+    fetchPrices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Calculate total portfolio value
   const totalValue = selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0);
   const totalChange = selectedWallet.chains.reduce((sum, chain) => 
-    sum + (chain.change24h * chain.fiatValue / totalValue), 0
+    sum + (chain.change24h * chain.fiatValue / (totalValue || 1)), 0
   );
 
   return (
@@ -331,7 +384,10 @@ const Popup = () => {
         <WalletSelector
           wallets={wallets}
           selectedWallet={selectedWallet}
-          onWalletChange={setSelectedWallet}
+          onWalletChange={wallet => {
+            setSelectedWallet(wallet);
+            saveWallets(wallets);
+          }}
         />
       </div>
 
@@ -341,7 +397,7 @@ const Popup = () => {
         <div className="balance-card">
           <div className="balance-label">Total Portfolio Value</div>
           <div className="balance-amount">
-            ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {loadingPrices ? <span>Loading...</span> : `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
           <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`}>
             {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
