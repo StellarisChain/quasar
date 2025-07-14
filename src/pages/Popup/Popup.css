@@ -1,46 +1,3 @@
-/* Add your styles here */
-body {
-  background: #181825 !important;
-  color: #fff;
-  font-family: 'Inter', 'Roboto', 'Arial', sans-serif;
-}
-
-.popup-root {
-  background: #181825;
-  min-height: 100vh;
-}
-
-/* Custom scrollbar for modern look */
-::-webkit-scrollbar {
-  width: 8px;
-  background: #232136;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #312e81;
-  border-radius: 8px;
-}
-
-.card-modern {
-  background: #232136;
-  border: 1px solid #312e81;
-  border-radius: 1rem;
-  box-shadow: 0 2px 12px 0 #23213644;
-}
-
-.btn-modern {
-  background: #7c3aed;
-  color: #fff;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  box-shadow: none;
-  transition: background 0.2s;
-}
-
-.btn-modern:hover {
-  background: #6d28d9;
-}
-
 .App {
   position: absolute;
   top: 0px;
@@ -82,8 +39,48 @@ body {
   from {
     transform: rotate(0deg);
   }
-
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Wallet popup specific styles */
+.wallet-popup {
+  width: 100%;
+  max-width: 380px;
+  min-height: 500px;
+  max-height: 600px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.wallet-popup::-webkit-scrollbar {
+  width: 4px;
+}
+
+.wallet-popup::-webkit-scrollbar-track {
+  background: rgba(60, 36, 110, 0.3);
+  border-radius: 2px;
+}
+
+.wallet-popup::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, 0.6);
+  border-radius: 2px;
+}
+
+.wallet-popup::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 58, 237, 0.8);
+}
+
+@media (max-width: 400px) {
+  .wallet-popup {
+    max-width: 100%;
+    min-height: 400px;
+  }
+}
+
+@media (max-height: 600px) {
+  .wallet-popup {
+    max-height: 90vh;
   }
 }
