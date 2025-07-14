@@ -1,6 +1,4 @@
-<img src="src/assets/img/icon-128.png" width="64"/>
-
-# Quasar (MV3)
+# <img src="src/assets/img/icon-128.png" width="64" align="center"/> Quasar (MV3)
 
 ![Static Badge](https://img.shields.io/badge/telegram-voxacommunications-blue?link=https%3A%2F%2Ft.me%2Fvoxacommunications)
 [![npm](https://img.shields.io/npm/v/chrome-extension-boilerplate-react)](https://www.npmjs.com/package/chrome-extension-boilerplate-react)
@@ -145,6 +143,10 @@ ApiCall({ key: secrets.key });
 
 - [Webpack documentation](https://webpack.js.org/concepts/)
 - [Chrome Extension documentation](https://developer.chrome.com/extensions/getstarted)
+
+## Images:
+
+<img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/screenshot.png?raw=true" style="border-radius: 8px">
 
 ---
 
