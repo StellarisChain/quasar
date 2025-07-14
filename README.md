@@ -148,4 +148,5 @@ ApiCall({ key: secrets.key });
 
 ---
 
+Connor W | [Website](https://connor33341.dev)
 Michael Xieyang Liu | [Website](https://lxieyang.github.io)
