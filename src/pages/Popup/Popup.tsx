@@ -78,7 +78,7 @@ const MiniChart = ({ data, color, positive }: { data: number[]; color: string; p
   const range = max - min;
   const width = 240;
   const height = 40;
-  
+
   const points = data.map((value, index) => {
     const x = (index / (data.length - 1)) * width;
     const y = height - ((value - min) / range) * height;
@@ -110,16 +110,16 @@ const MiniChart = ({ data, color, positive }: { data: number[]; color: string; p
 };
 
 // Dropdown Component
-const Dropdown = ({ 
-  trigger, 
-  children, 
-  isOpen, 
-  onToggle 
-}: { 
-  trigger: React.ReactNode; 
-  children: React.ReactNode; 
-  isOpen: boolean; 
-  onToggle: () => void; 
+const Dropdown = ({
+  trigger,
+  children,
+  isOpen,
+  onToggle
+}: {
+  trigger: React.ReactNode;
+  children: React.ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
 }) => {
   return (
     <div className="dropdown">
@@ -145,7 +145,7 @@ const ChainCard = ({ chain }: { chain: ChainData }) => {
       {/* Header Section */}
       <div className="chain-header">
         <div className="chain-info">
-          <div 
+          <div
             className="chain-icon"
             style={{ backgroundColor: chain.color }}
           >
@@ -169,9 +169,9 @@ const ChainCard = ({ chain }: { chain: ChainData }) => {
 
       {/* Chart Section */}
       <div className="chart-section">
-        <MiniChart 
-          data={chain.chartData} 
-          color={chain.color} 
+        <MiniChart
+          data={chain.chartData}
+          color={chain.color}
           positive={isPositive}
         />
       </div>
@@ -265,24 +265,24 @@ const Popup = () => {
       address: '0xA1b2...C3d4',
       chains: [
         {
-          name: 'Ethereum', symbol: 'ETH', balance: '2.345', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100,2150,2200,2180,2220,2300,2250,2280,2320,2350,2400,2380], tokens: [
+          name: 'Ethereum', symbol: 'ETH', balance: '2.345', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100, 2150, 2200, 2180, 2220, 2300, 2250, 2280, 2320, 2350, 2400, 2380], tokens: [
             { symbol: 'USDC', name: 'USD Coin', balance: '1,250.00', price: 0, change24h: 0 },
             { symbol: 'UNI', name: 'Uniswap', balance: '45.2', price: 0, change24h: 0 },
             { symbol: 'LINK', name: 'Chainlink', balance: '12.8', price: 0, change24h: 0 },
           ],
         },
         {
-          name: 'Solana', symbol: 'SOL', balance: '15.67', fiatValue: 0, change24h: 0, color: '#9945FF', chartData: [80,82,78,85,88,84,86,89,87,90,88,85], tokens: [
+          name: 'Solana', symbol: 'SOL', balance: '15.67', fiatValue: 0, change24h: 0, color: '#9945FF', chartData: [80, 82, 78, 85, 88, 84, 86, 89, 87, 90, 88, 85], tokens: [
             { symbol: 'USDC', name: 'USD Coin (Solana)', balance: '500.00', price: 0, change24h: 0 },
             { symbol: 'RAY', name: 'Raydium', balance: '230.5', price: 0, change24h: 0 },
             { symbol: 'BONK', name: 'Bonk', balance: '1,000,000', price: 0, change24h: 0 },
           ],
         },
         {
-          name: 'Stellaris', symbol: 'STE', balance: '158.67', fiatValue: 0, change24h: 0, color: '#9945FF', chartData: [80,82,78,85,88,84,86,89,87,90,88,85], tokens: [],
+          name: 'Stellaris', symbol: 'STE', balance: '158.67', fiatValue: 0, change24h: 0, color: '#9945FF', chartData: [80, 82, 78, 85, 88, 84, 86, 89, 87, 90, 88, 85], tokens: [],
         },
         {
-          name: 'Halogen', symbol: 'HAL', balance: '2759.65', fiatValue: 0, change24h: 0, color: '#ff4545ff', chartData: [80,60,40,150,230,184,416,380,259,210,313,185,180], tokens: [],
+          name: 'Halogen', symbol: 'HAL', balance: '2759.65', fiatValue: 0, change24h: 0, color: '#ff4545ff', chartData: [80, 60, 40, 150, 230, 184, 416, 380, 259, 210, 313, 185, 180], tokens: [],
         },
       ],
     },
@@ -292,7 +292,7 @@ const Popup = () => {
       address: '0xF1e2...B3c4',
       chains: [
         {
-          name: 'Ethereum', symbol: 'ETH', balance: '0.892', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100,2150,2200,2180,2220,2300,2250,2280,2320,2350,2400,2380], tokens: [
+          name: 'Ethereum', symbol: 'ETH', balance: '0.892', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100, 2150, 2200, 2180, 2220, 2300, 2250, 2280, 2320, 2350, 2400, 2380], tokens: [
             { symbol: 'WETH', name: 'Wrapped Ethereum', balance: '0.5', price: 0, change24h: 0 },
             { symbol: 'USDT', name: 'Tether', balance: '5,000.00', price: 0, change24h: 0 },
           ],
@@ -306,7 +306,7 @@ const Popup = () => {
     try {
       const raw = localStorage.getItem(WALLET_STORAGE_KEY);
       if (raw) return JSON.parse(raw);
-    } catch (e) {}
+    } catch (e) { }
     return defaultWallets;
   };
 
@@ -326,41 +326,53 @@ const Popup = () => {
       setLoadingPrices(true);
       // Collect all symbols to fetch
       const symbols = Array.from(new Set(wallets.flatMap(w => w.chains.flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
+      let priceData: Record<string, { price: number; change24h: number }> = {};
       try {
         // Fetch prices for all symbols
         const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
-        const priceData = await res.json();
-        // Update wallets with price info
-        const updatedWallets = wallets.map(wallet => ({
-          ...wallet,
-          chains: wallet.chains.map(chain => {
-            const chainPrice = priceData[chain.symbol]?.price ?? 0;
-            const chainChange = priceData[chain.symbol]?.change24h ?? 0;
-            // Calculate fiatValue for chain
-            const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
-            return {
-              ...chain,
-              fiatValue,
-              change24h: chainChange,
-              tokens: chain.tokens.map(token => {
-                const tokenPrice = priceData[token.symbol]?.price ?? 0;
-                const tokenChange = priceData[token.symbol]?.change24h ?? 0;
-                return {
-                  ...token,
-                  price: tokenPrice,
-                  change24h: tokenChange,
-                };
-              })
-            };
-          })
-        }));
-        setWallets(updatedWallets);
-        // If selectedWallet changed, update it too
-        setSelectedWallet(updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]);
-        saveWallets(updatedWallets);
+        priceData = await res.json();
+        // If the stub returns nothing or invalid, fallback
+        if (!priceData || typeof priceData !== 'object' || Object.keys(priceData).length === 0) {
+          throw new Error('Stub API returned no data');
+        }
       } catch (e) {
-        // fallback: keep old prices
+        // fallback: use default stub prices
+        priceData = {};
+        symbols.forEach(symbol => {
+          priceData[symbol] = {
+            price: 1.0,
+            change24h: 0.5
+          };
+        });
       }
+      // Update wallets with price info
+      const updatedWallets = wallets.map(wallet => ({
+        ...wallet,
+        chains: wallet.chains.map(chain => {
+          const chainPrice = priceData[chain.symbol]?.price ?? 0;
+          const chainChange = priceData[chain.symbol]?.change24h ?? 0;
+          // Calculate fiatValue for chain
+          const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
+          return {
+            ...chain,
+            fiatValue,
+            change24h: chainChange,
+            tokens: chain.tokens.map(token => {
+              const tokenPrice = priceData[token.symbol]?.price ?? 0;
+              const tokenChange = priceData[token.symbol]?.change24h ?? 0;
+              return {
+                ...token,
+                price: tokenPrice,
+                change24h: tokenChange,
+              };
+            })
+          };
+        })
+      }));
+      setWallets(updatedWallets);
+      // If selectedWallet changed, update it too
+      setSelectedWallet(updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]);
+      saveWallets(updatedWallets);
       setLoadingPrices(false);
     };
     fetchPrices();
@@ -369,7 +381,7 @@ const Popup = () => {
 
   // Calculate total portfolio value
   const totalValue = selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0);
-  const totalChange = selectedWallet.chains.reduce((sum, chain) => 
+  const totalChange = selectedWallet.chains.reduce((sum, chain) =>
     sum + (chain.change24h * chain.fiatValue / (totalValue || 1)), 0
   );
 
