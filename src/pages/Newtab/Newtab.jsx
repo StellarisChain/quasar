@@ -76,9 +76,9 @@ const Newtab = () => {
   const getFaviconUrl = (url) => {
     try {
       const domain = new URL(url).hostname;
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      return `https://www.google.com/s2/favicons?domain=https://${domain}&sz=32`;
     } catch (e) {
-      return `https://www.google.com/s2/favicons?domain=example.com&sz=32`;
+      return `https://www.google.com/s2/favicons?domain=https://example.com&sz=32`;
     }
   };
 
