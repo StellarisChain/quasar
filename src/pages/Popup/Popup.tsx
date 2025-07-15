@@ -45,7 +45,7 @@ const Popup = () => {
 
         {/* Popup Page */}
         <div className="popup-page">
-          {page === 'main' && <Portfolio />}
+          {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet} />}
           {page === 'create-wallet' && <div>Create Wallet</div>}
         </div>
       </div>

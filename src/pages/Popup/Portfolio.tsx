@@ -11,10 +11,13 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import './Popup.css';
 
-export const Portfolio = () => {
+export const Portfolio = ({ wallets, selectedWallet }: {
+    wallets: Wallet[];
+    selectedWallet: Wallet;
+}) => {
   // State
-  const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
-  const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
+  //const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
+  //const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
 
   // Fetch price data from API
@@ -66,9 +69,9 @@ export const Portfolio = () => {
           };
         })
       }));
-      setWallets(updatedWallets);
+      //setWallets(updatedWallets);
       // If selectedWallet changed, update it too
-      setSelectedWallet(updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]);
+      //setSelectedWallet(updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]);
       saveWallets(updatedWallets);
       setLoadingPrices(false);
     };
@@ -92,12 +95,12 @@ export const Portfolio = () => {
             <span>Loading...</span>
           ) : (
             <>
-              <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 1, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
+              <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 0.5, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
               <Counter
                 value={totalValue}
                 fontSize={32}
                 padding={0}
-                gap={0.5}
+                gap={0.25}
                 textColor="white"
                 fontWeight={600}
               />
