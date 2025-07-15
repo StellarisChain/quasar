@@ -136,7 +136,7 @@ const Dropdown = ({
 };
 
 // Chain Card Component
-const ChainCard = ({ chain }: { chain: ChainData }) => {
+export const ChainCard = ({ chain }: { chain: ChainData }) => {
   const [isTokenMenuOpen, setIsTokenMenuOpen] = useState(false);
   const isPositive = chain.change24h >= 0;
 
@@ -214,7 +214,7 @@ const ChainCard = ({ chain }: { chain: ChainData }) => {
 };
 
 // Wallet Selector Component
-const WalletSelector = ({ wallets, selectedWallet, onWalletChange }: {
+export const WalletSelector = ({ wallets, selectedWallet, onWalletChange }: {
   wallets: Wallet[];
   selectedWallet: Wallet;
   onWalletChange: (wallet: Wallet) => void;
@@ -390,7 +390,7 @@ const Popup = () => {
       {/* Header */}
       <div className="popup-header">
         <div className="brand">
-          <div className="brand-icon">Q</div>
+          <div className="brand-icon"><img src="icon-34.png" alt="Brand Icon" /></div>
           <span className="brand-name">Quasar</span>
         </div>
         <WalletSelector
