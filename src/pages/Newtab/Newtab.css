@@ -50,6 +50,207 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #0f0f0f;
+  color: white;
+  min-height: 100vh;
+}
+
+/* New Tab Specific Styles */
+.newtab-root {
+  min-height: 100vh;
+  background: #0f0f0f;
+  color: white;
+  padding: 20px;
+}
+
+.newtab-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-direction: column;
+  text-align: center;
+}
+
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.brand-title {
+  color: #a855f7;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.search-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 2px solid #3a3a3a;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #a855f7;
+}
+
+.search-btn {
+  padding: 12px 20px;
+  background: #a855f7;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-btn:hover {
+  background: #9333ea;
+}
+
+.newtab-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Links Section */
+.links-section {
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  padding: 24px;
+  height: fit-content;
+}
+
+.links-section h2 {
+  color: #a855f7;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.links-list {
+  list-style: none;
+  margin-bottom: 20px;
+}
+
+.link-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.link-item:last-child {
+  border-bottom: none;
+}
+
+.link-item a {
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.link-item a:hover {
+  color: #a855f7;
+}
+
+.remove-link-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.remove-link-btn:hover {
+  background: #2a2a2a;
+}
+
+.add-link-form {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.add-link-input {
+  padding: 8px 12px;
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+}
+
+.add-link-input:focus {
+  outline: none;
+  border-color: #a855f7;
+}
+
+.add-link-btn {
+  padding: 8px 16px;
+  background: #a855f7;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-link-btn:hover {
+  background: #9333ea;
+}
+
+/* Portfolio Section */
+.portfolio-section {
+  background: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  padding: 24px;
+  height: fit-content;
+}
+
+.portfolio-section h2 {
+  color: #a855f7;
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.portfolio-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* Main popup container */
@@ -73,12 +274,6 @@ body {
   background: #2a2a2a;
   border-bottom: 1px solid #3a3a3a;
   flex-shrink: 0;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .brand-icon {
@@ -127,7 +322,7 @@ body {
   background: #2a2a2a;
   border: 1px solid #3a3a3a;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
   text-align: center;
 }
 
@@ -138,9 +333,9 @@ body {
 }
 
 .balance-amount {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: bold;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .balance-change {
@@ -223,18 +418,34 @@ body {
 }
 
 .assets-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.assets-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.assets-list::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+.assets-list::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 2px;
 }
 
 /* Chain Card */
 .chain-card {
   background: #2a2a2a;
   border: 1px solid #3a3a3a;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 12px;
   transition: all 0.2s;
+  min-height: 100px;
 }
 
 .chain-card:hover {
@@ -245,7 +456,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .chain-info {
@@ -255,25 +466,25 @@ body {
 }
 
 .chain-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 11px;
   color: white;
 }
 
 .chain-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .chain-balance {
-  font-size: 12px;
+  font-size: 11px;
   color: #9ca3af;
   line-height: 1.2;
 }
@@ -283,7 +494,7 @@ body {
 }
 
 .fiat-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
   line-height: 1.2;
   margin-bottom: 4px;
@@ -293,7 +504,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   justify-content: flex-end;
 }
@@ -510,3 +721,41 @@ body {
 
 .positive { color: #10b981; }
 .negative { color: #ef4444; }
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .newtab-main {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .assets-list {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  
+  .brand {
+    flex-direction: row;
+  }
+  
+  .brand-title {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .newtab-root {
+    padding: 10px;
+  }
+  
+  .search-form {
+    flex-direction: column;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .assets-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
