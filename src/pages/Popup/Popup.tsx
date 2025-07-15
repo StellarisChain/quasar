@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Counter from '../../components/Counter';
 import './Popup.css';
 
 // Types
@@ -465,8 +466,22 @@ const Popup = () => {
         {/* Total Balance */}
         <div className="balance-card balance-card-anim">
           <div className="balance-label">Total Portfolio Value</div>
-          <div className="balance-amount">
-            {loadingPrices ? <span>Loading...</span> : `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {loadingPrices ? (
+              <span>Loading...</span>
+            ) : (
+              <>
+                <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 4, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
+                <Counter
+                  value={totalValue}
+                  fontSize={32}
+                  padding={0}
+                  gap={8}
+                  textColor="white"
+                  fontWeight={600}
+                />
+              </>
+            )}
           </div>
           <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
             {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}

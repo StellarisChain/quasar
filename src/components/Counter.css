@@ -1,0 +1,51 @@
+.counter-container {
+  position: relative;
+  display: inline-block;
+}
+
+.counter-counter {
+  display: flex;
+  overflow: hidden;
+  line-height: 1;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: Inter, Segoe UI, Arial, Helvetica, sans-serif;
+  font-weight: 600;
+}
+
+.counter-digit {
+  position: relative;
+  width: 1ch;
+  font-variant-numeric: tabular-nums;
+  background: none;
+  border-radius: 0;
+}
+
+.counter-number {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.gradient-container {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.bottom-gradient {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
