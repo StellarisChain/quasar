@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './Popup.css';
 
 // Types
@@ -71,7 +71,6 @@ const CreditCardIcon = () => (
   </svg>
 );
 
-// Simple SVG Chart Component
 const MiniChart = ({ data, color, positive }: { data: number[]; color: string; positive: boolean }) => {
   const max = Math.max(...data);
   const min = Math.min(...data);
@@ -85,8 +84,49 @@ const MiniChart = ({ data, color, positive }: { data: number[]; color: string; p
     return `${x},${y}`;
   }).join(' ');
 
+
+  const polylineRef = useRef<SVGPolylineElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [drawn, setDrawn] = useState(false);
+
+  useEffect(() => {
+    setDrawn(false);
+    let observer: IntersectionObserver | null = null;
+    const el = containerRef.current;
+    if (el) {
+      observer = new window.IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setDrawn(true);
+            observer && observer.disconnect();
+          }
+        },
+        { threshold: 0.3 }
+      );
+      observer.observe(el);
+    }
+    return () => {
+      if (observer) observer.disconnect();
+    };
+  }, [data]);
+
+  useEffect(() => {
+    if (!polylineRef.current) return;
+    const poly = polylineRef.current;
+    const length = poly.getTotalLength();
+    poly.style.transition = 'none';
+    poly.style.strokeDasharray = String(length);
+    poly.style.strokeDashoffset = String(length);
+    if (drawn) {
+      setTimeout(() => {
+        poly.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)';
+        poly.style.strokeDashoffset = '0';
+      }, 10);
+    }
+  }, [drawn, data]);
+
   return (
-    <div className="mini-chart">
+    <div className="mini-chart" ref={containerRef}>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <defs>
           <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -95,6 +135,7 @@ const MiniChart = ({ data, color, positive }: { data: number[]; color: string; p
           </linearGradient>
         </defs>
         <polyline
+          ref={polylineRef}
           fill="none"
           stroke={color}
           strokeWidth="2"
