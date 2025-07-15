@@ -5,7 +5,7 @@ import { Token, ChainData, Wallet } from './DataTypes';
 export const WALLET_STORAGE_KEY = 'quasar_wallets';
 
 // Default Wallet Data (just for testing)
-// Default wallet data (structure only, no price values)
+export let useDefaultWallets = false;
 export const defaultWallets: Wallet[] = [
     {
         id: '1',
@@ -55,7 +55,8 @@ export const getStoredWallets = () => {
         const raw = localStorage.getItem(WALLET_STORAGE_KEY);
         if (raw) return JSON.parse(raw);
     } catch (e) { }
-    return defaultWallets;
+    console.warn('No wallets found in localStorage, using default wallets');
+    return useDefaultWallets ? defaultWallets : [];
 };
 
 // Save wallets to localStorage

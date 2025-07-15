@@ -34,7 +34,7 @@ const Popup = () => {
             <span className="brand-name">Quasar</span>
           </div>
           <WalletSelector
-            wallets={wallets}
+            wallets={wallets} // If no wallets are loaded, this will default to []
             selectedWallet={selectedWallet}
             onWalletChange={wallet => {
               setSelectedWallet(wallet);
