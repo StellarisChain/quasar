@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import '../../assets/img/logo.svg';
 import './Newtab.css';
@@ -54,6 +53,35 @@ const Newtab = () => {
   const [selectedWallet, setSelectedWallet] = useState(defaultWallets[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
 
+  // Load saved links from localStorage or use defaults
+  const [links, setLinks] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem('quasar-saved-links') || '[]');
+    return saved.length > 0 ? saved : [
+      { url: 'https://stellarischain.com', label: 'StellarisChain' },
+      { url: 'https://quasarwallet.io', label: 'Quasar Wallet' },
+      { url: 'https://github.com/StellarisChain/quasar', label: 'Quasar GitHub' },
+    ];
+  });
+  
+  const [search, setSearch] = useState('');
+  const [newLink, setNewLink] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+
+  // Save links to localStorage whenever links change
+  useEffect(() => {
+    localStorage.setItem('quasar-saved-links', JSON.stringify(links));
+  }, [links]);
+
+  // Function to get favicon URL
+  const getFaviconUrl = (url) => {
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch (e) {
+      return `https://www.google.com/s2/favicons?domain=example.com&sz=32`;
+    }
+  };
+
   // Simulate price fetching (stub)
   useEffect(() => {
     setLoadingPrices(true);
@@ -94,16 +122,6 @@ const Newtab = () => {
     sum + (chain.change24h * chain.fiatValue / (totalValue || 1)), 0
   );
 
-  // Saved links state
-  const [links, setLinks] = useState([
-    { url: 'https://stellarischain.com', label: 'StellarisChain' },
-    { url: 'https://quasarwallet.io', label: 'Quasar Wallet' },
-    { url: 'https://github.com/StellarisChain/quasar', label: 'Quasar GitHub' },
-  ]);
-  const [search, setSearch] = useState('');
-  const [newLink, setNewLink] = useState('');
-  const [newLabel, setNewLabel] = useState('');
-
   // Search submit handler
   const handleSearch = (e) => {
     e.preventDefault();
@@ -117,7 +135,8 @@ const Newtab = () => {
   const handleAddLink = (e) => {
     e.preventDefault();
     if (newLink.trim() && newLabel.trim()) {
-      setLinks([...links, { url: newLink, label: newLabel }]);
+      const newLinkObj = { url: newLink, label: newLabel };
+      setLinks([...links, newLinkObj]);
       setNewLink('');
       setNewLabel('');
     }
@@ -154,6 +173,14 @@ const Newtab = () => {
           <ul className="links-list">
             {links.map((link, idx) => (
               <li key={idx} className="link-item">
+                <img 
+                  src={getFaviconUrl(link.url)} 
+                  alt={`${link.label} favicon`} 
+                  className="link-favicon"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
                 <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>
                 <button className="remove-link-btn" onClick={() => handleRemoveLink(idx)} title="Remove">×</button>
               </li>
