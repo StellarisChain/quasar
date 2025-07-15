@@ -123,14 +123,27 @@ const Dropdown = ({
 }) => {
   return (
     <div className="dropdown">
-      <div onClick={onToggle} className="dropdown-trigger">
+      <div
+        onClick={onToggle}
+        className="dropdown-trigger dropdown-anim"
+        tabIndex={0}
+        role="button"
+        aria-expanded={isOpen}
+        style={{ cursor: 'pointer', outline: 'none', transition: 'background 0.2s' }}
+      >
         {trigger}
       </div>
-      {isOpen && (
-        <div className="dropdown-content">
-          {children}
-        </div>
-      )}
+      <div
+        className={`dropdown-content${isOpen ? ' open' : ''}`}
+        style={{
+          maxHeight: isOpen ? 500 : 0,
+          opacity: isOpen ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.3s cubic-bezier(.4,0,.2,1), opacity 0.2s',
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 };
@@ -141,13 +154,13 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
   const isPositive = chain.change24h >= 0;
 
   return (
-    <div className="chain-card">
+    <div className="chain-card chain-card-anim">
       {/* Header Section */}
       <div className="chain-header">
         <div className="chain-info">
           <div
             className="chain-icon"
-            style={{ backgroundColor: chain.color }}
+            style={{ backgroundColor: chain.color, transition: 'box-shadow 0.2s' }}
           >
             {chain.symbol.slice(0, 2)}
           </div>
@@ -160,7 +173,7 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
           <div className="fiat-value">
             ${chain.fiatValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <div className={`change-value ${isPositive ? 'positive' : 'negative'}`}>
+          <div className={`change-value ${isPositive ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
             {isPositive ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
             <span>{isPositive ? '+' : ''}{chain.change24h.toFixed(2)}%</span>
           </div>
@@ -189,7 +202,7 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
       >
         <div className="tokens-list">
           {chain.tokens.map((token, idx) => (
-            <div key={idx} className="token-item">
+            <div key={idx} className="token-item token-anim">
               <div className="token-info">
                 <div className="token-icon">
                   {token.symbol.slice(0, 2)}
@@ -224,7 +237,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange }: {
   return (
     <Dropdown
       trigger={
-        <div className="wallet-selector">
+        <div className="wallet-selector wallet-selector-anim">
           <WalletIcon />
           <span className="wallet-name">{selectedWallet.name}</span>
           <ChevronDownIcon />
@@ -241,7 +254,10 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange }: {
               onWalletChange(wallet);
               setIsOpen(false);
             }}
-            className={`wallet-item ${selectedWallet.id === wallet.id ? 'selected' : ''}`}
+            className={`wallet-item wallet-item-anim ${selectedWallet.id === wallet.id ? 'selected' : ''}`}
+            tabIndex={0}
+            role="button"
+            style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
           >
             <div className="wallet-name">{wallet.name}</div>
             <div className="wallet-address">{wallet.address}</div>
@@ -386,7 +402,7 @@ const Popup = () => {
   );
 
   return (
-    <div className="wallet-popup">
+    <div className="wallet-popup wallet-popup-anim">
       {/* Header */}
       <div className="popup-header">
         <div className="brand">
@@ -406,12 +422,12 @@ const Popup = () => {
       {/* Content */}
       <div className="popup-content">
         {/* Total Balance */}
-        <div className="balance-card">
+        <div className="balance-card balance-card-anim">
           <div className="balance-label">Total Portfolio Value</div>
           <div className="balance-amount">
             {loadingPrices ? <span>Loading...</span> : `$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           </div>
-          <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`}>
+          <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
             {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
             <span>{totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)</span>
           </div>
@@ -419,15 +435,15 @@ const Popup = () => {
 
         {/* Action Buttons */}
         <div className="action-buttons">
-          <button className="action-btn">
+          <button className="action-btn action-btn-anim">
             <ArrowsRightLeftIcon />
             <span>Send</span>
           </button>
-          <button className="action-btn">
+          <button className="action-btn action-btn-anim">
             <PlusIcon />
             <span>Receive</span>
           </button>
-          <button className="action-btn">
+          <button className="action-btn action-btn-anim">
             <CreditCardIcon />
             <span>Buy</span>
           </button>
@@ -437,7 +453,7 @@ const Popup = () => {
         <div className="assets-section">
           <div className="assets-header">
             <span className="assets-label">Assets ({selectedWallet.chains.length})</span>
-            <button className="manage-btn">Manage</button>
+            <button className="manage-btn manage-btn-anim">Manage</button>
           </div>
           <div className="assets-list">
             {selectedWallet.chains.map((chain, idx) => (

@@ -1,3 +1,12 @@
+/* Card hover scale effect */
+.chain-card-anim {
+  transition: transform 0.18s cubic-bezier(.4,0,.2,1), box-shadow 0.18s cubic-bezier(.4,0,.2,1);
+}
+.chain-card-anim:hover, .chain-card-anim:focus-within {
+  transform: scale(1.035);
+  box-shadow: 0 4px 24px 0 rgba(60,60,90,0.10), 0 1.5px 6px 0 rgba(60,60,90,0.08);
+  z-index: 2;
+}
 /* Reset and base styles */
 * {
   box-sizing: border-box;
