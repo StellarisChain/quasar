@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Counter from '../../components/Counter';
 import StarBorder from '../../components/StarBorder';
+import Noise from '../../components/Noise';
 import './Popup.css';
 
 // Types
@@ -445,77 +446,84 @@ const Popup = () => {
   );
 
   return (
-    <div className="wallet-popup wallet-popup-anim">
-      {/* Header */}
-      <div className="popup-header">
-        <div className="brand">
-          <div className="brand-icon"><img src="icon-34.png" alt="Brand Icon" /></div>
-          <span className="brand-name">Quasar</span>
-        </div>
-        <WalletSelector
-          wallets={wallets}
-          selectedWallet={selectedWallet}
-          onWalletChange={wallet => {
-            setSelectedWallet(wallet);
-            saveWallets(wallets);
-          }}
-        />
+    <div className="wallet-popup wallet-popup-anim" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Noise background */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <Noise />
       </div>
-
-      {/* Content */}
-      <div className="popup-content">
-        {/* Total Balance */}
-        <div className="balance-card balance-card-anim">
-          <div className="balance-label">Total Portfolio Value</div>
-          <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {loadingPrices ? (
-              <span>Loading...</span>
-            ) : (
-              <>
-                <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 1, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
-                <Counter
-                  value={totalValue}
-                  fontSize={32}
-                  padding={0}
-                  gap={0.5}
-                  textColor="white"
-                  fontWeight={600}
-                />
-              </>
-            )}
+      {/* Main content */}
+      <div style={{ position: 'relative', zIndex: 1, height: '100%', minHeight: '100vh' }}>
+        {/* Header */}
+        <div className="popup-header">
+          <div className="brand">
+            <div className="brand-icon"><img src="icon-34.png" alt="Brand Icon" /></div>
+            <span className="brand-name">Quasar</span>
           </div>
-          <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
-            {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
-            <span>{totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)</span>
-          </div>
+          <WalletSelector
+            wallets={wallets}
+            selectedWallet={selectedWallet}
+            onWalletChange={wallet => {
+              setSelectedWallet(wallet);
+              saveWallets(wallets);
+            }}
+          />
         </div>
 
-        {/* Action Buttons */}
-        <div className="action-buttons">
-          <button className="action-btn action-btn-anim">
-            <ArrowsRightLeftIcon />
-            <span>Send</span>
-          </button>
-          <button className="action-btn action-btn-anim">
-            <PlusIcon />
-            <span>Receive</span>
-          </button>
-          <button className="action-btn action-btn-anim">
-            <CreditCardIcon />
-            <span>Buy</span>
-          </button>
-        </div>
-
-        {/* Assets Section */}
-        <div className="assets-section">
-          <div className="assets-header">
-            <span className="assets-label">Assets ({selectedWallet.chains.length})</span>
-            <button className="manage-btn manage-btn-anim">Manage</button>
+        {/* Content */}
+        <div className="popup-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
+          {/* Total Balance */}
+          <div className="balance-card balance-card-anim">
+            <div className="balance-label">Total Portfolio Value</div>
+            <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {loadingPrices ? (
+                <span>Loading...</span>
+              ) : (
+                <>
+                  <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 1, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
+                  <Counter
+                    value={totalValue}
+                    fontSize={32}
+                    padding={0}
+                    gap={0.5}
+                    textColor="white"
+                    fontWeight={600}
+                  />
+                </>
+              )}
+            </div>
+            <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
+              {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
+              <span>{totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)</span>
+            </div>
           </div>
-          <div className="assets-list">
-            {selectedWallet.chains.map((chain, idx) => (
-              <ChainCard key={idx} chain={chain} />
-            ))}
+
+          {/* Action Buttons */}
+          <div className="action-buttons">
+            <button className="action-btn action-btn-anim">
+              <ArrowsRightLeftIcon />
+              <span>Send</span>
+            </button>
+            <button className="action-btn action-btn-anim">
+              <PlusIcon />
+              <span>Receive</span>
+            </button>
+            <button className="action-btn action-btn-anim">
+              <CreditCardIcon />
+              <span>Buy</span>
+            </button>
+          </div>
+
+          {/* Assets Section */}
+          <div className="assets-section">
+            <div className="assets-header">
+              <span className="assets-label">Assets ({selectedWallet.chains.length})</span>
+              <button className="manage-btn manage-btn-anim">Manage</button>
+            </div>
+            <div className="assets-list">
+              {selectedWallet.chains.map((chain, idx) => (
+                <ChainCard key={idx} chain={chain} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
