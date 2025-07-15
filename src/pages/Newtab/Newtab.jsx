@@ -62,7 +62,7 @@ const Newtab = () => {
       { url: 'https://github.com/StellarisChain/quasar', label: 'Quasar GitHub' },
     ];
   });
-  
+
   const [search, setSearch] = useState('');
   const [newLink, setNewLink] = useState('');
   const [newLabel, setNewLabel] = useState('');
@@ -173,9 +173,9 @@ const Newtab = () => {
           <ul className="links-list">
             {links.map((link, idx) => (
               <li key={idx} className="link-item">
-                <img 
-                  src={getFaviconUrl(link.url)} 
-                  alt={`${link.label} favicon`} 
+                <img
+                  src={getFaviconUrl(link.url)}
+                  alt={`${link.label} favicon`}
                   className="link-favicon"
                   onError={(e) => {
                     e.target.style.display = 'none';
