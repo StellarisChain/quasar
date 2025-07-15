@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Counter from '../../components/Counter';
+import StarBorder from '../../components/StarBorder';
 import './Popup.css';
 
 // Types

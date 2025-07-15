@@ -1,3 +1,11 @@
+/* Interactive scaling for action buttons */
+.action-btn:hover,
+.action-btn:focus {
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.10);
+  z-index: 1;
+}
+
 /* Card hover scale effect */
 .chain-card-anim {
   transition: transform 0.18s cubic-bezier(.4, 0, .2, 1), box-shadow 0.18s cubic-bezier(.4, 0, .2, 1);
@@ -157,7 +165,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  transition: all 0.2s;
+  /* transition: all 0.2s; */
+  transition: transform 0.15s cubic-bezier(.4, 0, .2, 1), box-shadow 0.15s cubic-bezier(.4, 0, .2, 1);
 }
 
 .action-btn:hover {
