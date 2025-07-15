@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Token, ChainData, Wallet } from '../pages/Popup/DataTypes';
 import { Dropdown } from './Dropdown';
 import { ChevronDownIcon, ArrowUpRightIcon, ArrowDownRightIcon, WalletIcon, PlusIcon } from './Icons';
+import './WalletSelector.css';
 
 // Wallet Selector Component
 export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCreateWallet }: {
@@ -29,14 +30,16 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
     >
       <div className="wallet-list">
         {(!walletList || walletList.length === 0) ? (
-          <button
+          <div
             className="wallet-item wallet-item-anim create-wallet"
-            style={{ textAlign: 'center', padding: '1em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5em', cursor: 'pointer', border: 'none', background: 'none' }}
+            tabIndex={0}
+            role="button"
             onClick={typeof onCreateWallet === 'function' ? onCreateWallet : undefined}
+            style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
           >
             <PlusIcon />
-            <span>Create Wallet</span>
-          </button>
+            <div className="wallet-name">Create Wallet</div>
+          </div>
         ) : (
           walletList.map((wallet) => (
             <div
