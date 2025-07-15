@@ -471,12 +471,12 @@ const Popup = () => {
               <span>Loading...</span>
             ) : (
               <>
-                <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 4, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
+                <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 2, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
                 <Counter
                   value={totalValue}
                   fontSize={32}
                   padding={0}
-                  gap={8}
+                  gap={1}
                   textColor="white"
                   fontWeight={600}
                 />

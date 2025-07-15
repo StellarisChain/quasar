@@ -100,16 +100,10 @@ export default function Counter({
   containerStyle,
   counterStyle,
   digitStyle,
-  gradientHeight = 16,
-  gradientFrom = "black",
-  gradientTo = "transparent",
-  topGradientStyle,
-  bottomGradientStyle,
 }: CounterProps) {
   const height = fontSize + padding;
   const defaultCounterStyle: React.CSSProperties = {
     fontSize,
-    gap: gap,
     borderRadius: borderRadius,
     paddingLeft: horizontalPadding,
     paddingRight: horizontalPadding,
@@ -117,6 +111,8 @@ export default function Counter({
     fontWeight: fontWeight,
     display: 'flex',
     alignItems: 'center',
+    gap: `${gap}px`,
+    letterSpacing: '0.02em',
   };
 
   // Format value with commas and two decimals
@@ -134,10 +130,10 @@ export default function Counter({
       >
         {chars.map((char, idx) => {
           if (char === ',') {
-            return <span key={idx} style={{ opacity: 0.7, margin: '0 2px' }}>,</span>;
+            return <span key={idx} style={{ opacity: 0.7, margin: `0 ${gap / 2}px` }}>,</span>;
           }
           if (char === '.') {
-            return <span key={idx} style={{ opacity: 0.7, margin: '0 2px' }}>.</span>;
+            return <span key={idx} style={{ opacity: 0.7, margin: `0 ${gap / 2}px` }}>.</span>;
           }
           // Only animate digits
           return (
@@ -146,7 +142,7 @@ export default function Counter({
               place={1}
               value={parseInt(char, 10) || 0}
               height={height}
-              digitStyle={digitStyle}
+              digitStyle={{ ...digitStyle, margin: `0 ${gap / 2}px` }}
             />
           );
         })}
