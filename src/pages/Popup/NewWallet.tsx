@@ -13,7 +13,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
     const [step, setStep] = useState<'generate' | 'confirm' | 'name'>('generate');
     const [seedPhrase, setSeedPhrase] = useState<string[]>([]);
     const [confirmPhrase, setConfirmPhrase] = useState<string[]>(new Array(12).fill(''));
-    const [walletName, setWalletName] = useState('');
+    const [walletName, setWalletName] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedWords, setSelectedWords] = useState<number[]>([]);
 
@@ -61,6 +61,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
             deterministic: true,
             fields: ['mnemonic', 'id', 'private_key', 'public_key', 'address']
         });
+        newWallet.name = walletName || 'My Wallet';
         /*{
             id: Date.now().toString(),
             name: walletName || 'My Wallet',
