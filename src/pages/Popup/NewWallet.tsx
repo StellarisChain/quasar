@@ -64,7 +64,17 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
 
     if (step === 'generate') {
         return (
-            <div className="popup-content create-wallet-page">
+            <div className="popup-content create-wallet-page" style={{
+                height: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'stretch',
+                boxSizing: 'border-box',
+                paddingBottom: '0',
+                overflow: 'hidden',
+                position: 'relative'
+            }}>
                 <div className="create-wallet-header">
                     <button
                         className="back-btn back-btn-anim"
@@ -113,7 +123,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                 </div>
 
                 {/* Seed Phrase Display */}
-                <div className="seed-phrase-container" style={{ marginBottom: '32px' }}>
+                <div className="seed-phrase-container" style={{ marginBottom: '0' }}>
                     {isGenerating ? (
                         <div className="generating-seed" style={{
                             display: 'flex',
@@ -143,23 +153,73 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             padding: '24px',
                             background: '#2a2a2a',
                             borderRadius: '12px',
-                            border: '1px solid #3a3a3a'
+                            border: '1px solid #3a3a3a',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            maxWidth: '400px',
+                            margin: '0 auto',
+                            wordBreak: 'normal'
                         }}>
                             {seedPhrase.map((word, index) => (
                                 <div key={index} className="seed-word" style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
+                                    gap: '2px', // reduce gap between number and text
                                     padding: '12px',
                                     background: '#1a1a1a',
                                     borderRadius: '8px',
-                                    border: '1px solid #3a3a3a'
-                                }}>
+                                    border: '1px solid #3a3a3a',
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                    minWidth: 0,
+                                    overflow: 'hidden',
+                                    position: 'relative',
+                                    zIndex: 1 // ensure button stays above expanded word
+                                }}
+                                    onMouseEnter={e => {
+                                        const wordSpan = e.currentTarget.querySelector('.seed-word-text') as HTMLElement | null;
+                                        if (wordSpan) {
+                                            wordSpan.style.whiteSpace = 'normal';
+                                            wordSpan.style.overflow = 'visible';
+                                            wordSpan.style.textOverflow = 'clip';
+                                            wordSpan.style.maxWidth = 'none';
+                                            wordSpan.style.background = '#232323';
+                                            wordSpan.style.zIndex = '10'; // ensure expanded word stays above other content but not above button
+                                            wordSpan.style.padding = '2px 6px';
+                                            wordSpan.style.borderRadius = '6px';
+                                        }
+                                    }}
+                                    onMouseLeave={e => {
+                                        const wordSpan = e.currentTarget.querySelector('.seed-word-text') as HTMLElement | null;
+                                        if (wordSpan) {
+                                            wordSpan.style.whiteSpace = 'nowrap';
+                                            wordSpan.style.overflow = 'hidden';
+                                            wordSpan.style.textOverflow = 'ellipsis';
+                                            wordSpan.style.maxWidth = '90px';
+                                            wordSpan.style.background = 'none';
+                                            wordSpan.style.zIndex = '1';
+                                            wordSpan.style.padding = '0';
+                                            wordSpan.style.borderRadius = '0';
+                                        }
+                                    }}>
                                     <span style={{ color: '#9ca3af', fontSize: '12px', fontWeight: '500', minWidth: '20px' }}>
                                         {index + 1}.
                                     </span>
-                                    <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>
-                                        {word}
+                                    <span style={{ color: 'white', fontSize: '14px', fontWeight: '500', wordBreak: 'break-word' }}>
+                                        <span
+                                            className="seed-word-text"
+                                            style={{
+                                                color: 'white',
+                                                fontSize: '14px',
+                                                fontWeight: '500',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                maxWidth: '90px',
+                                                display: 'inline-block',
+                                                transition: 'all 0.2s cubic-bezier(.4, 0, .2, 1)'
+                                            }}
+                                        >{word}</span>
                                     </span>
                                 </div>
                             ))}
@@ -167,55 +227,82 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                     )}
                 </div>
 
-                {/* Warning */}
-                <div className="security-warning" style={{
-                    padding: '16px',
-                    background: '#fbbf24',
-                    borderRadius: '8px',
-                    marginBottom: '32px',
-                    border: '1px solid #f59e0b'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '16px' }}>⚠️</span>
-                        <span style={{ color: '#92400e', fontSize: '14px', fontWeight: '600' }}>
-                            Important Security Notice
-                        </span>
-                    </div>
-                    <p style={{ color: '#92400e', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
-                        Write down this phrase and store it in a secure location. Never share it with anyone or enter it on suspicious websites.
-                    </p>
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '0', flexShrink: 0, padding: '0 24px 24px 24px', background: 'transparent' }}>
+                    <button
+                        className="continue-btn continue-btn-anim"
+                        onClick={() => setStep('confirm')}
+                        disabled={isGenerating}
+                        style={{
+                            width: '100%',
+                            background: isGenerating ? '#4b5563' : '#8b5cf6',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            color: 'white',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            cursor: isGenerating ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s cubic-bezier(.4, 0, .2, 1)',
+                            opacity: isGenerating ? 0.6 : 1,
+                            marginTop: '0',
+                            marginBottom: '0',
+                            boxSizing: 'border-box'
+                        }}
+                    >
+                        {isGenerating ? 'Generating...' : 'I\'ve Written It Down'}
+                    </button>
                 </div>
 
-                {/* Continue Button */}
-                <button
-                    className="continue-btn continue-btn-anim"
-                    onClick={() => setStep('confirm')}
-                    disabled={isGenerating}
-                    style={{
-                        width: '100%',
-                        background: isGenerating ? '#4b5563' : '#8b5cf6',
-                        border: 'none',
-                        borderRadius: '12px',
+                {/* Warning */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', margin: '0 auto', maxWidth: '400px' }}>
+                    {/*<div className="security-warning" style={{
                         padding: '16px',
-                        color: 'white',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        cursor: isGenerating ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s cubic-bezier(.4, 0, .2, 1)',
-                        opacity: isGenerating ? 0.6 : 1
-                    }}
-                >
-                    {isGenerating ? 'Generating...' : 'I\'ve Written It Down'}
-                </button>
+                        background: '#fbbf24',
+                        borderRadius: '8px',
+                        marginBottom: 0,
+                        border: '1px solid #f59e0b',
+                        width: '100%',
+                        opacity: 0.5,
+                        pointerEvents: 'none'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '16px' }}>⚠️</span>
+                            <span style={{ color: '#92400e', fontSize: '14px', fontWeight: '600' }}>
+                                Important Security Notice
+                            </span>
+                        </div>
+                        <p style={{ color: '#92400e', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
+                            Write down this phrase and store it in a secure location. Never share it with anyone or enter it on suspicious websites.
+                        </p>
+                    </div>*/}
+                </div>
             </div>
         );
     }
 
     if (step === 'confirm') {
         return (
-            <div className="popup-content create-wallet-page">
+            <div className="popup-content create-wallet-page" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
                 <div className="create-wallet-header">
-                    <button className="back-btn back-btn-anim" onClick={() => setStep('generate')}>
+                    <button
+                        className="back-btn back-btn-anim"
+                        onClick={onBack}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#9ca3af',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            marginBottom: '16px'
+                        }}
+                    >
                         <BackIcon />
                         <span>Back</span>
                     </button>
@@ -315,9 +402,27 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
 
     if (step === 'name') {
         return (
-            <div className="popup-content create-wallet-page">
+            <div className="popup-content create-wallet-page" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
                 <div className="create-wallet-header">
-                    <button className="back-btn back-btn-anim" onClick={() => setStep('confirm')}>
+                    <button
+                        className="back-btn back-btn-anim"
+                        onClick={onBack}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#9ca3af',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            transition: 'all 0.2s',
+                            marginBottom: '16px'
+                        }}
+                    >
                         <BackIcon />
                         <span>Back</span>
                     </button>
