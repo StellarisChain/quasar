@@ -13,7 +13,7 @@ import './Popup.css';
 
 export const Portfolio = ({ wallets, selectedWallet }: {
     wallets: Wallet[];
-    selectedWallet: Wallet;
+    selectedWallet: Wallet| null;
 }) => {
     // State
     //const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());

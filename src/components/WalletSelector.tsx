@@ -3,6 +3,7 @@ import { Token, ChainData, Wallet } from '../pages/Popup/DataTypes';
 import { Dropdown } from './Dropdown';
 import { ChevronDownIcon, ArrowUpRightIcon, ArrowDownRightIcon, WalletIcon, PlusIcon } from './Icons';
 import { defaultWallets } from '../pages/Popup/WalletUtils';
+import { saveWallets } from '../pages/Popup/WalletUtils';
 import './WalletSelector.css';
 
 // Config
@@ -11,8 +12,8 @@ export let demoMode = true; // Set to false in production
 // Wallet Selector Component
 export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCreateWallet, setWallets }: {
   wallets: Wallet[];
-  selectedWallet: Wallet;
-  onWalletChange: (wallet: Wallet) => void;
+  selectedWallet: Wallet | null;
+  onWalletChange: (wallet: Wallet | null) => void;
   onCreateWallet?: () => void;
   setWallets?: (wallets: Wallet[]) => void;
 }) => {
@@ -53,7 +54,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
                 onWalletChange(wallet);
                 setIsOpen(false);
               }}
-              className={`wallet-item wallet-item-anim ${selectedWallet.id === wallet.id ? 'selected' : ''}`}
+              className={`wallet-item wallet-item-anim ${selectedWallet && selectedWallet.id === wallet.id ? 'selected' : ''}`}
               tabIndex={0}
               role="button"
               style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
@@ -66,12 +67,15 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
         {/* Demo Mode: AT NO POINT USE THIS WITH PRODUCTION WALLETS */}
         {demoMode && (
           <div
-            className={`wallet-item wallet-item-anim create-wallet ${selectedWallet.id === defaultWallets[0].id ? 'selected' : ''}`}
+            className={`wallet-item wallet-item-anim create-wallet ${selectedWallet && selectedWallet.id === defaultWallets[0].id ? 'selected' : ''}`}
             tabIndex={0}
             role="button"
             onClick={() => {
               if (selectedWallet === defaultWallets[0] && setWallets){
                 setWallets([]); // Unselect the wallet
+                onWalletChange(null);
+                saveWallets([]); // Clear wallets
+                setIsOpen(false);
                 return
               }
               onWalletChange(defaultWallets[0]);

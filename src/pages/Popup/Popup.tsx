@@ -16,7 +16,7 @@ const Popup = () => {
   // State
   const [page, setPage] = useState<'main' | 'create-wallet'>('main');
   const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
-  const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
+  const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
 
   return (
@@ -47,7 +47,7 @@ const Popup = () => {
 
         {/* Popup Page */}
         <div className="popup-page">
-          {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet} />}
+          {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet ? selectedWallet : null} />}
           {page === 'create-wallet' && <div>Create Wallet</div>}
         </div>
       </div>
