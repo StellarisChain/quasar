@@ -67,7 +67,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
         };
 
         // Update wallets array
-        const updatedWallets = wallets.map(wallet => 
+        const updatedWallets = wallets.map(wallet =>
             wallet.id === selectedWallet.id ? updatedWallet : wallet
         );
 
@@ -80,8 +80,8 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Fetch price data from API
     React.useEffect(() => {
         const fetchPrices = async () => {
-            if (lastFetch && Date.now() - lastFetch < 6000) {
-                console.warn('Skipping fetch, last fetch was less than 6 seconds ago');
+            if (lastFetch && Date.now() - lastFetch < 600) {
+                console.warn('Skipping fetch, last fetch was less than 600 milliseconds ago');
                 return;
             }
             setLoadingPrices(true);
@@ -274,7 +274,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 <div className="assets-section">
                     <div className="assets-header">
                         <span className="assets-label">Assets ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
-                        <button 
+                        <button
                             className="manage-btn manage-btn-anim"
                             onClick={() => setShowManageAssets(true)}
                         >
