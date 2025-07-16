@@ -19,10 +19,11 @@ function shortenAddress(address: string, chars = 6) {
     return address.slice(0, chars) + '...' + address.slice(-chars);
 }
 
-export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
+export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWallets }: {
     wallets: Wallet[];
     selectedWallet: Wallet | null;
     setSelectedWallet: (wallet: Wallet | null) => void;
+    setWallets: (wallets: Wallet[]) => void;
 }) => {
     // State
     const [loadingPrices, setLoadingPrices] = useState(false);
@@ -72,6 +73,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
 
         // Save to storage and update state
         saveWallets(updatedWallets);
+        setWallets(updatedWallets);
         setSelectedWallet(updatedWallet);
     };
 
@@ -87,6 +89,10 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
             if (wallets && wallets.length > 0) {
                 // Collect all symbols to fetch
                 const symbols = Array.from(new Set(wallets.flatMap(w => (w.chains ?? []).flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
+                if (symbols.length === 0) {
+                    setLoadingPrices(false);
+                    return;
+                }
                 let priceData: Record<string, { price: number; change24h: number }> = {};
                 try {
                     // Fetch prices for all symbols
