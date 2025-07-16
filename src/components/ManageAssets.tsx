@@ -22,7 +22,7 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
             try {
                 setLoading(true);
                 setError(null);
-                const tokens = await loadTokensXmlAsJson('/static/tokens.xml');
+                const tokens = await loadTokensXmlAsJson('tokens.xml');
                 setAvailableTokens(tokens);
                 
                 // Pre-select tokens that are already in the wallet

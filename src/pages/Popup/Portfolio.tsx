@@ -9,6 +9,8 @@ import { ChainCard } from '../../components/ChainCard';
 import { Token, ChainData, Wallet } from './DataTypes';
 import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
+import { ManageAssets } from '../../components/ManageAssets';
+import { Chain as TokenFromXML } from '../../lib/token_loader';
 import './Popup.css';
 
 // Utility to shorten address
@@ -23,10 +25,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
     setSelectedWallet: (wallet: Wallet | null) => void;
 }) => {
     // State
-    //const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
-    //const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
     const [loadingPrices, setLoadingPrices] = useState(false);
     const [lastFetch, setLastFetch] = useState<number | null>(null);
+    const [showManageAssets, setShowManageAssets] = useState(false);
 
     // Copy address feedback state
     const [copied, setCopied] = useState(false);
@@ -40,6 +41,38 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
             if (copyTimeout.current) clearTimeout(copyTimeout.current);
             copyTimeout.current = setTimeout(() => setCopied(false), 1200);
         }
+    };
+
+    // Handle saving selected tokens from ManageAssets
+    const handleSaveSelectedTokens = (selectedTokens: TokenFromXML[]) => {
+        if (!selectedWallet) return;
+
+        // Convert selected tokens to ChainData format
+        const newChains: ChainData[] = selectedTokens.map(token => ({
+            name: token.Name,
+            symbol: token.Symbol,
+            balance: '0.00', // Default balance
+            fiatValue: 0,
+            change24h: 0,
+            tokens: [], // Start with empty tokens array
+            chartData: [], // Empty chart data
+            color: token.Color // Add color property as required by ChainData
+        }));
+
+        // Update the selected wallet with new chains
+        const updatedWallet = {
+            ...selectedWallet,
+            chains: newChains
+        };
+
+        // Update wallets array
+        const updatedWallets = wallets.map(wallet => 
+            wallet.id === selectedWallet.id ? updatedWallet : wallet
+        );
+
+        // Save to storage and update state
+        saveWallets(updatedWallets);
+        setSelectedWallet(updatedWallet);
     };
 
     // Fetch price data from API
@@ -97,7 +130,6 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                         };
                     })
                 }));
-                //setWallets(updatedWallets);
                 // If selectedWallet changed, update it too
                 setSelectedWallet(
                     selectedWallet
@@ -126,123 +158,139 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
         : 0;
 
     return (
-        <div className="popup-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
-            {/* Wallet Address Display */}
-            {selectedWallet?.address && (
-                <div
-                    className="wallet-address-container"
-                    title={selectedWallet.address}
-                    onClick={handleCopyAddress}
-                >
-                    <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
-                        <span className="wallet-address-text">
-                            {shortenAddress(selectedWallet.address, 6)}
-                            <span className="wallet-address-full">{selectedWallet.address}</span>
+        <>
+            <div className="popup-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
+                {/* Wallet Address Display */}
+                {selectedWallet?.address && (
+                    <div
+                        className="wallet-address-container"
+                        title={selectedWallet.address}
+                        onClick={handleCopyAddress}
+                    >
+                        <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
+                            <span className="wallet-address-text">
+                                {shortenAddress(selectedWallet.address, 6)}
+                                <span className="wallet-address-full">{selectedWallet.address}</span>
+                            </span>
                         </span>
-                    </span>
-                    <span className="wallet-copy-icon" style={{ opacity: 0.7, fontSize: 16, marginLeft: 8, display: 'flex', alignItems: 'center' }}>
-                        {copied ? '✓' : <CopyIcon />}
-                    </span>
-                    <span
+                        <span className="wallet-copy-icon" style={{ opacity: 0.7, fontSize: 16, marginLeft: 8, display: 'flex', alignItems: 'center' }}>
+                            {copied ? '✓' : <CopyIcon />}
+                        </span>
+                        <span
+                            style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: '#222',
+                                color: '#fff',
+                                fontSize: 12,
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                                marginTop: 2,
+                                opacity: copied ? 1 : 0,
+                                pointerEvents: 'none',
+                                transition: 'opacity 0.2s',
+                                zIndex: 10,
+                            }}
+                        >
+                            Copied!
+                        </span>
+                    </div>
+                )}
+                {/* Total Balance */}
+                <div className="balance-card balance-card-anim" style={{ position: 'relative' }}>
+                    {/* Settings Gear Icon */}
+                    <button
+                        className="settings-gear-btn"
                         style={{
                             position: 'absolute',
-                            top: '100%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            background: '#222',
-                            color: '#fff',
-                            fontSize: 12,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            marginTop: 2,
-                            opacity: copied ? 1 : 0,
-                            pointerEvents: 'none',
+                            top: 10,
+                            right: 10,
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            zIndex: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0.7,
                             transition: 'opacity 0.2s',
-                            zIndex: 10,
                         }}
+                        title="Settings"
+                        aria-label="Settings"
+                        tabIndex={0}
                     >
-                        Copied!
-                    </span>
+                        <SettingsIcon />
+                    </button>
+                    <div className="balance-label">Total Portfolio Value</div>
+                    <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {loadingPrices ? (
+                            <span>Loading...</span>
+                        ) : (
+                            <>
+                                <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 0.5, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
+                                <Counter
+                                    value={totalValue}
+                                    fontSize={32}
+                                    padding={0}
+                                    gap={0.25}
+                                    textColor="white"
+                                    fontWeight={600}
+                                />
+                            </>
+                        )}
+                    </div>
+                    <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
+                        {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
+                        <span>{totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)</span>
+                    </div>
                 </div>
+
+                {/* Action Buttons */}
+                <div className="action-buttons">
+                    <button className="action-btn action-btn-anim">
+                        <ArrowsRightLeftIcon />
+                        <span>Send</span>
+                    </button>
+                    <button className="action-btn action-btn-anim">
+                        <PlusIcon />
+                        <span>Receive</span>
+                    </button>
+                    <button className="action-btn action-btn-anim">
+                        <CreditCardIcon />
+                        <span>Buy</span>
+                    </button>
+                </div>
+
+                {/* Assets Section */}
+                <div className="assets-section">
+                    <div className="assets-header">
+                        <span className="assets-label">Assets ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
+                        <button 
+                            className="manage-btn manage-btn-anim"
+                            onClick={() => setShowManageAssets(true)}
+                        >
+                            Manage
+                        </button>
+                    </div>
+                    <div className="assets-list">
+                        {selectedWallet && selectedWallet.chains ? selectedWallet.chains.map((chain, idx) => (
+                            <ChainCard key={idx} chain={chain} />
+                        )) : null}
+                    </div>
+                </div>
+            </div>
+
+            {/* Manage Assets Modal */}
+            {showManageAssets && (
+                <ManageAssets
+                    selectedWallet={selectedWallet}
+                    onClose={() => setShowManageAssets(false)}
+                    onSave={handleSaveSelectedTokens}
+                />
             )}
-            {/* Total Balance */}
-            <div className="balance-card balance-card-anim" style={{ position: 'relative' }}>
-                {/* Settings Gear Icon */}
-                <button
-                    className="settings-gear-btn"
-                    style={{
-                        position: 'absolute',
-                        top: 10,
-                        right: 10,
-                        background: 'none',
-                        border: 'none',
-                        padding: 0,
-                        cursor: 'pointer',
-                        zIndex: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: 0.7,
-                        transition: 'opacity 0.2s',
-                    }}
-                    title="Settings"
-                    aria-label="Settings"
-                    tabIndex={0}
-                >
-                    <SettingsIcon />
-                </button>
-                <div className="balance-label">Total Portfolio Value</div>
-                <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {loadingPrices ? (
-                        <span>Loading...</span>
-                    ) : (
-                        <>
-                            <span style={{ fontSize: 32, fontWeight: 600, color: 'white', marginRight: 0.5, fontFamily: 'Inter, Segoe UI, Arial, Helvetica, sans-serif' }}>$</span>
-                            <Counter
-                                value={totalValue}
-                                fontSize={32}
-                                padding={0}
-                                gap={0.25}
-                                textColor="white"
-                                fontWeight={600}
-                            />
-                        </>
-                    )}
-                </div>
-                <div className={`balance-change ${totalChange >= 0 ? 'positive' : 'negative'}`} style={{ transition: 'color 0.2s' }}>
-                    {totalChange >= 0 ? <ArrowUpRightIcon /> : <ArrowDownRightIcon />}
-                    <span>{totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}% (24h)</span>
-                </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="action-buttons">
-                <button className="action-btn action-btn-anim">
-                    <ArrowsRightLeftIcon />
-                    <span>Send</span>
-                </button>
-                <button className="action-btn action-btn-anim">
-                    <PlusIcon />
-                    <span>Receive</span>
-                </button>
-                <button className="action-btn action-btn-anim">
-                    <CreditCardIcon />
-                    <span>Buy</span>
-                </button>
-            </div>
-
-            {/* Assets Section */}
-            <div className="assets-section">
-                <div className="assets-header">
-                    <span className="assets-label">Assets ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
-                    <button className="manage-btn manage-btn-anim">Manage</button>
-                </div>
-                <div className="assets-list">
-                    {selectedWallet && selectedWallet.chains ? selectedWallet.chains.map((chain, idx) => (
-                        <ChainCard key={idx} chain={chain} />
-                    )) : null}
-                </div>
-            </div>
-        </div>
+        </>
     );
 };
