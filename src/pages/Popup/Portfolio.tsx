@@ -23,9 +23,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
 
     // Fetch price data from API
     React.useEffect(() => {
+        let lastFetch = Date.now();
         const fetchPrices = async () => {
+            if (lastFetch && Date.now() - lastFetch < 60000) {
+                console.warn('Skipping fetch, last fetch was less than 60 seconds ago');
+                return;
+            }
             setLoadingPrices(true);
-
+            lastFetch = Date.now();
             if (wallets && wallets.length > 0) {
                 // Collect all symbols to fetch
                 const symbols = Array.from(new Set(wallets.flatMap(w => w.chains.flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
@@ -43,8 +48,8 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                     priceData = {};
                     symbols.forEach(symbol => {
                         priceData[symbol] = {
-                            price: 1.0,
-                            change24h: 0.5
+                            price: Math.random() * 100 + 1, // Random price between 1 and 100
+                            change24h: (Math.random() - 0.5) * 2 //
                         };
                     });
                 }
@@ -86,8 +91,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                 setLoadingPrices(false);
             }
         };
+        fetchPrices();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedWallet]);
+    }, [wallets, selectedWallet]);
 
     // Calculate total portfolio value
     const totalValue = selectedWallet ? selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0) : 0;
