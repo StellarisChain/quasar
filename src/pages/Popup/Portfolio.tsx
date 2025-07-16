@@ -11,9 +11,10 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import './Popup.css';
 
-export const Portfolio = ({ wallets, selectedWallet }: {
+export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
     wallets: Wallet[];
-    selectedWallet: Wallet| null;
+    selectedWallet: Wallet | null;
+    setSelectedWallet: (wallet: Wallet | null) => void;
 }) => {
     // State
     //const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
@@ -25,7 +26,7 @@ export const Portfolio = ({ wallets, selectedWallet }: {
         const fetchPrices = async () => {
             setLoadingPrices(true);
 
-            if (!wallets || wallets.length === 0) {
+            if (wallets && wallets.length > 0) {
                 // Collect all symbols to fetch
                 const symbols = Array.from(new Set(wallets.flatMap(w => w.chains.flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
                 let priceData: Record<string, { price: number; change24h: number }> = {};
@@ -73,7 +74,11 @@ export const Portfolio = ({ wallets, selectedWallet }: {
                 }));
                 //setWallets(updatedWallets);
                 // If selectedWallet changed, update it too
-                //setSelectedWallet(updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]);
+                setSelectedWallet(
+                    selectedWallet
+                        ? updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]
+                        : updatedWallets[0]
+                );
                 saveWallets(updatedWallets);
                 setLoadingPrices(false);
             }

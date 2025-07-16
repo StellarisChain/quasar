@@ -10,6 +10,7 @@ import { Token, ChainData, Wallet } from './DataTypes';
 import { WalletSelector } from '../../components/WalletSelector';
 import { Portfolio } from './Portfolio';
 import { getStoredWallets, saveWallets, defaultWallets } from './WalletUtils';
+import { CreateWallet } from './CreateWallet';
 import './Popup.css';
 
 const Popup = () => {
@@ -48,7 +49,10 @@ const Popup = () => {
         {/* Popup Page */}
         <div className="popup-page">
           {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet ? selectedWallet : null} />}
-          {page === 'create-wallet' && <div>Create Wallet</div>}
+          {page === 'create-wallet' && <CreateWallet onBack={() => setPage('main')} onCreateWallet={(type) => {
+            // Handle wallet creation
+            setPage('main');
+          }} />}
         </div>
       </div>
     </div>

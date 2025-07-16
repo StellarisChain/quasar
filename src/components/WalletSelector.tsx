@@ -40,7 +40,10 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
             className="wallet-item wallet-item-anim create-wallet"
             tabIndex={0}
             role="button"
-            onClick={typeof onCreateWallet === 'function' ? onCreateWallet : undefined}
+            onClick={typeof onCreateWallet === 'function' ? () => {
+              onCreateWallet();
+              setIsOpen(false);
+            } : undefined}
             style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
           >
             <PlusIcon />
