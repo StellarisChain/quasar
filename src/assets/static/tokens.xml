@@ -1,0 +1,14 @@
+<Tokens>
+    <Token>
+        <Name>Stellaris</Name>
+        <Symbol>STE</Symbol>
+        <Color>#9945FF</Color>
+        <Node>https://stellaris-node.connor33341.dev</Node>
+    </Token>
+    <Token>
+        <Name>Denaro</Name>
+        <Symbol>DNR</Symbol>
+        <Color>#FFD700</Color>
+        <Node>https://denaro-node.gaetano.eu.org</Node>
+    </Token>
+</Tokens>
