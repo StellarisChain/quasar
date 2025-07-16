@@ -16,7 +16,7 @@ import './Popup.css';
 
 const Popup = () => {
   // State
-  const [page, setPage] = useState<'main' | 'create-wallet' | 'new-wallet'>('main');
+  const [page, setPage] = useState<'main' | 'create-wallet' | 'new-wallet' | 'import-wallet'>('main');
   const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
@@ -60,6 +60,9 @@ const Popup = () => {
             // Handle wallet creation
             if (type === "new") {
               setPage('new-wallet');
+              return;
+            } else if (type === "import-file") {
+              setPage('import-wallet');
               return;
             }
             setPage('main');
