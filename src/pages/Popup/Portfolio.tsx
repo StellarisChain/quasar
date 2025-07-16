@@ -86,9 +86,8 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                 setLoadingPrices(false);
             }
         };
-        fetchPrices();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [selectedWallet]);
 
     // Calculate total portfolio value
     const totalValue = selectedWallet ? selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0) : 0;
