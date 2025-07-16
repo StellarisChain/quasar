@@ -33,7 +33,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
             setLastFetch(Date.now());
             if (wallets && wallets.length > 0) {
                 // Collect all symbols to fetch
-                const symbols = Array.from(new Set(wallets.flatMap(w => w.chains.flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
+                const symbols = Array.from(new Set(wallets.flatMap(w => (w.chains ?? []).flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
                 let priceData: Record<string, { price: number; change24h: number }> = {};
                 try {
                     // Fetch prices for all symbols
@@ -56,7 +56,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                 // Update wallets with price info
                 const updatedWallets = wallets.map(wallet => ({
                     ...wallet,
-                    chains: wallet.chains.map(chain => {
+                    chains: (wallet.chains ?? []).map(chain => {
                         const chainPrice = priceData[chain.symbol]?.price ?? 0;
                         const chainChange = priceData[chain.symbol]?.change24h ?? 0;
                         // Calculate fiatValue for chain
@@ -96,10 +96,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
     }, [wallets, selectedWallet]);
 
     // Calculate total portfolio value
-    const totalValue = selectedWallet ? selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0) : 0;
-    const totalChange = selectedWallet ? selectedWallet.chains.reduce((sum, chain) =>
-        sum + (chain.change24h * chain.fiatValue / (totalValue || 1)), 0
-    ) : 0;
+    const totalValue = selectedWallet && selectedWallet.chains
+        ? selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0)
+        : 0;
+    const totalChange = selectedWallet && selectedWallet.chains
+        ? selectedWallet.chains.reduce((sum, chain) =>
+            sum + (chain.change24h * chain.fiatValue / (totalValue || 1)), 0
+        )
+        : 0;
 
     return (
         <div className="popup-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
@@ -148,11 +152,11 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
             {/* Assets Section */}
             <div className="assets-section">
                 <div className="assets-header">
-                    <span className="assets-label">Assets ({selectedWallet ? selectedWallet.chains.length : 0})</span>
+                    <span className="assets-label">Assets ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
                     <button className="manage-btn manage-btn-anim">Manage</button>
                 </div>
                 <div className="assets-list">
-                    {selectedWallet ? selectedWallet.chains.map((chain, idx) => (
+                    {selectedWallet && selectedWallet.chains ? selectedWallet.chains.map((chain, idx) => (
                         <ChainCard key={idx} chain={chain} />
                     )) : null}
                 </div>

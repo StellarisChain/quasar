@@ -21,6 +21,12 @@ const Popup = () => {
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
 
+  React.useEffect(() => {
+    if (wallets) {
+      saveWallets(wallets);
+    }
+  }, [wallets]);
+
   return (
     <div className="wallet-popup wallet-popup-anim" style={{ position: 'relative', overflow: 'hidden' }}>
       {/* Noise background */}
@@ -40,7 +46,7 @@ const Popup = () => {
             selectedWallet={selectedWallet}
             onWalletChange={wallet => {
               setSelectedWallet(wallet);
-              saveWallets(wallets);
+              setWallets(wallets);
             }}
             onCreateWallet={() => setPage('create-wallet')}
             setWallets={setWallets}

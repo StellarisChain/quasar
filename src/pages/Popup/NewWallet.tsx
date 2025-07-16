@@ -54,7 +54,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
     };
 
     const handleComplete = () => {
-        const newWallet: Wallet = generate({
+        let newWallet: Wallet = generate({
             mnemonicPhrase: seedPhrase.join(' '),
             passphrase: '',
             index: Date.now(),
