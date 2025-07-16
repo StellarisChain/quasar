@@ -65,14 +65,16 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
     if (step === 'generate') {
         return (
             <div className="popup-content create-wallet-page" style={{
-                height: '100vh',
+                //height: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
                 alignItems: 'stretch',
                 boxSizing: 'border-box',
-                paddingBottom: '0',
-                overflow: 'hidden',
+                //paddingBottom: '0',
+                //overflow: 'hidden',
+                overflowY: 'auto',
+                maxHeight: '150vh',
                 position: 'relative'
             }}>
                 <div className="create-wallet-header">
@@ -229,7 +231,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
 
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '0', flexShrink: 0, padding: '0 24px 24px 24px', background: 'transparent' }}>
                     <button
-                        className="continue-btn continue-btn-anim"
+                        className="continue-btn continue-btn-anim fucking-retard-continue-button"
                         onClick={() => setStep('confirm')}
                         disabled={isGenerating}
                         style={{
