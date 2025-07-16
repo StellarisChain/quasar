@@ -38,7 +38,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
             style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
           >
             <PlusIcon />
-            <div className="wallet-name">Create Wallet</div>
+            <div className="wallet-name">New Wallet</div>
           </div>
         ) : (
           walletList.map((wallet) => (

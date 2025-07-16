@@ -29,7 +29,7 @@ const Popup = () => {
       <div style={{ position: 'relative', zIndex: 1, height: '100%', minHeight: '100vh' }}>
         {/* Header */}
         <div className="popup-header">
-          <div className="brand">
+          <div className="brand" onClick={() => setPage('main')}>
             <div className="brand-icon"><img src="icon-34.png" alt="Brand Icon" /></div>
             <span className="brand-name">Quasar</span>
           </div>
@@ -40,6 +40,7 @@ const Popup = () => {
               setSelectedWallet(wallet);
               saveWallets(wallets);
             }}
+            onCreateWallet={() => setPage('create-wallet')}
           />
         </div>
 
