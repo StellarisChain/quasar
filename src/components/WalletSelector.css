@@ -1,4 +1,6 @@
-create-wallet{
+.create-wallet {
     color: white;
-    align-content: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }

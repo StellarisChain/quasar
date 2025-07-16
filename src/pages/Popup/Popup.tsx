@@ -41,6 +41,7 @@ const Popup = () => {
               saveWallets(wallets);
             }}
             onCreateWallet={() => setPage('create-wallet')}
+            setWallets={setWallets}
           />
         </div>
 

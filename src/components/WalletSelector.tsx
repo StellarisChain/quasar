@@ -2,14 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Token, ChainData, Wallet } from '../pages/Popup/DataTypes';
 import { Dropdown } from './Dropdown';
 import { ChevronDownIcon, ArrowUpRightIcon, ArrowDownRightIcon, WalletIcon, PlusIcon } from './Icons';
+import { defaultWallets } from '../pages/Popup/WalletUtils';
 import './WalletSelector.css';
 
+// Config
+export let demoMode = true; // Set to false in production
+
 // Wallet Selector Component
-export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCreateWallet }: {
+export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCreateWallet, setWallets }: {
   wallets: Wallet[];
   selectedWallet: Wallet;
   onWalletChange: (wallet: Wallet) => void;
   onCreateWallet?: () => void;
+  setWallets?: (wallets: Wallet[]) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   // Defensive: treat falsy, non-array, or empty array as no wallets
@@ -57,6 +62,27 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
               <div className="wallet-address">{wallet.address}</div>
             </div>
           ))
+        )}
+        {/* Demo Mode: AT NO POINT USE THIS WITH PRODUCTION WALLETS */}
+        {demoMode && (
+          <div
+            className={`wallet-item wallet-item-anim create-wallet ${selectedWallet.id === defaultWallets[0].id ? 'selected' : ''}`}
+            tabIndex={0}
+            role="button"
+            onClick={() => {
+              if (selectedWallet === defaultWallets[0] && setWallets){
+                setWallets([]); // Unselect the wallet
+                return
+              }
+              onWalletChange(defaultWallets[0]);
+              if (setWallets) setWallets(defaultWallets);
+              setIsOpen(false);
+            }}
+            style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
+          >
+            <PlusIcon />
+            <div className="wallet-name">Demo</div>
+          </div>
         )}
       </div>
     </Dropdown>
