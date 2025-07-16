@@ -48,7 +48,7 @@ const Popup = () => {
 
         {/* Popup Page */}
         <div className="popup-page">
-          {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet ? selectedWallet : null} />}
+          {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet ? selectedWallet : null} setSelectedWallet={setSelectedWallet} />}
           {page === 'create-wallet' && <CreateWallet onBack={() => setPage('main')} onCreateWallet={(type) => {
             // Handle wallet creation
             setPage('main');

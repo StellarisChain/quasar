@@ -81,6 +81,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                 );
                 saveWallets(updatedWallets);
                 setLoadingPrices(false);
+            } else {
+                console.warn('No wallets found');
+                setLoadingPrices(false);
             }
         };
         fetchPrices();
