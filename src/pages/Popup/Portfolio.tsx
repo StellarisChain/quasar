@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Counter from '../../components/Counter';
 import StarBorder from '../../components/StarBorder';
 import Noise from '../../components/Noise';
-import { ChevronDownIcon, WalletIcon, ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon } from '../../components/Icons';
+import { ChevronDownIcon, WalletIcon, ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon, CopyIcon, SettingsIcon } from '../../components/Icons';
 import { MiniChart } from '../../components/MiniChart';
 import { Dropdown } from '../../components/Dropdown';
 import { ChainCard } from '../../components/ChainCard';
@@ -131,30 +131,24 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
             {selectedWallet?.address && (
                 <div
                     className="wallet-address-container"
-                    style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-                        position: 'relative', cursor: 'pointer', userSelect: 'none',
-                    }}
                     title={selectedWallet.address}
                     onClick={handleCopyAddress}
                 >
-                    <span
-                        style={{
-                            background: 'rgba(255,255,255,0.08)',
-                            borderRadius: 8,
-                            padding: '4px 10px',
-                            color: '#fff',
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                            display: 'flex', alignItems: 'center',
-                            gap: 6,
-                            border: copied ? '1px solid #4caf50' : '1px solid transparent',
-                            transition: 'border 0.2s',
-                        }}
-                    >
-                        {shortenAddress(selectedWallet.address, 6)}
+                    <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
+                        <span className="wallet-address-text">
+                            <span className="wallet-address-full">{selectedWallet.address}</span>
+                            {(() => {
+                                const el = document.querySelector(".wallet-address-full");
+                                if (el) {
+                                    const opacity = window.getComputedStyle(el).opacity;
+                                    return opacity === "0" ? shortenAddress(selectedWallet.address, 6) : '';
+                                }
+                                return '';
+                            })()}
+                            {/*shortenAddress(selectedWallet.address, 6)*/}
+                        </span>
                         <span style={{ opacity: 0.7, fontSize: 16, marginLeft: 2 }}>
-                            {copied ? '✓' : <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ verticalAlign: 'middle' }}><rect x="6" y="6" width="9" height="9" rx="2" stroke="#fff" strokeWidth="1.5" /><rect x="3" y="3" width="9" height="9" rx="2" stroke="#fff" strokeWidth="1.5" opacity="0.5" /></svg>}
+                            {copied ? '✓' : <CopyIcon />}
                         </span>
                     </span>
                     <span
@@ -180,7 +174,31 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                 </div>
             )}
             {/* Total Balance */}
-            <div className="balance-card balance-card-anim">
+            <div className="balance-card balance-card-anim" style={{ position: 'relative' }}>
+                {/* Settings Gear Icon */}
+                <button
+                    className="settings-gear-btn"
+                    style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        zIndex: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0.7,
+                        transition: 'opacity 0.2s',
+                    }}
+                    title="Settings"
+                    aria-label="Settings"
+                    tabIndex={0}
+                >
+                    <SettingsIcon />
+                </button>
                 <div className="balance-label">Total Portfolio Value</div>
                 <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {loadingPrices ? (

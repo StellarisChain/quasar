@@ -77,6 +77,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
                 onWalletChange(null);
                 saveWallets([]); // Clear wallets
                 setIsOpen(false);
+                localStorage.clear(); // Clear local storage
                 return
               }
               onWalletChange(defaultWallets[0]);
