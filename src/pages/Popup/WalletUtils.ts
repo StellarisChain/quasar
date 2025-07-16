@@ -11,6 +11,7 @@ export const defaultWallets: Wallet[] = [
         id: '1',
         name: 'Main Wallet',
         address: '0xA1b2...C3d4',
+        public_key: '0xA1b2...C3d4_PUBLIC',
         chains: [
             {
                 name: 'Ethereum', symbol: 'ETH', balance: '2.345', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100, 2150, 2200, 2180, 2220, 2300, 2250, 2280, 2320, 2350, 2400, 2380], tokens: [
@@ -38,6 +39,7 @@ export const defaultWallets: Wallet[] = [
         id: '2',
         name: 'Trading Wallet',
         address: '0xF1e2...B3c4',
+        public_key: '0xF1e2...B3c4_PUBLIC',
         chains: [
             {
                 name: 'Ethereum', symbol: 'ETH', balance: '0.892', fiatValue: 0, change24h: 0, color: '#627EEA', chartData: [2100, 2150, 2200, 2180, 2220, 2300, 2250, 2280, 2320, 2350, 2400, 2380], tokens: [

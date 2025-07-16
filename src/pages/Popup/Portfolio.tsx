@@ -136,20 +136,12 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
                 >
                     <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
                         <span className="wallet-address-text">
+                            {shortenAddress(selectedWallet.address, 6)}
                             <span className="wallet-address-full">{selectedWallet.address}</span>
-                            {(() => {
-                                const el = document.querySelector(".wallet-address-full");
-                                if (el) {
-                                    const opacity = window.getComputedStyle(el).opacity;
-                                    return opacity === "0" ? shortenAddress(selectedWallet.address, 6) : '';
-                                }
-                                return '';
-                            })()}
-                            {/*shortenAddress(selectedWallet.address, 6)*/}
                         </span>
-                        <span style={{ opacity: 0.7, fontSize: 16, marginLeft: 2 }}>
-                            {copied ? '✓' : <CopyIcon />}
-                        </span>
+                    </span>
+                    <span className="wallet-copy-icon" style={{ opacity: 0.7, fontSize: 16, marginLeft: 8, display: 'flex', alignItems: 'center' }}>
+                        {copied ? '✓' : <CopyIcon />}
                     </span>
                     <span
                         style={{
