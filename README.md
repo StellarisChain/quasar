@@ -146,7 +146,11 @@ ApiCall({ key: secrets.key });
 
 ## Images:
 
-<img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/screenshot.png?raw=true" style="border-radius: 8px">
+
+<div style="display: flex; gap: 16px; align-items: flex-start;">
+  <img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/screenshot2.png?raw=true" style="border-radius: 8px; max-width: 48%; height: auto;">
+  <img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/create.png?raw=true" style="border-radius: 8px; max-width: 48%; height: auto;">
+</div>
 
 ---
 
