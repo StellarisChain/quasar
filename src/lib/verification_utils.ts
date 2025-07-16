@@ -1,39 +1,48 @@
-import * as crypto from 'crypto';
-import * as base64 from 'base-64';
-import * as pyotp from 'otplib';
-import * as https from 'https';
-import * as http from 'http';
 import axios from 'axios';
-import * as dataManipulationUtil from './data_manipulation';
-import * as cryptographicUtil from './cryptographic_util';
+//import * as dataManipulationUtil from './data_manipulation';
+//import * as cryptographicUtil from './cryptographic_util';
+// Remove Node.js-only imports
 
 export class Verification {
     /**
      * Generate a cryptographic hash of the password using PBKDF2 and then Scrypt.
      */
-    static async hashPassword(password: string, salt: Buffer | string): Promise<Buffer> {
-        const saltBytes = typeof salt === 'string' ? Buffer.from(salt, 'utf-8') : salt;
-        // First layer of hashing using PBKDF2
-        const pbkdf2Hash = crypto.pbkdf2Sync(password, saltBytes, 100000, 32, 'sha256');
-        // Second layer of hashing using Scrypt
-        const result = await new Promise<Buffer>((resolve, reject) => {
-            crypto.scrypt(pbkdf2Hash, saltBytes, 32, { N: 16384, r: 8, p: 1 }, (err, derivedKey) => {
-                if (err) reject(err);
-                else resolve(derivedKey as Buffer);
-            });
-        });
-        dataManipulationUtil.DataManipulation.secureDelete([pbkdf2Hash, saltBytes, password, salt]);
-        return result;
+    static async hashPassword(password: string, salt: string | Uint8Array): Promise<ArrayBuffer> {
+        // Use Web Crypto API for PBKDF2
+        const enc = new TextEncoder();
+        const pwKey = await window.crypto.subtle.importKey(
+            'raw',
+            enc.encode(password),
+            { name: 'PBKDF2' },
+            false,
+            ['deriveBits', 'deriveKey']
+        );
+        const saltBytes = typeof salt === 'string' ? enc.encode(salt) : salt;
+        const pbkdf2Bits = await window.crypto.subtle.deriveBits(
+            {
+                name: 'PBKDF2',
+                salt: saltBytes,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            pwKey,
+            256
+        );
+        // Scrypt is not natively supported in browsers; fallback to PBKDF2 only
+        // If you need scrypt, use a JS implementation like scrypt-js
+        // For now, return pbkdf2Bits
+        // dataManipulationUtil.DataManipulation.secureDelete([password, salt]);
+        return pbkdf2Bits;
     }
 
     /**
      * Compares the provided password with the stored hash.
      */
-    static async verifyPassword(storedPasswordHash: Buffer, providedPassword: string, salt: Buffer | string): Promise<[boolean, Buffer | null]> {
+    static async verifyPassword(storedPasswordHash: ArrayBuffer, providedPassword: string, salt: string | Uint8Array): Promise<[boolean, ArrayBuffer | null]> {
         const verifier = await Verification.hashPassword(providedPassword, salt);
-        const isVerified = crypto.timingSafeEqual(verifier, storedPasswordHash);
-        const result: [boolean, Buffer | null] = [isVerified, isVerified ? verifier : null];
-        dataManipulationUtil.DataManipulation.secureDelete([verifier, storedPasswordHash, providedPassword, salt]);
+        const isVerified = Verification.timingSafeEqual(new Uint8Array(verifier), new Uint8Array(storedPasswordHash));
+        const result: [boolean, ArrayBuffer | null] = [isVerified, isVerified ? verifier : null];
+        // dataManipulationUtil.DataManipulation.secureDelete([verifier, storedPasswordHash, providedPassword, salt]);
         return result;
     }
 
@@ -42,25 +51,40 @@ export class Verification {
      */
     static async hmacUtil({ password, hmacSalt, storedHmac, hmacMsg, verify = false }: {
         password: string,
-        hmacSalt: Buffer | string,
-        storedHmac?: Buffer,
-        hmacMsg: Buffer,
+        hmacSalt: string | Uint8Array,
+        storedHmac?: ArrayBuffer,
+        hmacMsg: Uint8Array,
         verify?: boolean
-    }): Promise<Buffer | boolean> {
-        const saltBytes = typeof hmacSalt === 'string' ? Buffer.from(hmacSalt, 'utf-8') : hmacSalt;
-        const hmacKey = await new Promise<Buffer>((resolve, reject) => {
-            crypto.scrypt(password, saltBytes, 32, { N: 16384, r: 8, p: 1 }, (err, derivedKey) => {
-                if (err) reject(err);
-                else resolve(derivedKey as Buffer);
-            });
-        });
-        const computedHmac = crypto.createHmac('sha256', hmacKey).update(hmacMsg).digest();
+    }): Promise<ArrayBuffer | boolean> {
+        // Use PBKDF2 for key derivation
+        const enc = new TextEncoder();
+        const keyMaterial = await window.crypto.subtle.importKey(
+            'raw',
+            enc.encode(password),
+            { name: 'PBKDF2' },
+            false,
+            ['deriveKey']
+        );
+        const saltBytes = typeof hmacSalt === 'string' ? enc.encode(hmacSalt) : hmacSalt;
+        const hmacKey = await window.crypto.subtle.deriveKey(
+            {
+                name: 'PBKDF2',
+                salt: saltBytes,
+                iterations: 100000,
+                hash: 'SHA-256'
+            },
+            keyMaterial,
+            { name: 'HMAC', hash: 'SHA-256', length: 256 },
+            false,
+            ['sign', 'verify']
+        );
+        const computedHmac = await window.crypto.subtle.sign('HMAC', hmacKey, hmacMsg);
         if (verify && storedHmac) {
-            const result = crypto.timingSafeEqual(computedHmac, storedHmac);
-            dataManipulationUtil.DataManipulation.secureDelete([hmacKey, computedHmac, storedHmac, hmacMsg, password, hmacSalt]);
+            const result = Verification.timingSafeEqual(new Uint8Array(computedHmac), new Uint8Array(storedHmac));
+            // dataManipulationUtil.DataManipulation.secureDelete([...]);
             return result;
         } else {
-            dataManipulationUtil.DataManipulation.secureDelete([hmacKey, password, hmacSalt]);
+            // dataManipulationUtil.DataManipulation.secureDelete([...]);
             return computedHmac;
         }
     }
@@ -68,60 +92,48 @@ export class Verification {
     /**
      * Verifies the given password and HMAC.
      */
-    static async verifyPasswordAndHmac(data: any, password: string, hmacSalt: Buffer | string, verificationSalt: Buffer | string, deterministic: boolean): Promise<[boolean, boolean, Buffer]> {
-        const storedVerifier = Buffer.from(data.wallet_data.verifier, 'base64');
+    static async verifyPasswordAndHmac(data: any, password: string, hmacSalt: string | Uint8Array, verificationSalt: string | Uint8Array, deterministic: boolean): Promise<[boolean, boolean, ArrayBuffer]> {
+        // Decode base64 to Uint8Array
+        const storedVerifier = Verification.base64ToArrayBuffer(data.wallet_data.verifier);
         const [passwordVerified] = await Verification.verifyPassword(storedVerifier, password, verificationSalt);
-        let hmacMsg = Buffer.from(JSON.stringify(data.wallet_data.entry_data.entries));
+        let hmacMsg = new TextEncoder().encode(JSON.stringify(data.wallet_data.entry_data.entries));
         if (data.wallet_data.entry_data.imported_entries) {
-            hmacMsg = Buffer.concat([
-                Buffer.from(JSON.stringify(data.wallet_data.entry_data.imported_entries)),
-                hmacMsg
-            ]);
+            const imported = new TextEncoder().encode(JSON.stringify(data.wallet_data.entry_data.imported_entries));
+            hmacMsg = Verification.concatUint8Arrays(imported, hmacMsg);
         }
         if (deterministic) {
-            hmacMsg = Buffer.concat([
-                hmacMsg,
-                Buffer.from(JSON.stringify(data.wallet_data.entry_data.key_data))
-            ]);
+            const keyData = new TextEncoder().encode(JSON.stringify(data.wallet_data.entry_data.key_data));
+            hmacMsg = Verification.concatUint8Arrays(hmacMsg, keyData);
         }
-        const storedHmac = Buffer.from(data.wallet_data.hmac, 'base64');
+        const storedHmac = Verification.base64ToArrayBuffer(data.wallet_data.hmac);
         const hmacVerified = await Verification.hmacUtil({ password, hmacSalt, storedHmac, hmacMsg, verify: true }) as boolean;
-        dataManipulationUtil.DataManipulation.secureDelete([storedVerifier, storedHmac, hmacMsg, password, hmacSalt, verificationSalt]);
+        // dataManipulationUtil.DataManipulation.secureDelete([...]);
         return [passwordVerified, hmacVerified, storedVerifier];
     }
 
     /**
      * Validates the given Two-Factor Authentication secret token
      */
-    static async verifyTotpSecret(password: string, totpSecret: string, hmacSalt: Buffer | string, verificationSalt: Buffer | string, storedVerifier: Buffer): Promise<[string, boolean]> {
-        const decryptedTotpSecret = await cryptographicUtil.EncryptDecryptUtils.decryptData(
-            totpSecret,
-            password,
-            '',
-            typeof hmacSalt === 'string' ? Buffer.from(hmacSalt, 'utf-8') : hmacSalt,
-            typeof verificationSalt === 'string' ? Buffer.from(verificationSalt, 'utf-8') : verificationSalt,
-            storedVerifier
-        );
-        const predictableTotpSecret = cryptographicUtil.TOTP.generateTotpSecret(
-            true,
-            typeof verificationSalt === 'string' ? Buffer.from(verificationSalt, 'utf-8') : verificationSalt
-        );
-        if (decryptedTotpSecret !== predictableTotpSecret) {
-            dataManipulationUtil.DataManipulation.secureDelete([decryptedTotpSecret, predictableTotpSecret, password, totpSecret, hmacSalt, verificationSalt, storedVerifier]);
-            return [decryptedTotpSecret, true];
-        } else {
-            dataManipulationUtil.DataManipulation.secureDelete([decryptedTotpSecret, predictableTotpSecret, password, totpSecret, hmacSalt, verificationSalt, storedVerifier]);
-            return ['', false];
-        }
+    // You must refactor cryptographicUtil.EncryptDecryptUtils.decryptData and TOTP for browser compatibility
+    static async verifyTotpSecret(password: string, totpSecret: string, hmacSalt: string | Uint8Array, verificationSalt: string | Uint8Array, storedVerifier: ArrayBuffer): Promise<[string, boolean]> {
+        // Placeholder: implement browser-compatible decryptData and TOTP
+        // const decryptedTotpSecret = await cryptographicUtil.EncryptDecryptUtils.decryptData(...);
+        // const predictableTotpSecret = cryptographicUtil.TOTP.generateTotpSecret(...);
+        // if (decryptedTotpSecret !== predictableTotpSecret) {
+        //     return [decryptedTotpSecret, true];
+        // } else {
+        //     return ['', false];
+        // }
+        return ['', false];
     }
 
     /**
      * Validates the given Two-Factor Authentication code using the provided secret.
      */
+    // You must refactor TOTP validation for browser compatibility
     static validateTotpCode(secret: string, code: string): boolean {
-        const result = pyotp.authenticator.check(code, secret);
-        dataManipulationUtil.DataManipulation.secureDelete([secret, code]);
-        return result;
+        // Placeholder: implement browser-compatible TOTP validation
+        return false;
     }
 
     /**
@@ -135,7 +147,6 @@ export class Verification {
         if (urlWithTldOptionalPort.test(strippedAddress)) return true;
         if (ipv4WithOptionalPort.test(strippedAddress)) return true;
         if (localhostWithOptionalPort.test(strippedAddress)) return true;
-        dataManipulationUtil.DataManipulation.secureDelete([address]);
         return false;
     }
 
@@ -147,7 +158,6 @@ export class Verification {
             const portNum = typeof port === 'string' ? parseInt(port, 10) : port;
             return portNum >= 1 && portNum <= 65535;
         } catch {
-            dataManipulationUtil.DataManipulation.secureDelete([port]);
             return false;
         }
     }
@@ -161,25 +171,19 @@ export class Verification {
         if (node.startsWith('https://')) chosenProtocol = 0;
         else if (node.startsWith('http://')) chosenProtocol = 1;
         if (!Verification.isValidAddress(node)) {
-            console.error('Invalid node address. Please provide a valid IP Address or URL.');
-            dataManipulationUtil.DataManipulation.secureDelete([node]);
             return [false, null];
         }
         node = node.replace(/\s+/g, ' ');
         node = node.replace(' :', ':').replace(': ', ':');
         const portMatch = node.match(/:([0-9]{1,5})/);
         if (portMatch && !Verification.isValidPort(portMatch[1])) {
-            console.error('Invalid port number. Please enter a value between 1 and 65535.');
-            dataManipulationUtil.DataManipulation.secureDelete([node]);
             return [false, null];
         }
         const strippedAddress = node.replace(/^https?:\/\//, '');
         const [success, validNode] = await Verification.tryRequest(strippedAddress, chosenProtocol);
         if (success) {
-            console.log(`Successfully established connection with valid Denaro node at: ${validNode}\n`);
             return [true, validNode as string];
         }
-        dataManipulationUtil.DataManipulation.secureDelete([node]);
         return [false, null];
     }
 
@@ -199,32 +203,53 @@ export class Verification {
             const protocol = protocolsToTry[i];
             const fullAddress = protocol + address;
             try {
-                const mainResponse = await axios.get(`${mainNodeUrl}/get_mining_info`, { timeout: 5000, httpsAgent: new https.Agent({ rejectUnauthorized: false }) });
+                const mainResponse = await axios.get(`${mainNodeUrl}/get_mining_info`, { timeout: 5000 });
                 const lastBlockNumber = mainResponse.data?.result?.last_block?.id;
                 if (lastBlockNumber == null) continue;
                 const randomBlockId = Math.floor(Math.random() * lastBlockNumber);
-                const mainBlockResponse = await axios.get(`${mainNodeUrl}/get_block?block=${randomBlockId}`, { timeout: 5000, httpsAgent: new https.Agent({ rejectUnauthorized: false }) });
+                const mainBlockResponse = await axios.get(`${mainNodeUrl}/get_block?block=${randomBlockId}`, { timeout: 5000 });
                 const mainNodeBlockHash = mainBlockResponse.data?.result?.block?.hash;
                 if (!mainNodeBlockHash) continue;
-                const userBlockResponse = await axios.get(`${fullAddress}/get_block?block=${randomBlockId}`, { timeout: 5000, httpsAgent: new https.Agent({ rejectUnauthorized: false }) });
+                const userBlockResponse = await axios.get(`${fullAddress}/get_block?block=${randomBlockId}`, { timeout: 5000 });
                 const userNodeBlockHash = userBlockResponse.data?.result?.block?.hash;
                 if (!userNodeBlockHash) continue;
                 if (mainNodeBlockHash === userNodeBlockHash) {
-                    dataManipulationUtil.DataManipulation.secureDelete([address, fullAddress, mainNodeBlockHash, userNodeBlockHash]);
                     return [true, fullAddress];
                 } else {
                     continue;
                 }
             } catch (e) {
-                if (i < protocolsToTry.length - 1) {
-                    // Try next protocol
-                } else {
-                    // Last protocol failed
-                }
                 continue;
             }
         }
-        dataManipulationUtil.DataManipulation.secureDelete([address]);
         return [null, false];
+    }
+    // Utility: timing-safe comparison for Uint8Array
+    static timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+        if (a.length !== b.length) return false;
+        let result = 0;
+        for (let i = 0; i < a.length; i++) {
+            result |= a[i] ^ b[i];
+        }
+        return result === 0;
+    }
+
+    // Utility: base64 to ArrayBuffer
+    static base64ToArrayBuffer(base64: string): ArrayBuffer {
+        const binary = atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    // Utility: concat Uint8Arrays
+    static concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
+        const c = new Uint8Array(a.length + b.length);
+        c.set(a, 0);
+        c.set(b, a.length);
+        return c;
     }
 }
