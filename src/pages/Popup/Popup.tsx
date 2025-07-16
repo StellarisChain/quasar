@@ -11,11 +11,12 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { Portfolio } from './Portfolio';
 import { getStoredWallets, saveWallets, defaultWallets } from './WalletUtils';
 import { CreateWallet } from './CreateWallet';
+import { NewWallet } from './NewWallet';
 import './Popup.css';
 
 const Popup = () => {
   // State
-  const [page, setPage] = useState<'main' | 'create-wallet'>('main');
+  const [page, setPage] = useState<'main' | 'create-wallet' | 'new-wallet'>('main');
   const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
@@ -51,6 +52,13 @@ const Popup = () => {
           {page === 'main' && <Portfolio wallets={wallets} selectedWallet={selectedWallet ? selectedWallet : null} setSelectedWallet={setSelectedWallet} />}
           {page === 'create-wallet' && <CreateWallet onBack={() => setPage('main')} onCreateWallet={(type) => {
             // Handle wallet creation
+            if (type === "new") {
+              setPage('new-wallet');
+              return;
+            }
+            setPage('main');
+          }} />}
+          {page === 'new-wallet' && <NewWallet onBack={() => setPage('create-wallet')} onComplete={(wallet) => {
             setPage('main');
           }} />}
         </div>
