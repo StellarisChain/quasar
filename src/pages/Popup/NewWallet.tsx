@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BackIcon, KeyIcon, WalletIcon, ArrowUpRightIcon } from '../../components/Icons';
+import { generateMnemonic } from '../../lib/wallet_generation_utils';
 import './Popup.css';
 
 interface NewWalletProps {
@@ -21,12 +22,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
             setIsGenerating(true);
             // Simulate generation delay
             setTimeout(() => {
-                const words = [
-                    'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
-                    'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
-                    'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual'
-                ];
-                const phrase = Array.from({ length: 12 }, () => words[Math.floor(Math.random() * words.length)]);
+                const phrase = generateMnemonic().trim().split(/\s+/);
                 setSeedPhrase(phrase);
                 setIsGenerating(false);
             }, 2000);
