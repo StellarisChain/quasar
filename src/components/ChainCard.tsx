@@ -3,11 +3,25 @@ import { Token, ChainData, Wallet } from '../pages/Popup/DataTypes';
 import { MiniChart } from './MiniChart';
 import { Dropdown } from './Dropdown';
 import { ChevronDownIcon, ArrowUpRightIcon, ArrowDownRightIcon } from './Icons';
+import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
+import './ChainCard.css';
 
 // Chain Card Component
 export const ChainCard = ({ chain }: { chain: ChainData }) => {
   const [isTokenMenuOpen, setIsTokenMenuOpen] = useState(false);
   const isPositive = chain.change24h >= 0;
+
+  const [chainImagePath, setChainImagePath] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getTokenImagePath(chain.symbol).then((path) => {
+      if (isMounted) setChainImagePath(path);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [chain.symbol]);
 
   return (
     <div className="chain-card chain-card-anim">
@@ -18,7 +32,11 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
             className="chain-icon"
             style={{ backgroundColor: chain.color, transition: 'box-shadow 0.2s' }}
           >
-            {chain.symbol.slice(0, 2)}
+            {chainImagePath ? (
+              <img src={chainImagePath} alt={`${chain.symbol} icon`} />
+            ) : (
+              chain.symbol.slice(0, 2).toUpperCase() // Fallback to first two letters
+            )}
           </div>
           <div>
             <div className="chain-name">{chain.name}</div>

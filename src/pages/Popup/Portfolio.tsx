@@ -20,17 +20,17 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
     //const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
     //const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
     const [loadingPrices, setLoadingPrices] = useState(false);
+    const [lastFetch, setLastFetch] = useState<number | null>(null);
 
     // Fetch price data from API
     React.useEffect(() => {
-        let lastFetch = Date.now();
         const fetchPrices = async () => {
-            if (lastFetch && Date.now() - lastFetch < 60000) {
-                console.warn('Skipping fetch, last fetch was less than 60 seconds ago');
+            if (lastFetch && Date.now() - lastFetch < 6000) {
+                console.warn('Skipping fetch, last fetch was less than 6 seconds ago');
                 return;
             }
             setLoadingPrices(true);
-            lastFetch = Date.now();
+            setLastFetch(Date.now());
             if (wallets && wallets.length > 0) {
                 // Collect all symbols to fetch
                 const symbols = Array.from(new Set(wallets.flatMap(w => w.chains.flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
