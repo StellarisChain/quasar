@@ -10,6 +10,7 @@ import { Token, ChainData, Wallet } from './DataTypes';
 import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
+import { WalletSettingsModal } from '../../components/WalletSettings';
 import { Chain as TokenFromXML } from '../../lib/token_loader';
 import './Popup.css';
 
@@ -33,6 +34,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Copy address feedback state
     const [copied, setCopied] = useState(false);
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Wallet settings modal state
+    const [showWalletSettings, setShowWalletSettings] = useState(false);
 
     // Copy address handler
     const handleCopyAddress = () => {
@@ -227,6 +231,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         title="Settings"
                         aria-label="Settings"
                         tabIndex={0}
+                        onClick={() => setShowWalletSettings(true)}
                     >
                         <SettingsIcon />
                     </button>
@@ -295,6 +300,15 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     selectedWallet={selectedWallet}
                     onClose={() => setShowManageAssets(false)}
                     onSave={handleSaveSelectedTokens}
+                />
+            )}
+
+            {/* Wallet Settings Modal */}
+            {showWalletSettings && selectedWallet && (
+                <WalletSettingsModal
+                    wallet={selectedWallet}
+                    onClose={() => setShowWalletSettings(false)}
+                    onSave={() => { }}
                 />
             )}
         </>
