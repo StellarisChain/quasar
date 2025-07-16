@@ -58,7 +58,9 @@ const Popup = () => {
             }
             setPage('main');
           }} />}
-          {page === 'new-wallet' && <NewWallet onBack={() => setPage('create-wallet')} onComplete={(wallet) => {
+          {page === 'new-wallet' && <NewWallet onBack={() => setPage('create-wallet')} onComplete={(wallet: Wallet) => {
+            setWallets([...wallets, wallet]);
+            setSelectedWallet(wallet);
             setPage('main');
           }} />}
         </div>

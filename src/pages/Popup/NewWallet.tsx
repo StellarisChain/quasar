@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BackIcon, KeyIcon, WalletIcon, ArrowUpRightIcon } from '../../components/Icons';
-import { generateMnemonic } from '../../lib/wallet_generation_utils';
+import { generateMnemonic, generate } from '../../lib/wallet_generation_utils';
+import { Wallet } from '../Popup/DataTypes';
 import './Popup.css';
 
 interface NewWalletProps {
     onBack: () => void;
-    onComplete: (wallet: any) => void;
+    onComplete: (wallet: Wallet) => void;
 }
 
 export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
@@ -53,30 +54,37 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
     };
 
     const handleComplete = () => {
-        const newWallet = {
+        const newWallet: Wallet = generate({
+            mnemonicPhrase: seedPhrase.join(' '),
+            passphrase: '',
+            index: Date.now(),
+            deterministic: true,
+            fields: ['mnemonic', 'id', 'private_key', 'public_key', 'address']
+        });
+        /*{
             id: Date.now().toString(),
             name: walletName || 'My Wallet',
             address: '0x' + Math.random().toString(16).substr(2, 40),
             chains: [] // Empty initially
-        };
+        };*/
         onComplete(newWallet);
     };
 
     if (step === 'generate') {
         return (
-            <div className="popup-content create-wallet-page" style={{
-                //height: '100vh',
+            <div className="popup-content create-wallet-page" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }} /*style={{
+                height: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
                 alignItems: 'stretch',
                 boxSizing: 'border-box',
-                //paddingBottom: '0',
-                //overflow: 'hidden',
-                overflowY: 'auto',
-                maxHeight: '150vh',
+                paddingBottom: '0',
+                overflow: 'hidden',
+                //overflowY: 'auto',
+                //maxHeight: '150vh',
                 position: 'relative'
-            }}>
+            }}*/>
                 <div className="create-wallet-header">
                     <button
                         className="back-btn back-btn-anim"
@@ -284,7 +292,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
 
     if (step === 'confirm') {
         return (
-            <div className="popup-content create-wallet-page" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+            <div className="popup-content create-wallet-page" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}/*style={{ maxHeight: '100vh', overflowY: 'auto' }}*/>
                 <div className="create-wallet-header">
                     <button
                         className="back-btn back-btn-anim"
@@ -404,7 +412,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
 
     if (step === 'name') {
         return (
-            <div className="popup-content create-wallet-page" style={{ maxHeight: '100vh', overflowY: 'auto' }}>
+            <div className="popup-content create-wallet-page" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }} /*style={{ maxHeight: '100vh', overflowY: 'auto' }}*/>
                 <div className="create-wallet-header">
                     <button
                         className="back-btn back-btn-anim"

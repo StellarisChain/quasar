@@ -5,6 +5,7 @@
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
 import { ec as EC } from 'elliptic';
+import { Wallet } from '../pages/Popup/DataTypes';
 
 const ec = new EC('p256'); // Equivalent to P256 curve
 const ENDIAN = 'le'; // little-endian
@@ -168,7 +169,7 @@ export function generate({
     deterministic?: boolean,
     fields?: string[],
     walletVersion?: string
-}): any {
+}): Wallet {
     if (walletVersion === '0.2.3') passphrase = '';
     if (!mnemonicPhrase) mnemonicPhrase = generateMnemonic();
     const seed = bip39.mnemonicToSeedSync(mnemonicPhrase, passphrase);
@@ -177,7 +178,7 @@ export function generate({
     const privateKeyHex = bytesToHex(seed).slice(0, 64);
     const { point, compressed } = privateToPublicKey(privateKeyHex);
     const address = pointToString(point);
-    const result: any = {};
+    const result: Wallet = {} as Wallet;
     if (deterministic) {
         if (!fields) fields = ['mnemonic', 'id', 'private_key', 'public_key', 'address'];
         if (fields.includes('mnemonic')) result.mnemonic = mnemonicPhrase;

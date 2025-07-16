@@ -19,8 +19,11 @@ export interface ChainData {
 }
 
 export interface Wallet {
-  id: string;
-  name: string;
+  id: string | number;
+  name?: string;
   address: string;
-  chains: ChainData[];
+  public_key: string;
+  private_key?: string;
+  mnemonic?: string;
+  chains?: ChainData[];
 }
