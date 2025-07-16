@@ -28,7 +28,7 @@ export async function sha256(message: string | Uint8Array): Promise<string> {
     if (typeof message === 'string') {
         // If hex string, convert to bytes
         msgBytes = /^[0-9a-fA-F]+$/.test(message) ?
-            Uint8Array.from(Buffer.from(message, 'hex')) :
+            hexToBytes(message) :
             new TextEncoder().encode(message);
     } else {
         msgBytes = message;
@@ -98,7 +98,7 @@ export function pointToString(point: any, addressFormat: AddressFormat = Address
     const x = point.getX();
     const y = point.getY();
     if (addressFormat === AddressFormat.FULL_HEX) {
-        return Buffer.from(pointToBytes(point)).toString('hex');
+        return bytesToHex(pointToBytes(point));
     } else if (addressFormat === AddressFormat.COMPRESSED) {
         // Compressed: Base58, first byte 42/43 for even/odd y
         const prefix = y % 2 === 0 ? 42 : 43;
@@ -110,8 +110,9 @@ export function pointToString(point: any, addressFormat: AddressFormat = Address
 }
 
 export function stringToBytes(str: string): Uint8Array {
+    // Try hex decode, fallback to base58
     try {
-        return Uint8Array.from(Buffer.from(str, 'hex'));
+        return hexToBytes(str);
     } catch {
         return bs58.decode(str);
     }
@@ -141,7 +142,16 @@ export function isValidMnemonic(mnemonicPhrase: string): boolean {
 }
 
 export function generateMnemonic(): string {
-    return bip39.generateMnemonic(128); // 12 words
+    const mnemonic = bip39.generateMnemonic(128);
+    if (typeof mnemonic === 'string') {
+        return mnemonic;
+    }
+    // If it's a Uint8Array or ArrayBuffer, decode as UTF-8
+    if (mnemonic && typeof mnemonic === 'object' && ArrayBuffer.isView(mnemonic)) {
+        return new TextDecoder().decode(mnemonic);
+    }
+    // Fallback: force to string
+    return '';
 }
 
 export function generate({
@@ -164,7 +174,7 @@ export function generate({
     const seed = bip39.mnemonicToSeedSync(mnemonicPhrase, passphrase);
     // Use BIP32 derivation (browser: use bip32 or bitcoinjs-lib if needed)
     // Here, we use the seed as private key for demo
-    const privateKeyHex = Buffer.from(seed).toString('hex').slice(0, 64);
+    const privateKeyHex = bytesToHex(seed).slice(0, 64);
     const { point, compressed } = privateToPublicKey(privateKeyHex);
     const address = pointToString(point);
     const result: any = {};
@@ -211,4 +221,18 @@ function bytesToInt(bytes: Uint8Array): number {
         val += bytes[i] * (1 << (8 * (ENDIAN === 'le' ? i : bytes.length - i - 1)));
     }
     return val;
+}
+
+// Browser-safe hex encoding/decoding
+function bytesToHex(bytes: Uint8Array): string {
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function hexToBytes(hex: string): Uint8Array {
+    if (hex.length % 2 !== 0) throw new Error('Invalid hex string');
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
 }
