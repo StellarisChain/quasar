@@ -11,6 +11,12 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import './Popup.css';
 
+// Utility to shorten address
+function shortenAddress(address: string, chars = 6) {
+    if (!address) return '';
+    return address.slice(0, chars) + '...' + address.slice(-chars);
+}
+
 export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
     wallets: Wallet[];
     selectedWallet: Wallet | null;
@@ -21,6 +27,20 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
     //const [selectedWallet, setSelectedWallet] = useState<Wallet>(getStoredWallets()[0]);
     const [loadingPrices, setLoadingPrices] = useState(false);
     const [lastFetch, setLastFetch] = useState<number | null>(null);
+
+    // Copy address feedback state
+    const [copied, setCopied] = useState(false);
+    const copyTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // Copy address handler
+    const handleCopyAddress = () => {
+        if (selectedWallet?.address) {
+            navigator.clipboard.writeText(selectedWallet.address);
+            setCopied(true);
+            if (copyTimeout.current) clearTimeout(copyTimeout.current);
+            copyTimeout.current = setTimeout(() => setCopied(false), 1200);
+        }
+    };
 
     // Fetch price data from API
     React.useEffect(() => {
@@ -107,6 +127,58 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet }: {
 
     return (
         <div className="popup-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
+            {/* Wallet Address Display */}
+            {selectedWallet?.address && (
+                <div
+                    className="wallet-address-container"
+                    style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+                        position: 'relative', cursor: 'pointer', userSelect: 'none',
+                    }}
+                    title={selectedWallet.address}
+                    onClick={handleCopyAddress}
+                >
+                    <span
+                        style={{
+                            background: 'rgba(255,255,255,0.08)',
+                            borderRadius: 8,
+                            padding: '4px 10px',
+                            color: '#fff',
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                            display: 'flex', alignItems: 'center',
+                            gap: 6,
+                            border: copied ? '1px solid #4caf50' : '1px solid transparent',
+                            transition: 'border 0.2s',
+                        }}
+                    >
+                        {shortenAddress(selectedWallet.address, 6)}
+                        <span style={{ opacity: 0.7, fontSize: 16, marginLeft: 2 }}>
+                            {copied ? '✓' : <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ verticalAlign: 'middle' }}><rect x="6" y="6" width="9" height="9" rx="2" stroke="#fff" strokeWidth="1.5" /><rect x="3" y="3" width="9" height="9" rx="2" stroke="#fff" strokeWidth="1.5" opacity="0.5" /></svg>}
+                        </span>
+                    </span>
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: '#222',
+                            color: '#fff',
+                            fontSize: 12,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            marginTop: 2,
+                            opacity: copied ? 1 : 0,
+                            pointerEvents: 'none',
+                            transition: 'opacity 0.2s',
+                            zIndex: 10,
+                        }}
+                    >
+                        Copied!
+                    </span>
+                </div>
+            )}
             {/* Total Balance */}
             <div className="balance-card balance-card-anim">
                 <div className="balance-label">Total Portfolio Value</div>

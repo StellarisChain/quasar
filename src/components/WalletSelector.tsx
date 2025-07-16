@@ -35,21 +35,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
       onToggle={() => setIsOpen(!isOpen)}
     >
       <div className="wallet-list">
-        {(!walletList || walletList.length === 0) ? (
-          <div
-            className="wallet-item wallet-item-anim create-wallet"
-            tabIndex={0}
-            role="button"
-            onClick={typeof onCreateWallet === 'function' ? () => {
-              onCreateWallet();
-              setIsOpen(false);
-            } : undefined}
-            style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
-          >
-            <PlusIcon />
-            <div className="wallet-name">New Wallet</div>
-          </div>
-        ) : (
+        {
           walletList.map((wallet) => (
             <div
               key={wallet.id}
@@ -65,10 +51,22 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
               <div className="wallet-name">{wallet.name}</div>
               <div className="wallet-address">{wallet.address}</div>
             </div>
-          ))
-        )}
+          ))}
+          <div
+            className="wallet-item wallet-item-anim create-wallet"
+            tabIndex={0}
+            role="button"
+            onClick={typeof onCreateWallet === 'function' ? () => {
+              onCreateWallet();
+              setIsOpen(false);
+            } : undefined}
+            style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
+          >
+            <PlusIcon />
+            <div className="wallet-name">New Wallet</div>
+          </div>
         {/* Demo Mode: AT NO POINT USE THIS WITH PRODUCTION WALLETS */}
-        {demoMode && (
+        {demoMode && walletList.length === 0 && (
           <div
             className={`wallet-item wallet-item-anim create-wallet ${selectedWallet && selectedWallet.id === defaultWallets[0].id ? 'selected' : ''}`}
             tabIndex={0}
