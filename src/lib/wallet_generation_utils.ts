@@ -7,8 +7,9 @@ import bs58 from 'bs58';
 import { ec as EC } from 'elliptic';
 import { Wallet } from '../pages/Popup/DataTypes';
 
+export type Endian = 'le' | 'be';
 export const ec = new EC('p256'); // Equivalent to P256 curve
-export const ENDIAN = 'le'; // little-endian
+export const ENDIAN: Endian = 'le'; // little-endian
 export const SMALLEST = 1000000;
 
 export enum AddressFormat {
@@ -208,7 +209,7 @@ export function generateFromPrivateKey(privateKeyHex: string, fields?: string[])
 }
 
 // Helper functions
-function intToBytes(num: number, length: number): Uint8Array {
+export function intToBytes(num: number, length: number): Uint8Array {
     const arr = new Uint8Array(length);
     for (let i = 0; i < length; i++) {
         arr[i] = (num >> (8 * (ENDIAN === 'le' ? i : length - i - 1))) & 0xff;
