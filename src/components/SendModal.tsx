@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Decimal } from 'decimal.js'
 // TODO: Create ArrowRightIcon
 import { ArrowsRightLeftIcon, XIcon, ChevronDownIcon, ArrowUpRightIcon as ArrowRightIcon } from './Icons';
 import { Wallet, ChainData } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
+import { createTransaction } from '../lib/wallet_client';
+import { Transaction } from '../lib/transaction/transaction';
 import './WalletSettings.css';
 
 interface SendModalProps {
@@ -22,6 +25,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isProcessing, setIsProcessing] = useState(false);
     const [transactionHash, setTransactionHash] = useState('');
+    const [transactionFee, setTransactionFee] = useState<Decimal>();
 
     const amountInputRef = useRef<HTMLInputElement>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
@@ -81,8 +85,16 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
     const handleSend = async () => {
         setIsProcessing(true);
         // Simulate transaction processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setTransactionHash('0x' + Math.random().toString(16).substring(2, 66));
+        const result: Transaction | null= await createTransaction(
+            [wallet.private_key ?? ''],
+            wallet.address,
+            recipientAddress,
+            amount,
+            memo ? new TextEncoder().encode(memo) : null
+        );
+        //await new Promise(resolve => setTimeout(resolve, 2000));
+        setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));
+        setTransactionFee(result?.fees ?? new Decimal(0));
         setIsProcessing(false);
         setStep('success');
     };
@@ -486,7 +498,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                         Network Fee
                     </span>
                     <span style={{ fontSize: '14px', color: '#fff' }}>
-                        0.001 {selectedAsset?.symbol}
+                        {transactionFee?.toString() ?? 'NO FEE'} {selectedAsset?.symbol}
                     </span>
                 </div>
             </div>
