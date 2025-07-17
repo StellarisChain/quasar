@@ -7,9 +7,9 @@ import bs58 from 'bs58';
 import { ec as EC } from 'elliptic';
 import { Wallet } from '../pages/Popup/DataTypes';
 
-const ec = new EC('p256'); // Equivalent to P256 curve
-const ENDIAN = 'le'; // little-endian
-const SMALLEST = 1000000;
+export const ec = new EC('p256'); // Equivalent to P256 curve
+export const ENDIAN = 'le'; // little-endian
+export const SMALLEST = 1000000;
 
 export enum AddressFormat {
     FULL_HEX = 'hex',
