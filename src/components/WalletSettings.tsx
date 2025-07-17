@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon } from './Icons';
 import { Wallet } from '../pages/Popup/DataTypes';
+import './WalletSettings.css';
 
 interface WalletSettingsModalProps {
     wallet: Wallet;
@@ -79,7 +80,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
         if (!key) return '';
         if (key.length <= 4) return '•'.repeat(key.length);
         // Show only first 2 and last 2 chars
-        return key.slice(0, 2) + '•'.repeat(key.length - 4) + key.slice(-2);
+        return key.slice(0, 2) + '•'.repeat(Math.round((key.length - 4) / 3)) + key.slice(-2);
     };
 
     return (
