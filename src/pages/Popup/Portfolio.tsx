@@ -11,7 +11,8 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
-import { Chain as TokenFromXML } from '../../lib/token_loader';
+import { loadTokensXmlAsJson, Chain as TokenFromXML } from '../../lib/token_loader';
+import { getBalanceInfo } from '../../lib/wallet_client';
 import './Popup.css';
 
 // Utility to shorten address
@@ -117,28 +118,41 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     });
                 }
                 // Update wallets with price info
-                const updatedWallets = wallets.map(wallet => ({
-                    ...wallet,
-                    chains: (wallet.chains ?? []).map(chain => {
-                        const chainPrice = priceData[chain.symbol]?.price ?? 0;
-                        const chainChange = priceData[chain.symbol]?.change24h ?? 0;
-                        // Calculate fiatValue for chain
-                        const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
-                        return {
-                            ...chain,
-                            fiatValue,
-                            change24h: chainChange,
-                            tokens: chain.tokens.map(token => {
-                                const tokenPrice = priceData[token.symbol]?.price ?? 0;
-                                const tokenChange = priceData[token.symbol]?.change24h ?? 0;
-                                return {
-                                    ...token,
-                                    price: tokenPrice,
-                                    change24h: tokenChange,
-                                };
-                            })
-                        };
-                    })
+                const updatedWallets = await Promise.all(wallets.map(async wallet => {
+                    const chains = await Promise.all(
+                        (wallet.chains ?? []).map(async chain => {
+                            const chainPrice = priceData[chain.symbol]?.price ?? 0;
+                            const chainChange = priceData[chain.symbol]?.change24h ?? 0;
+                            const tokenData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
+
+                            // Load Balance
+                            const [balance] = await getBalanceInfo(
+                                selectedWallet?.address || '',
+                                tokenData.find(token => token.Symbol === chain.symbol)?.Node || ''
+                            );
+                            chain.balance = (balance !== null && balance !== undefined) ? balance.toString() : '0.00'; // Ensure balance is a string
+                            // Calculate fiatValue for chain
+                            const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
+                            return {
+                                ...chain,
+                                fiatValue,
+                                change24h: chainChange,
+                                tokens: chain.tokens.map(token => {
+                                    const tokenPrice = priceData[token.symbol]?.price ?? 0;
+                                    const tokenChange = priceData[token.symbol]?.change24h ?? 0;
+                                    return {
+                                        ...token,
+                                        price: tokenPrice,
+                                        change24h: tokenChange,
+                                    };
+                                })
+                            };
+                        })
+                    );
+                    return {
+                        ...wallet,
+                        chains
+                    };
                 }));
                 // If selectedWallet changed, update it too
                 setSelectedWallet(
