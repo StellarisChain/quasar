@@ -1,4 +1,8 @@
 import { Decimal } from 'decimal.js';
+import { Transaction } from './transaction/transaction';
+import { TransactionOutput } from './transaction/transaction_outputs';
+import { TransactionInput } from './transaction/transaction_input';
+import { stringToPoint, pointToString, SMALLEST, ENDIAN, ec } from './wallet_generation_utils';
 
 // Helper for decimal math using decimal.js
 function toDecimal(val: any): Decimal {
@@ -58,3 +62,67 @@ export async function getBalanceInfo(address: string, node: string): Promise<[nu
     }
 }
 
+export async function getAddressInfo(
+    address: string,
+    node: string
+): Promise<[
+    Decimal | null,
+    TransactionInput[] | null,
+    boolean | null,
+    [string, number][] | null,
+    string[] | null,
+    boolean
+]> {
+    try {
+        const url = `${node}/get_address_info?address=${encodeURIComponent(address)}&transactions_count_limit=0&show_pending=true`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`HTTP error: ${response.status}`);
+            return [null, null, null, null, null, true];
+        }
+        const data = await response.json();
+        if (!data.ok) {
+            console.error(data.error);
+            return [null, null, null, null, null, true];
+        }
+        const result = data.result;
+        if (!result) {
+            console.error("Missing 'result' key in response");
+            return [null, null, null, null, null, true];
+        }
+        let isPending = false;
+        const txInputs: TransactionInput[] = [];
+        const pendingSpentOutputs: [string, number][] = [];
+        const pendingTransactionHashes: string[] = [];
+
+        for (const value of result.pending_spent_outputs || []) {
+            pendingSpentOutputs.push([value.tx_hash, value.index]);
+        }
+
+        for (const spendableTxInput of result.spendable_outputs || []) {
+            const isOutputPending = pendingSpentOutputs.some(
+                ([txHash, idx]) => txHash === spendableTxInput.tx_hash && idx === spendableTxInput.index
+            );
+            if (isOutputPending) {
+                isPending = true;
+                continue;
+            }
+            const txInput = new TransactionInput(spendableTxInput.tx_hash, spendableTxInput.index);
+            txInput.amount = new Decimal(String(spendableTxInput.amount));
+            txInput.publicKey = stringToPoint(address);
+            txInputs.push(txInput);
+        }
+
+        if (isPending) {
+            for (const value of result.pending_transactions || []) {
+                pendingTransactionHashes.push(value.hash);
+            }
+        }
+
+        const balance = new Decimal(String(result.balance));
+        return [balance, txInputs, isPending, pendingSpentOutputs, pendingTransactionHashes, false];
+    } catch (e) {
+        console.error(e);
+        return [null, null, null, null, null, true];
+    }
+}
