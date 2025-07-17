@@ -133,10 +133,26 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             chain.balance = (balance !== null && balance !== undefined) ? balance.toString() : '0.00'; // Ensure balance is a string
                             // Calculate fiatValue for chain
                             const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
+
+                            // api.cex.connor33341.dev is a stub rn, so we generate plausible data
+                            // Generate plausible chartData as a random walk based on price
+                            const chartPoints = 24; // e.g., 24 points for 24h
+                            const base = chainPrice || 1;
+                            let last = base * (1 - chainChange / 200); // start near price, offset by half 24h change
+                            const chartData = [last];
+                            for (let i = 1; i < chartPoints; i++) {
+                                // Simulate a small random walk, trending toward the current price
+                                const drift = (base - last) * 0.1; // pull toward base price
+                                const noise = (Math.random() - 0.5) * base * 0.02; // up to ±2% noise
+                                last = Math.max(0, last + drift + noise);
+                                chartData.push(Number(last.toFixed(4)));
+                            }
+
                             return {
                                 ...chain,
                                 fiatValue,
                                 change24h: chainChange,
+                                chartData,
                                 tokens: chain.tokens.map(token => {
                                     const tokenPrice = priceData[token.symbol]?.price ?? 0;
                                     const tokenChange = priceData[token.symbol]?.change24h ?? 0;
