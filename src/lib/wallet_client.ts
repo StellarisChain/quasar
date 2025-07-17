@@ -126,3 +126,130 @@ export async function getAddressInfo(
         return [null, null, null, null, null, true];
     }
 }
+
+
+export async function createTransaction(
+    privateKeys: string[],
+    sender: string,
+    receivingAddress: string,
+    amount: Decimal | string | number,
+    message?: Uint8Array | null,
+    sendBackAddress?: string | null,
+    node?: string
+): Promise<Transaction | null> {
+    const decAmount = toDecimal(amount);
+    let inputs: TransactionInput[] = [];
+    let balance: Decimal | null = null;
+    let isPending: boolean | null = null;
+    let addressInputs: TransactionInput[] | null = null;
+    let pendingTransactionHashes: string[] | null = null;
+
+    for (const key of privateKeys) {
+        if (!sendBackAddress) sendBackAddress = sender;
+        const [bal, addrInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!);
+        if (isError) {
+            return null;
+        }
+        balance = bal;
+        addressInputs = addrInputs;
+        isPending = pending;
+        pendingTransactionHashes = pendingHashes;
+        if (addressInputs) {
+            for (const addressInput of addressInputs) {
+                (addressInput as any).privateKey = key;
+            }
+            inputs = inputs.concat(addressInputs);
+        }
+        const sortedInputs = [...inputs].sort((a, b) => {
+            const aAmount = a.amount ?? new Decimal(0);
+            const bAmount = b.amount ?? new Decimal(0);
+            return aAmount.minus(bAmount).toNumber();
+        });
+        const sumInputs = sortedInputs.slice(0, 255).reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+        if (sumInputs.greaterThanOrEqualTo(decAmount)) {
+            break;
+        }
+    }
+
+    if (!inputs.length) {
+        if (isPending) {
+            console.error("No spendable outputs. Please wait for pending transactions to be confirmed.");
+            if (pendingTransactionHashes) {
+                console.log("\nTransactions awaiting confirmation:");
+                pendingTransactionHashes.forEach((tx, idx) => {
+                    console.log(`${idx + 1}: ${tx}`);
+                });
+            }
+        } else {
+            console.error("No spendable outputs.");
+            if (!(balance && balance.greaterThan(0))) {
+                console.log("The associated address does not have enough funds.");
+            }
+        }
+        return null;
+    }
+
+    // Check if accumulated inputs are sufficient
+    const totalInput = inputs.reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+    if (totalInput.lessThan(decAmount)) {
+        console.error("The associated address does not have enough funds.");
+        return null;
+    }
+
+    // Select appropriate transaction inputs
+    const transactionInputs: TransactionInput[] = [];
+    let runningSum = new Decimal(0);
+    for (const txInput of inputs.sort((a, b) => {
+        const aAmount = a.amount ?? new Decimal(0);
+        const bAmount = b.amount ?? new Decimal(0);
+        return aAmount.minus(bAmount).toNumber();
+    })) {
+        transactionInputs.push(txInput);
+        runningSum = runningSum.plus(txInput.amount ?? new Decimal(0));
+        if (runningSum.greaterThanOrEqualTo(decAmount)) {
+            break;
+        }
+    }
+
+    // Ensure that the transaction amount is adequate
+    const transactionAmount = transactionInputs.reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+    if (transactionAmount.lessThan(decAmount)) {
+        console.error(`Consolidate outputs: send ${transactionAmount.toString()} stellaris to yourself`);
+        return null;
+    }
+
+    // Create the transaction
+    const outputs: TransactionOutput[] = [
+        new TransactionOutput(receivingAddress, decAmount)
+    ];
+    if (transactionAmount.greaterThan(decAmount)) {
+        outputs.push(new TransactionOutput(sendBackAddress!, transactionAmount.minus(decAmount)));
+    }
+    const tx = new Transaction(transactionInputs, outputs, message ?? undefined);
+
+    // Sign and send the transaction
+    tx.sign(privateKeys);
+
+    // Push transaction to node
+    try {
+        const response = await fetch(`${node}/push_tx`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tx_hex: tx.hex() }),
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error during request to node: ${errorText}`);
+            return null;
+        }
+        const respJson = await response.json();
+        if (!respJson.ok) {
+            console.error(respJson.error);
+            return null;
+        }
+        return tx;
+    } catch (e) {
+        console.error(`Error during request to node: ${e}`);
+        return null;
+    }
+}
