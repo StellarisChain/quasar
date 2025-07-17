@@ -11,6 +11,7 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
+import { SendModal } from '../../components/SendModal';
 import { loadTokensXmlAsJson, Chain as TokenFromXML } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
 import './Popup.css';
@@ -35,6 +36,11 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Copy address feedback state
     const [copied, setCopied] = useState(false);
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    // TODO: There should be a global modal state
+
+    // Send modal state
+    const [showSendModal, setShowSendModal] = useState(false);
 
     // Wallet settings modal state
     const [showWalletSettings, setShowWalletSettings] = useState(false);
@@ -134,7 +140,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 tokenData.find(token => token.Symbol === chain.symbol)?.Node || ''
                             );
                             chain.balance = (balance !== null && balance !== undefined) ? balance.toString() : '0.00'; // Ensure balance is a string
-                            
+
                             // Calculate fiatValue for chain
                             const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
 
@@ -295,7 +301,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
 
                 {/* Action Buttons */}
                 <div className="action-buttons">
-                    <button className="action-btn action-btn-anim">
+                    <button className="action-btn action-btn-anim" onClick={() => setShowSendModal(true)}>
                         <ArrowsRightLeftIcon />
                         <span>Send</span>
                     </button>
@@ -327,6 +333,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     </div>
                 </div>
             </div>
+
+            {/* Send Modal */}
+            {showSendModal && selectedWallet && (
+                <SendModal
+                    wallet={selectedWallet}
+                    onClose={() => setShowSendModal(false)}
+                />
+            )}
 
             {/* Manage Assets Modal */}
             {showManageAssets && (

@@ -4,6 +4,7 @@
         <Name>Stellaris</Name>
         <Symbol>STE</Symbol>
         <Color>#9945FF</Color>
+        <!--<Color>#161616</Color>-->
         <Node>https://stellaris-node.connor33341.dev</Node>
     </Token>
     <Token>
