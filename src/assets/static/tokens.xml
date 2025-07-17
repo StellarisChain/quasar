@@ -9,7 +9,7 @@
     <Token>
         <Name>Denaro</Name>
         <Symbol>DNR</Symbol>
-        <Color>#FFD700</Color>
+        <Color>#21a9af</Color>
         <Node>https://denaro-node.gaetano.eu.org</Node>
     </Token>
 </Tokens>

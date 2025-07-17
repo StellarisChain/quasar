@@ -125,12 +125,16 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             const chainChange = priceData[chain.symbol]?.change24h ?? 0;
                             const tokenData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
 
+                            // Cosmetic
+                            chain.color = tokenData.find(token => token.Symbol === chain.symbol)?.Color || '';
+
                             // Load Balance
                             const [balance] = await getBalanceInfo(
                                 selectedWallet?.address || '',
                                 tokenData.find(token => token.Symbol === chain.symbol)?.Node || ''
                             );
                             chain.balance = (balance !== null && balance !== undefined) ? balance.toString() : '0.00'; // Ensure balance is a string
+                            
                             // Calculate fiatValue for chain
                             const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
 
