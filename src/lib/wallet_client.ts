@@ -1,10 +1,10 @@
+import { Decimal } from 'decimal.js';
 
-// Helper for decimal math (use native JS number for now, or use a library like decimal.js if needed)
-
-function toDecimal(val: any): number {
-    if (typeof val === 'number') return val;
-    if (typeof val === 'string') return parseFloat(val);
-    return 0;
+// Helper for decimal math using decimal.js
+function toDecimal(val: any): Decimal {
+    if (val instanceof Decimal) return val;
+    if (typeof val === 'number' || typeof val === 'string') return new Decimal(val);
+    return new Decimal(0);
 }
 
 export async function getBalanceInfo(address: string, node: string): Promise<[number | null, number | null, boolean]> {
@@ -30,26 +30,26 @@ export async function getBalanceInfo(address: string, node: string): Promise<[nu
         const spendableOutputs = result.spendable_outputs || [];
         const spendableHashes = new Set<string>(spendableOutputs.map((output: any) => output.tx_hash));
         const totalBalance = toDecimal(result.balance);
-        let pendingBalance = 0;
+        let pendingBalance = new Decimal(0);
         for (const transaction of pendingTransactions) {
             // Adjust the balance based on inputs
             for (const input of (transaction.inputs || [])) {
                 if (input.address === address && spendableHashes.has(input.tx_hash)) {
                     const inputAmount = toDecimal(input.amount ?? '0');
-                    pendingBalance -= inputAmount;
+                    pendingBalance = pendingBalance.minus(inputAmount);
                 }
             }
             // Adjust the balance based on outputs
             for (const output of (transaction.outputs || [])) {
                 if (output.address === address) {
                     const outputAmount = toDecimal(output.amount ?? '0');
-                    pendingBalance += outputAmount;
+                    pendingBalance = pendingBalance.plus(outputAmount);
                 }
             }
         }
         // Format to 6 decimal places
-        const formattedTotalBalance = Math.floor(totalBalance * 1e6) / 1e6;
-        const formattedPendingBalance = Math.floor(pendingBalance * 1e6) / 1e6;
+        const formattedTotalBalance = Number(totalBalance.toFixed(6));
+        const formattedPendingBalance = Number(pendingBalance.toFixed(6));
         const balanceData: [number, number, boolean] = [formattedTotalBalance, formattedPendingBalance, false];
         return balanceData;
     } catch (e) {
