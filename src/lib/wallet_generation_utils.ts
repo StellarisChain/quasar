@@ -8,7 +8,8 @@ import { ec as EC } from 'elliptic';
 import { Wallet } from '../pages/Popup/DataTypes';
 
 export type Endian = 'le' | 'be';
-export const ec = new EC('p256'); // Equivalent to P256 curve
+type ECType = InstanceType<typeof EC>;
+export const ec: ECType = new EC('p256'); // Equivalent to P256 curve
 export const ENDIAN: Endian = 'le'; // little-endian
 export const SMALLEST = 1000000;
 
@@ -58,17 +59,34 @@ export function xToY(x: number, isOdd = false): number {
     return point.y;
 }
 
+// Given the x-coordinate, compute the y-coordinate on the elliptic curve.
+// Uses elliptic.js for browser compatibility.
+export function xToYFromX(x: number, isOdd: boolean = false): number {
+    // Use elliptic's pointFromX to get the point, then return y
+    const point = ec.curve.pointFromX(x, isOdd);
+    return point.y;
+}
+
 export function bytesToPoint(pointBytes: Uint8Array): any {
     if (pointBytes.length === 64) {
         const x = bytesToInt(pointBytes.slice(0, 32));
         const y = bytesToInt(pointBytes.slice(32, 64));
-        return ec.curve.point(x, y);
+        try {
+            return ec.curve.point(x, y);
+        } catch (e) {
+            throw new Error('Invalid uncompressed point: ' + (e instanceof Error ? e.message : e));
+        }
     } else if (pointBytes.length === 33) {
         const specifier = pointBytes[0];
-        const x = bytesToInt(pointBytes.slice(1));
-        return ec.curve.pointFromX(x, specifier === 43);
+        const x = bytesToInt(pointBytes.slice(1)); // 
+        try {
+            // specifier 43 means odd y, 42 means even y
+            return ec.curve.pointFromX(x, specifier === 43);
+        } catch (e) {
+            throw new Error('Invalid compressed point: ' + (e instanceof Error ? e.message : e));
+        }
     } else {
-        throw new Error('Unsupported byte length');
+        throw new Error('Unsupported byte length for EC point: ' + pointBytes.length);
     }
 }
 
@@ -121,7 +139,17 @@ export function stringToBytes(str: string): Uint8Array {
 }
 
 export function stringToPoint(str: string): any {
-    return bytesToPoint(stringToBytes(str));
+    let bytes: Uint8Array;
+    try {
+        bytes = stringToBytes(str);
+    } catch (e) {
+        throw new Error('Failed to decode string to bytes for EC point: ' + (e instanceof Error ? e.message : e));
+    }
+    try {
+        return bytesToPoint(bytes);
+    } catch (e) {
+        throw new Error('Failed to parse EC point from string: ' + (e instanceof Error ? e.message : e));
+    }
 }
 
 export function hexToPoint(xHex: string, yHex: string): any {
@@ -220,7 +248,7 @@ export function intToBytes(num: number, length: number): Uint8Array {
 function bytesToInt(bytes: Uint8Array): number {
     let val = 0;
     for (let i = 0; i < bytes.length; i++) {
-        val += bytes[i] * (1 << (8 * (ENDIAN === 'le' ? i : bytes.length - i - 1)));
+        val += bytes[i] * (1 << (8)); // * (ENDIAN === 'le' ? i : bytes.length - i - 1)
     }
     return val;
 }
