@@ -109,7 +109,8 @@ export async function getAddressInfo(
             }
             const txInput = new TransactionInput(spendableTxInput.tx_hash, spendableTxInput.index);
             txInput.amount = new Decimal(String(spendableTxInput.amount));
-            txInput.publicKey = stringToPoint(address);
+            // Always set publicKey as a string
+            txInput.publicKey = pointToString(stringToPoint(address));
             txInputs.push(txInput);
         }
 
@@ -138,38 +139,70 @@ export async function createTransaction(
     node?: string
 ): Promise<Transaction | null> {
     const decAmount = toDecimal(amount);
+    if (!sendBackAddress) sendBackAddress = sender;
+
+    console.debug('createTransaction called with:', {
+        privateKeys,
+        sender,
+        receivingAddress,
+        amount: decAmount.toString(),
+        message,
+        sendBackAddress,
+        node
+    });
+
     let inputs: TransactionInput[] = [];
     let balance: Decimal | null = null;
     let isPending: boolean | null = null;
-    let addressInputs: TransactionInput[] | null = null;
     let pendingTransactionHashes: string[] | null = null;
 
     for (const key of privateKeys) {
-        if (!sendBackAddress) sendBackAddress = sender;
-        const [bal, addrInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!);
+        const [bal, addressInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!);
+        console.debug('getAddressInfo result:', {
+            key,
+            bal: bal?.toString(),
+            addressInputs,
+            pending,
+            pendingHashes,
+            isError
+        });
         if (isError) {
             return null;
         }
         balance = bal;
-        addressInputs = addrInputs;
         isPending = pending;
         pendingTransactionHashes = pendingHashes;
         if (addressInputs) {
             for (const addressInput of addressInputs) {
                 (addressInput as any).privateKey = key;
+                // Ensure publicKey is always a string (hex or compressed)
+                if (addressInput.publicKey && typeof addressInput.publicKey !== 'string') {
+                    try {
+                        addressInput.publicKey = pointToString(addressInput.publicKey);
+                    } catch (e) {
+                        // fallback: try to convert from address
+                        addressInput.publicKey = pointToString(stringToPoint(sender));
+                    }
+                }
             }
             inputs = inputs.concat(addressInputs);
         }
-        const sortedInputs = [...inputs].sort((a, b) => {
-            const aAmount = a.amount ?? new Decimal(0);
-            const bAmount = b.amount ?? new Decimal(0);
-            return aAmount.minus(bAmount).toNumber();
-        });
-        const sumInputs = sortedInputs.slice(0, 255).reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+        // Check if enough inputs have been gathered
+        const sumInputs = inputs
+            .sort((a, b) => {
+                const aAmount = a.amount ?? new Decimal(0);
+                const bAmount = b.amount ?? new Decimal(0);
+                return aAmount.minus(bAmount).toNumber();
+            })
+            .slice(0, 255)
+            .reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+        console.debug('Accumulated sumInputs:', sumInputs.toString(), 'inputs:', inputs);
         if (sumInputs.greaterThanOrEqualTo(decAmount)) {
             break;
         }
     }
+
+    console.debug('Final gathered inputs:', inputs);
 
     if (!inputs.length) {
         if (isPending) {
@@ -191,6 +224,7 @@ export async function createTransaction(
 
     // Check if accumulated inputs are sufficient
     const totalInput = inputs.reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+    console.debug('Total input amount:', totalInput.toString(), 'Required amount:', decAmount.toString());
     if (totalInput.lessThan(decAmount)) {
         console.error("The associated address does not have enough funds.");
         return null;
@@ -210,9 +244,11 @@ export async function createTransaction(
             break;
         }
     }
+    console.debug('Selected transactionInputs:', transactionInputs);
 
     // Ensure that the transaction amount is adequate
     const transactionAmount = transactionInputs.reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
+    console.debug('transactionAmount:', transactionAmount.toString(), 'decAmount:', decAmount.toString());
     if (transactionAmount.lessThan(decAmount)) {
         console.error(`Consolidate outputs: send ${transactionAmount.toString()} stellaris to yourself`);
         return null;
@@ -225,10 +261,12 @@ export async function createTransaction(
     if (transactionAmount.greaterThan(decAmount)) {
         outputs.push(new TransactionOutput(sendBackAddress!, transactionAmount.minus(decAmount)));
     }
+    console.debug('Transaction outputs:', outputs);
     const tx = new Transaction(transactionInputs, outputs, message ?? undefined);
 
     // Sign and send the transaction
     tx.sign(privateKeys);
+    console.debug('Transaction hex:', tx.hex());
 
     // Push transaction to node
     try {
