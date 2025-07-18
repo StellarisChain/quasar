@@ -36,43 +36,52 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
     >
       <div className="wallet-list">
         {
-          walletList.map((wallet) => (
-            <div
-              key={wallet.id}
-              onClick={() => {
-                onWalletChange(wallet);
-                setIsOpen(false);
-              }}
-              className={`wallet-item wallet-item-anim ${selectedWallet && selectedWallet.id === wallet.id ? 'selected' : ''}`}
-              tabIndex={0}
-              role="button"
-              style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
-            >
-              <div className="wallet-name">{wallet.name}</div>
-              <div className="wallet-address">{wallet.address}</div>
-            </div>
-          ))}
-          <div
-            className="wallet-item wallet-item-anim create-wallet"
-            tabIndex={0}
-            role="button"
-            onClick={typeof onCreateWallet === 'function' ? () => {
-              onCreateWallet();
-              setIsOpen(false);
-            } : undefined}
-            style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
-          >
-            <PlusIcon />
-            <div className="wallet-name">New Wallet</div>
-          </div>
+          walletList.map((wallet, idx) => {
+            // Use id if present and unique, else fallback to address or index
+            let key = wallet.id;
+            if (!key || walletList.filter(w => w.id === key).length > 1) {
+              key = wallet.address ? `address-${wallet.address}${Math.random()*5}` : `idx-${idx}`;
+            }
+            return (
+              <div
+                key={key}
+                onClick={() => {
+                  onWalletChange(wallet);
+                  setIsOpen(false);
+                }}
+                className={`wallet-item wallet-item-anim ${selectedWallet && selectedWallet.id === wallet.id ? 'selected' : ''}`}
+                tabIndex={0}
+                role="button"
+                style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
+              >
+                <div className="wallet-name">{wallet.name}</div>
+                <div className="wallet-address">{wallet.address}</div>
+              </div>
+            );
+          })}
+        <div
+          key="create-wallet"
+          className="wallet-item wallet-item-anim create-wallet"
+          tabIndex={0}
+          role="button"
+          onClick={typeof onCreateWallet === 'function' ? () => {
+            onCreateWallet();
+            setIsOpen(false);
+          } : undefined}
+          style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
+        >
+          <PlusIcon />
+          <div className="wallet-name">New Wallet</div>
+        </div>
         {/* Demo Mode: AT NO POINT USE THIS WITH PRODUCTION WALLETS */}
         {demoMode && walletList.length === 0 && (
           <div
+            key="demo-wallet"
             className={`wallet-item wallet-item-anim create-wallet ${selectedWallet && selectedWallet.id === defaultWallets[0].id ? 'selected' : ''}`}
             tabIndex={0}
             role="button"
             onClick={() => {
-              if (selectedWallet === defaultWallets[0] && setWallets){
+              if (selectedWallet === defaultWallets[0] && setWallets) {
                 setWallets([]); // Unselect the wallet
                 onWalletChange(null);
                 saveWallets([]); // Clear wallets

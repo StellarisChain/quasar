@@ -222,7 +222,7 @@ export function generate({
         const { point, compressed } = privateToPublicKey(privateKeyHex);
         publicKeyPoint = point;
         publicKeyHex = compressed;
-        address = pointToString(publicKeyPoint);
+        address = pointToString(publicKeyPoint, AddressFormat.FULL_HEX);
         if (!fields) fields = ['mnemonic', 'id', 'private_key', 'public_key', 'address'];
         if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
         if (fields.includes('id')) result.id = index;
