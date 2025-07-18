@@ -64,7 +64,8 @@ export async function getBalanceInfo(address: string, node: string): Promise<[nu
 
 export async function getAddressInfo(
     address: string,
-    node: string
+    node: string,
+    privateKey?: string
 ): Promise<[
     Decimal | null,
     TransactionInput[] | null,
@@ -109,8 +110,11 @@ export async function getAddressInfo(
             }
             const txInput = new TransactionInput(spendableTxInput.tx_hash, spendableTxInput.index);
             txInput.amount = new Decimal(String(spendableTxInput.amount));
-            // Always set publicKey as a string
-            txInput.publicKey = pointToString(stringToPoint(address));
+            // Always set publicKey from privateKey, never from address
+            if (!privateKey) {
+                throw new Error('privateKey is required to derive publicKey for transaction input');
+            }
+            txInput.publicKey = pointToString(ec.keyFromPrivate(privateKey).getPublic());
             txInputs.push(txInput);
         }
 
@@ -157,7 +161,7 @@ export async function createTransaction(
     let pendingTransactionHashes: string[] | null = null;
 
     for (const key of privateKeys) {
-        const [bal, addressInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!);
+        const [bal, addressInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!, key);
         console.debug('getAddressInfo result:', {
             key,
             bal: bal?.toString(),
@@ -175,15 +179,6 @@ export async function createTransaction(
         if (addressInputs) {
             for (const addressInput of addressInputs) {
                 (addressInput as any).privateKey = key;
-                // Ensure publicKey is always a string (hex or compressed)
-                if (addressInput.publicKey && typeof addressInput.publicKey !== 'string') {
-                    try {
-                        addressInput.publicKey = pointToString(addressInput.publicKey);
-                    } catch (e) {
-                        // fallback: try to convert from address
-                        addressInput.publicKey = pointToString(stringToPoint(sender));
-                    }
-                }
             }
             inputs = inputs.concat(addressInputs);
         }

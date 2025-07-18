@@ -58,8 +58,9 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
             mnemonicPhrase: seedPhrase.join(' '),
             passphrase: '',
             index: Date.now(),
-            deterministic: true,
-            fields: ['mnemonic', 'id', 'private_key', 'public_key', 'address']
+            deterministic: false,
+            fields: ['mnemonic', 'id', 'private_key', 'public_key', 'address'],
+            walletVersion: '0.2.3'
         });
         newWallet.name = walletName || 'My Wallet';
         /*{

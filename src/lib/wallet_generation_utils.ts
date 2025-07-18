@@ -1,3 +1,4 @@
+import { Wallet } from '../pages/Popup/DataTypes';
 // wallet_generation_utils.ts
 // Browser-compatible wallet generation utilities
 // Requires: npm install elliptic bip39 bs58
@@ -5,7 +6,7 @@
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
 import { ec as EC } from 'elliptic';
-import { Wallet } from '../pages/Popup/DataTypes';
+import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
 type ECType = InstanceType<typeof EC>;
@@ -199,27 +200,47 @@ export function generate({
     fields?: string[],
     walletVersion?: string
 }): Wallet {
-    if (walletVersion === '0.2.3') passphrase = '';
-    if (!mnemonicPhrase) mnemonicPhrase = generateMnemonic();
-    const seed = bip39.mnemonicToSeedSync(mnemonicPhrase, passphrase);
-    // Use BIP32 derivation (browser: use bip32 or bitcoinjs-lib if needed)
-    // Here, we use the seed as private key for demo
-    const privateKeyHex = bytesToHex(seed).slice(0, 64);
-    const { point, compressed } = privateToPublicKey(privateKeyHex);
-    const address = pointToString(point);
+    let localMnemonic = mnemonicPhrase;
+    let localPassphrase = passphrase ?? '';
+    if (walletVersion === '0.2.3') localPassphrase = '';
+    if (!localMnemonic) localMnemonic = generateMnemonic();
+    if (!localPassphrase) localPassphrase = '';
+    const seed = bip39.mnemonicToSeedSync(localMnemonic, localPassphrase);
+    const root = HDKey.fromMasterSeed(seed);
+    let privateKeyHex: string;
+    let publicKeyHex: string;
+    let publicKeyPoint: any;
+    let address: string;
     const result: Wallet = {} as Wallet;
+
     if (deterministic) {
+        // Derive child key at m/0/index
+        const child = root.derive(`m/0/${index}`);
+        if (!child.privateKey) throw new Error('Failed to derive child private key');
+        privateKeyHex = bytesToHex(child.privateKey); // 'hex'
+        // Use elliptic to get public key point and compressed hex
+        const { point, compressed } = privateToPublicKey(privateKeyHex);
+        publicKeyPoint = point;
+        publicKeyHex = compressed;
+        address = pointToString(publicKeyPoint);
         if (!fields) fields = ['mnemonic', 'id', 'private_key', 'public_key', 'address'];
-        if (fields.includes('mnemonic')) result.mnemonic = mnemonicPhrase;
+        if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
         if (fields.includes('id')) result.id = index;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
-        if (fields.includes('public_key')) result.public_key = compressed;
+        if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
     } else {
+        // Use root key directly
+        if (!root.privateKey) throw new Error('Failed to get root private key');
+        privateKeyHex = bytesToHex(root.privateKey); // convert Uint8Array to hex string
+        const { point, compressed } = privateToPublicKey(privateKeyHex);
+        publicKeyPoint = point;
+        publicKeyHex = compressed;
+        address = pointToString(publicKeyPoint);
         if (!fields) fields = ['mnemonic', 'private_key', 'public_key', 'address'];
-        if (fields.includes('mnemonic')) result.mnemonic = mnemonicPhrase;
+        if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
-        if (fields.includes('public_key')) result.public_key = compressed;
+        if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
     }
     return result;
