@@ -116,6 +116,21 @@ export function pointToBytes(point: any, addressFormat: AddressFormat = AddressF
 }
 
 export function pointToString(point: any, addressFormat: AddressFormat = AddressFormat.COMPRESSED): string {
+    const x = BigInt(point.getX().toString(10));
+    const y = BigInt(point.getY().toString(10));
+    if (addressFormat === AddressFormat.FULL_HEX) {
+        return bytesToHex(pointToBytes(point));
+    } else if (addressFormat === AddressFormat.COMPRESSED) {
+        const prefix = (BigInt(y.toString()) % BigInt(2)) === BigInt(0) ? 42 : 43;
+        const bytes = new Uint8Array([prefix, ...Array.from(intToBytes(x, 32))]);
+        return bs58.encode(bytes);
+    } else {
+        throw new Error('Unsupported format');
+    }
+}
+
+// This bitch dosent work
+/*export function pointToString(point: any, addressFormat: AddressFormat = AddressFormat.COMPRESSED): string {
     const x = point.getX();
     const y = point.getY();
     if (addressFormat === AddressFormat.FULL_HEX) {
@@ -128,7 +143,7 @@ export function pointToString(point: any, addressFormat: AddressFormat = Address
     } else {
         throw new Error('Unsupported format');
     }
-}
+}*/
 
 export function stringToBytes(str: string): Uint8Array {
     // Try hex decode, fallback to base58
@@ -257,6 +272,26 @@ export function generateFromPrivateKey(privateKeyHex: string, fields?: string[])
     return result;
 }
 
+export function intToBytes(num: number | bigint, length: number): Uint8Array {
+    let n = typeof num === 'bigint' ? num : BigInt(num);
+    const arr = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+        const shift = BigInt(8 * (ENDIAN === 'le' ? i : length - i - 1));
+        arr[i] = Number((n >> shift) & BigInt(255));
+    }
+    return arr;
+}
+
+function bytesToInt(bytes: Uint8Array): bigint {
+    let val = BigInt(0);
+    for (let i = 0; i < bytes.length; i++) {
+        const shift = BigInt(8 * (ENDIAN === 'le' ? i : bytes.length - i - 1));
+        val += BigInt(bytes[i]) << shift;
+    }
+    return val;
+}
+
+/*
 // Helper functions
 export function intToBytes(num: number, length: number): Uint8Array {
     const arr = new Uint8Array(length);
@@ -272,7 +307,7 @@ function bytesToInt(bytes: Uint8Array): number {
         val += bytes[i] * (1 << (8)); // * (ENDIAN === 'le' ? i : bytes.length - i - 1)
     }
     return val;
-}
+}*/
 
 // Browser-safe hex encoding/decoding
 function bytesToHex(bytes: Uint8Array): string {
