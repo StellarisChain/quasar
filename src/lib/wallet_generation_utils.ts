@@ -75,18 +75,24 @@ export function bytesToPoint(pointBytes: Uint8Array): any {
         try {
             return ec.curve.point(x, y);
         } catch (e) {
+            console.error('[bytesToPoint] Invalid uncompressed point', { x: x.toString(), y: y.toString(), error: e });
             throw new Error('Invalid uncompressed point: ' + (e instanceof Error ? e.message : e));
         }
     } else if (pointBytes.length === 33) {
         const specifier = pointBytes[0];
-        const x = bytesToInt(pointBytes.slice(1)); // 
+        const x = bytesToInt(pointBytes.slice(1));
+        if (specifier !== 42 && specifier !== 43) {
+            console.error('[bytesToPoint] Invalid compressed point prefix', { specifier, pointBytes: Array.from(pointBytes) });
+            throw new Error('Invalid compressed point: prefix byte must be 42 (even y) or 43 (odd y), got ' + specifier);
+        }
         try {
-            // specifier 43 means odd y, 42 means even y
             return ec.curve.pointFromX(x, specifier === 43);
         } catch (e) {
+            console.error('[bytesToPoint] Invalid compressed point', { x: x.toString(), specifier, error: e });
             throw new Error('Invalid compressed point: ' + (e instanceof Error ? e.message : e));
         }
     } else {
+        console.error('[bytesToPoint] Unsupported byte length for EC point', { length: pointBytes.length, pointBytes: Array.from(pointBytes) });
         throw new Error('Unsupported byte length for EC point: ' + pointBytes.length);
     }
 }
@@ -159,11 +165,13 @@ export function stringToPoint(str: string): any {
     try {
         bytes = stringToBytes(str);
     } catch (e) {
+        console.error('[stringToPoint] Failed to decode string to bytes', { str, error: e });
         throw new Error('Failed to decode string to bytes for EC point: ' + (e instanceof Error ? e.message : e));
     }
     try {
         return bytesToPoint(bytes);
     } catch (e) {
+        console.error('[stringToPoint] Failed to parse EC point from string', { str, bytes: Array.from(bytes), error: e });
         throw new Error('Failed to parse EC point from string: ' + (e instanceof Error ? e.message : e));
     }
 }
