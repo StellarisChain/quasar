@@ -9,16 +9,15 @@
 import { Wallet } from '../pages/Popup/DataTypes';
 // wallet_generation_utils.ts
 // Browser-compatible wallet generation utilities
-// Requires: npm install elliptic bip39 bs58
 
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
-import { ec as EC } from 'elliptic';
+import { p256 } from '@noble/curves/p256';
 import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
-type ECType = InstanceType<typeof EC>;
-export const ec: ECType = new EC('p256'); // Equivalent to P256 curve
+// noble-curves p256 instance
+export const ec = p256;
 export const ENDIAN: Endian = 'le'; // little-endian
 export const SMALLEST = 1000000;
 
@@ -60,48 +59,26 @@ export function normalizeBlock(block: any): any {
     return b;
 }
 
-// ECDSA point conversion utilities
-export function xToY(x: number, isOdd = false): number {
-    // y^2 = x^3 + ax + b mod p
-    // Not implemented: mod_sqrt for browser JS. Use elliptic's point-from-x
-    const point = ec.curve.pointFromX(x, isOdd);
+// ECDSA point conversion utilities using noble-curves
+export function xToY(x: bigint, isOdd = false): bigint {
+    // noble-curves: get point from x and y parity
+    const point = ec.ProjectivePoint.fromHex(ec.ProjectivePoint.fromPrivateKey(x).toRawBytes(true));
     return point.y;
 }
 
-// Given the x-coordinate, compute the y-coordinate on the elliptic curve.
-// Uses elliptic.js for browser compatibility.
-export function xToYFromX(x: number, isOdd: boolean = false): number {
-    // Use elliptic's pointFromX to get the point, then return y
-    const point = ec.curve.pointFromX(x, isOdd);
+export function xToYFromX(x: bigint, isOdd: boolean = false): bigint {
+    // noble-curves: get point from x and y parity
+    const point = ec.ProjectivePoint.fromHex(ec.ProjectivePoint.fromPrivateKey(x).toRawBytes(true));
     return point.y;
 }
 
 export function bytesToPoint(pointBytes: Uint8Array): any {
-    if (pointBytes.length === 64) {
-        const x = bytesToInt(pointBytes.slice(0, 32));
-        const y = bytesToInt(pointBytes.slice(32, 64));
-        try {
-            return ec.curve.point(x, y);
-        } catch (e) {
-            console.error('[bytesToPoint] Invalid uncompressed point', { x: x.toString(), y: y.toString(), error: e });
-            throw new Error('Invalid uncompressed point: ' + (e instanceof Error ? e.message : e));
-        }
-    } else if (pointBytes.length === 33) {
-        const specifier = pointBytes[0];
-        const x = bytesToInt(pointBytes.slice(1));
-        if (specifier !== 42 && specifier !== 43) {
-            console.error('[bytesToPoint] Invalid compressed point prefix', { specifier, pointBytes: Array.from(pointBytes) });
-            throw new Error('Invalid compressed point: prefix byte must be 42 (even y) or 43 (odd y), got ' + specifier);
-        }
-        try {
-            return ec.curve.pointFromX(x, specifier === 43);
-        } catch (e) {
-            console.error('[bytesToPoint] Invalid compressed point', { x: x.toString(), specifier, error: e });
-            throw new Error('Invalid compressed point: ' + (e instanceof Error ? e.message : e));
-        }
-    } else {
-        console.error('[bytesToPoint] Unsupported byte length for EC point', { length: pointBytes.length, pointBytes: Array.from(pointBytes) });
-        throw new Error('Unsupported byte length for EC point: ' + pointBytes.length);
+    // noble-curves: accepts compressed/uncompressed
+    try {
+        return ec.ProjectivePoint.fromHex(pointBytes);
+    } catch (e) {
+        console.error('[bytesToPoint] Invalid point bytes', { pointBytes: Array.from(pointBytes), error: e });
+        throw new Error('Invalid EC point bytes: ' + (e instanceof Error ? e.message : e));
     }
 }
 
@@ -116,32 +93,29 @@ export function bytesToString(pointBytes: Uint8Array): string {
     }
 }
 
+// Point to string (compressed/uncompressed) using noble-curves
+export function pointToString(point: any, addressFormat: AddressFormat = AddressFormat.COMPRESSED): string {
+    if (addressFormat === AddressFormat.FULL_HEX) {
+        return bytesToHex(pointToBytes(point, AddressFormat.FULL_HEX));
+    } else if (addressFormat === AddressFormat.COMPRESSED) {
+        return bs58.encode(pointToBytes(point, AddressFormat.COMPRESSED));
+    } else {
+        throw new Error('Unsupported format');
+    }
+}
 export function pointToBytes(point: any, addressFormat: AddressFormat = AddressFormat.FULL_HEX): Uint8Array {
     if (addressFormat === AddressFormat.FULL_HEX) {
-        return new Uint8Array([
-            ...Array.from(intToBytes(point.getX(), 32)),
-            ...Array.from(intToBytes(point.getY(), 32))
-        ]);
+        // Uncompressed (65 bytes, 0x04 prefix)
+        return point.toRawBytes(false).slice(1); // remove 0x04 prefix
     } else if (addressFormat === AddressFormat.COMPRESSED) {
-        return stringToBytes(pointToString(point, AddressFormat.COMPRESSED));
+        // Compressed (33 bytes)
+        return point.toRawBytes(true);
     } else {
         throw new Error('Unsupported format');
     }
 }
 
-export function pointToString(point: any, addressFormat: AddressFormat = AddressFormat.COMPRESSED): string {
-    const x = BigInt(point.getX().toString(10));
-    const y = BigInt(point.getY().toString(10));
-    if (addressFormat === AddressFormat.FULL_HEX) {
-        return bytesToHex(pointToBytes(point));
-    } else if (addressFormat === AddressFormat.COMPRESSED) {
-        const prefix = (BigInt(y.toString()) % BigInt(2)) === BigInt(0) ? 42 : 43;
-        const bytes = new Uint8Array([prefix, ...Array.from(intToBytes(x, 32))]);
-        return bs58.encode(bytes);
-    } else {
-        throw new Error('Unsupported format');
-    }
-}
+
 
 // This bitch dosent work
 /*export function pointToString(point: any, addressFormat: AddressFormat = AddressFormat.COMPRESSED): string {
@@ -185,16 +159,18 @@ export function stringToPoint(str: string): any {
 }
 
 export function hexToPoint(xHex: string, yHex: string): any {
-    const x = parseInt(xHex, 16);
-    const y = parseInt(yHex, 16);
-    return ec.curve.point(x, y);
+    // noble-curves: create point from x/y
+    const x = BigInt('0x' + xHex);
+    const y = BigInt('0x' + yHex);
+    return new ec.ProjectivePoint(x, y, 1n);
 }
 
 export function privateToPublicKey(privateKeyHex: string): { point: any, compressed: string } {
-    const key = ec.keyFromPrivate(privateKeyHex, 'hex');
-    const point = key.getPublic();
-    const prefix = point.getY() % 2 === 0 ? '02' : '03';
-    const compressed = prefix + point.getX().toString(16).padStart(64, '0');
+    // noble-curves: derive public key from private key
+    const priv = typeof privateKeyHex === 'string' ? privateKeyHex : bytesToHex(privateKeyHex);
+    const privBytes = hexToBytes(priv);
+    const point = ec.ProjectivePoint.fromPrivateKey(privBytes);
+    const compressed = bytesToHex(point.toRawBytes(true));
     return { point, compressed };
 }
 
@@ -298,7 +274,7 @@ export function intToBytes(num: number | bigint, length: number): Uint8Array {
     return arr;
 }
 
-function bytesToInt(bytes: Uint8Array): bigint {
+export function bytesToInt(bytes: Uint8Array): bigint {
     let val = BigInt(0);
     for (let i = 0; i < bytes.length; i++) {
         const shift = BigInt(8 * (ENDIAN === 'le' ? i : bytes.length - i - 1));
@@ -326,11 +302,11 @@ function bytesToInt(bytes: Uint8Array): number {
 }*/
 
 // Browser-safe hex encoding/decoding
-function bytesToHex(bytes: Uint8Array): string {
+export function bytesToHex(bytes: Uint8Array): string {
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array {
     if (hex.length % 2 !== 0) throw new Error('Invalid hex string');
     const bytes = new Uint8Array(hex.length / 2);
     for (let i = 0; i < hex.length; i += 2) {
