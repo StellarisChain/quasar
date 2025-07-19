@@ -4,7 +4,7 @@ import { stringToPoint, stringToBytes, byteLength, intToBytes, SMALLEST, ec } fr
 export class TransactionOutput {
     address: string;
     addressBytes: Uint8Array;
-    publicKey: any; // Replace 'any' with the actual type if available
+    publicKey: Uint8Array;
     amount: Decimal;
 
     constructor(address: string, amount: Decimal) {
@@ -42,8 +42,14 @@ export class TransactionOutput {
     }
 
     verify(): boolean {
-        // this.amount > 0 and ec.curve.isOnCurve(this.publicKey)
-        return this.amount.gt(0) && ec.curve.isOnCurve(this.publicKey);
+        // this.amount > 0 and publicKey is a valid curve point
+        if (!this.amount.gt(0)) return false;
+        try {
+            ec.ProjectivePoint.fromHex(this.publicKey);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     asDict(): Record<string, any> {

@@ -1,27 +1,24 @@
-
+// Inprogress: Switching to @noble/curves/p256
 import { Decimal } from 'decimal.js';
-//import { ec as EC } from 'elliptic';
-import { stringToPoint, pointToString, SMALLEST, ENDIAN, ec } from '../wallet_generation_utils';
-
-//const ec = new EC('secp256k1'); // or the curve you use
+import { stringToPoint, pointToString, SMALLEST, ENDIAN, ec, intToBytes } from '../wallet_generation_utils';
 
 export class TransactionInput {
     txHash: string;
     index: number;
-    privateKey?: string | number | bigint;
+    privateKey?: string;
     transaction?: any;
     transactionInfo?: any;
     amount?: Decimal;
-    publicKey?: ReturnType<typeof ec.keyFromPrivate> | any;
+    publicKey?: Uint8Array;
     signed?: { r: string; s: string };
 
     constructor(
         inputTxHash: string,
         index: number,
-        privateKey?: string | number | bigint,
+        privateKey?: string,
         transaction?: any,
         amount?: Decimal,
-        publicKey?: ReturnType<typeof ec.keyFromPrivate> | any
+        publicKey?: Uint8Array
     ) {
         this.txHash = inputTxHash;
         this.index = index;
@@ -79,14 +76,20 @@ export class TransactionInput {
         return (await this.getRelatedOutputInfo()).address;
     }
 
-    sign(txHex: string, privateKey?: string | number | bigint) {
-        const key = ec.keyFromPrivate((privateKey ?? this.privateKey) as string | Buffer);
+    sign(txHex: string, privateKey?: string) {
+        const priv = privateKey ?? this.privateKey;
+        if (priv === undefined) {
+            throw new Error('Private key is required for signing');
+        }
         const msg = Buffer.from(txHex, 'hex');
-        const signature = key.sign(msg);
-        this.signed = { r: signature.r.toString('hex'), s: signature.s.toString('hex') };
+        const signature = ec.sign(msg, priv);
+        this.signed = { 
+            r: Buffer.from(intToBytes(signature.r, 32)).toString('hex'), 
+            s: Buffer.from(intToBytes(signature.s, 32)).toString('hex') 
+        };
     }
 
-    async getPublicKey(): Promise<ReturnType<typeof ec.keyFromPrivate> | any | undefined> {
+    async getPublicKey(): Promise<Uint8Array | any | undefined> {
         if (this.publicKey) return this.publicKey;
         const address = await this.getAddress();
         return stringToPoint(address);
@@ -120,14 +123,18 @@ export class TransactionInput {
         }
         if (!this.signed) return false;
         const msg = Buffer.from(inputTx, 'hex');
-        // Accept both EC.KeyPair and EC.Point
-        let key;
-        if ('getPublic' in publicKey) {
-            key = publicKey as ReturnType<typeof ec.keyFromPrivate>;
-        } else {
-            key = ec.keyFromPublic(publicKey as any);
+        // noble-curves expects signature as { r, s } or a 64-byte Uint8Array
+        const r = BigInt('0x' + this.signed.r);
+        const s = BigInt('0x' + this.signed.s);
+        // Convert r and s to 32-byte big-endian Uint8Arrays and concatenate
+        const rBytes = Buffer.from(r.toString(16).padStart(64, '0'), 'hex');
+        const sBytes = Buffer.from(s.toString(16).padStart(64, '0'), 'hex');
+        const signature = Buffer.concat([rBytes, sBytes]);
+        try {
+            return ec.verify(msg, signature, publicKey);
+        } catch {
+            return false;
         }
-        return key.verify(msg, { r: this.signed.r, s: this.signed.s });
     }
 
     get asDict(): Record<string, any> {

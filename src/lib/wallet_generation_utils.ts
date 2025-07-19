@@ -12,7 +12,7 @@ import { Wallet } from '../pages/Popup/DataTypes';
 
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
-import { p256 } from '@noble/curves/p256';
+import { p256 } from '@noble/curves/nist';
 import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
@@ -142,7 +142,7 @@ export function stringToBytes(str: string): Uint8Array {
     }
 }
 
-export function stringToPoint(str: string): any {
+export function stringToPoint(str: string): Uint8Array {
     let bytes: Uint8Array;
     try {
         bytes = stringToBytes(str);
@@ -162,7 +162,7 @@ export function hexToPoint(xHex: string, yHex: string): any {
     // noble-curves: create point from x/y
     const x = BigInt('0x' + xHex);
     const y = BigInt('0x' + yHex);
-    return new ec.ProjectivePoint(x, y, 1n);
+    return new ec.ProjectivePoint(x, y, BigInt(1));
 }
 
 export function privateToPublicKey(privateKeyHex: string): { point: any, compressed: string } {

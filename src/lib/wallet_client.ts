@@ -114,7 +114,7 @@ export async function getAddressInfo(
             if (!privateKey) {
                 throw new Error('privateKey is required to derive publicKey for transaction input');
             }
-            txInput.publicKey = pointToString(ec.keyFromPrivate(privateKey).getPublic());
+            txInput.publicKey = ec.getPublicKey(privateKey);
             txInputs.push(txInput);
         }
 
