@@ -15,6 +15,7 @@
   "dependencies": {
     "@heroicons/react": "^2.0.18",
     "@material-tailwind/react": "^2.0.0",
+    "@noble/curves": "^1.9.4",
     "@scure/bip32": "^1.7.0",
     "apexcharts": "^3.41.0",
     "base-64": "^1.0.0",
