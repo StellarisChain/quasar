@@ -9,10 +9,10 @@
 import { Wallet } from '../pages/Popup/DataTypes';
 // wallet_generation_utils.ts
 // Browser-compatible wallet generation utilities
-// Requires: npm install elliptic bip39 bs58
 
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
+import { p256 } from '@noble/curves/nist';
 import { ec as EC } from 'elliptic';
 import { HDKey } from "@scure/bip32"
 
@@ -298,7 +298,7 @@ export function intToBytes(num: number | bigint, length: number): Uint8Array {
     return arr;
 }
 
-function bytesToInt(bytes: Uint8Array): bigint {
+export function bytesToInt(bytes: Uint8Array): bigint {
     let val = BigInt(0);
     for (let i = 0; i < bytes.length; i++) {
         const shift = BigInt(8 * (ENDIAN === 'le' ? i : bytes.length - i - 1));
@@ -326,11 +326,11 @@ function bytesToInt(bytes: Uint8Array): number {
 }*/
 
 // Browser-safe hex encoding/decoding
-function bytesToHex(bytes: Uint8Array): string {
+export function bytesToHex(bytes: Uint8Array): string {
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array {
     if (hex.length % 2 !== 0) throw new Error('Invalid hex string');
     const bytes = new Uint8Array(hex.length / 2);
     for (let i = 0; i < hex.length; i += 2) {
