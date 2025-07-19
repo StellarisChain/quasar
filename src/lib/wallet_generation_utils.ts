@@ -1,3 +1,11 @@
+/*
+    /// TODOLIST ///
+    - [ ] Replace elliptic with @noble/curves
+    - [ ] Replace bip39 with @scure/bip39
+    - [ ] Rewrite this to be more simple (Less type conversions)
+    /// connor33341 <connor@connor33341.dev> ///
+*/
+
 import { Wallet } from '../pages/Popup/DataTypes';
 // wallet_generation_utils.ts
 // Browser-compatible wallet generation utilities
