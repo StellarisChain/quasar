@@ -40,6 +40,12 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 var options = {
   mode: process.env.NODE_ENV || 'development',
+  cache: isDevelopment ? {
+    type: 'filesystem',
+    buildDependencies: {
+      config: [__filename],
+    },
+  } : false,
   entry: {
     newtab: path.join(__dirname, 'src', 'pages', 'Newtab', 'index.jsx'),
     options: path.join(__dirname, 'src', 'pages', 'Options', 'index.jsx'),
@@ -104,6 +110,7 @@ var options = {
                 before: [isDevelopment && ReactRefreshTypeScript.default && ReactRefreshTypeScript.default()].filter(Boolean),
               }),
               transpileOnly: isDevelopment,
+              experimentalFileCaching: isDevelopment,
             },
           },
         ],
@@ -120,6 +127,7 @@ var options = {
               plugins: [
                 isDevelopment && require.resolve('react-refresh/babel'),
               ].filter(Boolean),
+              cacheDirectory: isDevelopment,
             },
           },
         ],
@@ -210,7 +218,17 @@ var options = {
 };
 
 if (env.NODE_ENV === 'development') {
-  options.devtool = 'cheap-module-source-map';
+  options.devtool = 'eval-cheap-module-source-map';
+  options.optimization = {
+    moduleIds: 'deterministic',
+    chunkIds: 'named',
+    runtimeChunk: false,
+    splitChunks: {
+      chunks: 'async',
+      minSize: 20000,
+      maxSize: 700000,
+    },
+  };
 } else {
   options.optimization = {
     minimize: true,
