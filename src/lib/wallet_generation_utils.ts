@@ -12,12 +12,13 @@ import { Wallet } from '../pages/Popup/DataTypes';
 
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
-import { p256 } from '@noble/curves/nist';
+// import { p256 } from '@noble/curves/nist'; // removed p256 usage
+import { secp256k1 } from '@noble/curves/secp256k1';
 import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
-// noble-curves p256 instance
-export const ec = p256;
+// noble-curves secp256k1 instance
+export const ec = secp256k1;
 export const ENDIAN: Endian = 'le'; // little-endian
 export const SMALLEST = 1000000;
 

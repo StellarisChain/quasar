@@ -176,11 +176,13 @@ export class Transaction {
 
     sign(privateKeys: any[] = []): this {
         for (const privateKey of privateKeys) {
-            const keyPair = CURVE.keyFromPrivate(privateKey);
+            // noble/curves: get public key as Uint8Array, then hex
+            const pubKeyBytes = CURVE.getPublicKey(privateKey, false); // uncompressed
+            const pubKeyHex = Buffer.from(pubKeyBytes).toString('hex');
             for (const input of this.inputs) {
                 if (input.privateKey == null && (input.publicKey || input.transaction)) {
                     const inputPublicKey = input.publicKey || (input.transaction && input.transaction.outputs[input.index].publicKey);
-                    if (inputPublicKey && keyPair.getPublic('hex') === inputPublicKey) {
+                    if (inputPublicKey && pubKeyHex === inputPublicKey) {
                         input.privateKey = privateKey;
                     }
                 }

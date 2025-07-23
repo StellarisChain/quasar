@@ -8,6 +8,13 @@
         <Node>https://stellaris-node.connor33341.dev</Node>
     </Token>
     <Token>
+        <Name>Classic Stellaris</Name>
+        <Symbol>cSTE</Symbol>
+        <Color>#9945FF</Color>
+        <!--<Color>#161616</Color>-->
+        <Node>https://cstellaris-node.connor33341.dev</Node>
+    </Token>
+    <Token>
         <Name>Denaro</Name>
         <Symbol>DNR</Symbol>
         <Color>#21a9af</Color>
