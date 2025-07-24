@@ -28,3 +28,19 @@ export interface Wallet {
   mnemonic?: string;
   chains?: ChainData[];
 }
+
+export interface JsonWallet {
+  wallet_data: {
+    wallet_type: string;
+    version: string;
+    entry_data: {
+      entries: Array<{
+        id: string;
+        mnemonic: string;
+        private_key: string;
+        public_key: string;
+        address: string;
+      }>;
+    };
+  };
+}
