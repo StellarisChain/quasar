@@ -167,11 +167,19 @@ export function hexToPoint(xHex: string, yHex: string): any {
 }
 
 export function privateToPublicKey(privateKeyHex: string): { point: any, compressed: string } {
-    // noble-curves: derive public key from private key
-    const priv = typeof privateKeyHex === 'string' ? privateKeyHex : bytesToHex(privateKeyHex);
-    const privBytes = hexToBytes(priv);
-    const point = ec.ProjectivePoint.fromPrivateKey(privBytes);
-    const compressed = bytesToHex(point.toRawBytes(true));
+    // Convert hex to bigint
+    const privateKeyInt = BigInt('0x' + privateKeyHex);
+    // Derive public key point
+    const point = ec.ProjectivePoint.fromPrivateKey(privateKeyInt);
+    // Get x and y coordinates
+    const x = point.x;
+    const y = point.y;
+    // Determine prefix for compressed key
+    const prefix = (y % BigInt(2) === BigInt(0)) ? '02' : '03';
+    // Format x as 64 hex digits
+    const xHex = x.toString(16).padStart(64, '0');
+    // Compressed public key
+    const compressed = prefix + xHex;
     return { point, compressed };
 }
 
