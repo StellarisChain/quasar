@@ -94,5 +94,12 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                 </div>
             </div>
         )
+    } else {
+        return (
+            <>
+                <h1>Not Implemented</h1>
+                <p>This feature is not yet available.</p>
+            </>
+        );
     }
 }
