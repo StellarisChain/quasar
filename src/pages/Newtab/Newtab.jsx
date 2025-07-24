@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../../assets/img/logo.svg';
 import './Newtab.css';
 import './Newtab.scss';
-import { WalletSelector, ChainCard } from '../Popup/Popup';
+import { WalletSelector, ChainCard } from '../../components';
 
 // Inline the defaultWallets from Popup
 const defaultWallets = [
