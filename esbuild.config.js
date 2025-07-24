@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { ManifestJsoncPlugin } = require('./utils/manifest-jsonc-plugin');
 const ignorePlugin = require('./utils/ignore-plugin');
+const progress = require('esbuild-plugin-progress');
 
 // Helper to copy static assets
 function copyAssets(src, dest) {
@@ -84,7 +85,7 @@ esbuild.build({
     define: {
         'process.env.NODE_ENV': `"${process.env.NODE_ENV || 'development'}"`,
     },
-    plugins: [sassPlugin()],
+    plugins: [sassPlugin(), progress()],
 }).then(() => {
     // Copy static assets
     copyAssets('src/assets/img', 'build');
@@ -107,7 +108,7 @@ esbuild.build({
         output: 'build/manifest.json',
         packageJson: 'package.json',
     }).apply();
-    console.log('Build complete!');
+    //console.log('Build complete!');
 }).catch((err) => {
     console.error('Build failed:', err);
     process.exit(1);

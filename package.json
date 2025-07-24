@@ -11,6 +11,7 @@
     "build": "node utils/build.js",
     "esbuild": "node esbuild.config.js",
     "start": "node utils/webserver.js",
+    "tests": "node tests/cli.js",
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
   },
   "dependencies": {
@@ -63,6 +64,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.3",
     "esbuild": "^0.25.8",
+    "esbuild-plugin-progress": "^1.3.0",
     "esbuild-sass-plugin": "^3.3.1",
     "eslint": "^8.31.0",
     "eslint-config-react-app": "^7.0.1",
@@ -85,6 +87,7 @@
     "style-loader": "^3.3.1",
     "terser-webpack-plugin": "^5.3.6",
     "ts-loader": "^9.4.2",
+    "ts-node": "^10.9.2",
     "type-fest": "^3.5.2",
     "typescript": "^4.9.4",
     "webpack": "^5.75.0",

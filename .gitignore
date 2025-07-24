@@ -25,3 +25,7 @@
 # secrets
 secrets.*.js
 .env
+
+# testing
+/tests/.env
+/tests/test_wallets/
