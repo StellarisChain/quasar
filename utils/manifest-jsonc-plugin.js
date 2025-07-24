@@ -10,35 +10,66 @@ export class ManifestJsoncPlugin {
         this.packageJson = options.packageJson || 'package.json';
     }
 
+    parse(){
+        let manifestContent = fs.readFileSync(this.inputPath, 'utf8');
+        manifestContent = stripJsonComments(manifestContent);
+        let manifest = JSON.parse(manifestContent);
+
+        // Optionally inject description and version from package.json
+        if (fs.existsSync(this.pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(this.pkgPath, 'utf8'));
+            manifest.description = pkg.description || manifest.description;
+            manifest.version = pkg.version || manifest.version;
+        }
+
+        this.json = JSON.stringify(manifest, null, 2);
+    }
+
     apply(compiler) {
-        compiler.hooks.emit.tapAsync('ManifestJsoncPlugin', (compilation, callback) => {
-            try {
-                const inputPath = path.resolve(compiler.context, this.input);
-                const outputPath = path.resolve(compiler.context, this.output);
-                const pkgPath = path.resolve(compiler.context, this.packageJson);
+        if (compiler && compiler.hooks) {
+            // Webpack environment
+            compiler.hooks.emit.tapAsync('ManifestJsoncPlugin', (compilation, callback) => {
+                try {
+                    // Use the same logic as the standalone function, but add to compilation.assets
+                    this.context = compiler.context;
+                    this.inputPath = path.resolve(this.context, this.input);
+                    this.outputPath = path.resolve(this.context, this.output);
+                    this.pkgPath = path.resolve(this.context, this.packageJson);
 
-                let manifestContent = fs.readFileSync(inputPath, 'utf8');
-                manifestContent = stripJsonComments(manifestContent);
-                let manifest = JSON.parse(manifestContent);
+                    /*let manifestContent = fs.readFileSync(this.inputPath, 'utf8');
+                    manifestContent = stripJsonComments(manifestContent);
+                    let manifest = JSON.parse(manifestContent);
 
-                // Optionally inject description and version from package.json
-                if (fs.existsSync(pkgPath)) {
-                    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-                    manifest.description = pkg.description || manifest.description;
-                    manifest.version = pkg.version || manifest.version;
+                    // Optionally inject description and version from package.json
+                    if (fs.existsSync(this.pkgPath)) {
+                        const pkg = JSON.parse(fs.readFileSync(this.pkgPath, 'utf8'));
+                        manifest.description = pkg.description || manifest.description;
+                        manifest.version = pkg.version || manifest.version;
+                    }
+
+                    const json = JSON.stringify(manifest, null, 2);*/
+                    this.parse();
+                    // Add to Webpack assets
+                    compilation.assets[path.basename(this.output)] = {
+                        source: () => this.json,
+                        size: () => this.json.length,
+                    };
+                } catch (err) {
+                    compilation.errors.push(err);
                 }
+                callback();
+            });
+        } else {
+            // Fallback for direct invocation (ESBuild/Node)
+            this.context = process.cwd();
+            this.inputPath = path.resolve(this.context, this.input);
+            this.outputPath = path.resolve(this.context, this.output);
+            this.pkgPath = path.resolve(this.context, this.packageJson);
+            this.parse();
 
-                const json = JSON.stringify(manifest, null, 2);
-                // Add to Webpack assets
-                compilation.assets[path.basename(this.output)] = {
-                    source: () => json,
-                    size: () => json.length,
-                };
-            } catch (err) {
-                compilation.errors.push(err);
-            }
-            callback();
-        });
+            // Write to output file
+            fs.writeFileSync(this.outputPath, this.json);
+        }
     }
 }
 
