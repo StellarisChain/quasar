@@ -1,6 +1,7 @@
 import { generateMnemonic, generate } from '../src/lib/wallet_generation_utils';
 import { Wallet } from "../src/pages/Popup/DataTypes";
 import * as fs from 'fs';
+import * as path from 'path';
 
 const mnemonic: string = generateMnemonic();
 const wallet: Wallet = generate({
