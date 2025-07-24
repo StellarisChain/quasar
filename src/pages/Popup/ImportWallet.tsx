@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BackIcon, KeyIcon, WalletIcon, ArrowUpRightIcon } from '../../components/Icons';
-import { generateMnemonic, generate } from '../../lib/wallet_generation_utils';
 import { Wallet } from '../Popup/DataTypes';
 import './Popup.css';
 
