@@ -218,7 +218,7 @@ var options = {
 };
 
 if (env.NODE_ENV === 'development') {
-  options.devtool = 'eval-cheap-module-source-map';
+  options.devtool = 'cheap-module-source-map'; // 'eval-cheap-module-source-map'; // Warning, using eval will result in errors
   options.optimization = {
     moduleIds: 'deterministic',
     chunkIds: 'named',
