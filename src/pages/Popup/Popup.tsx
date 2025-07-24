@@ -12,6 +12,7 @@ import { Portfolio } from './Portfolio';
 import { getStoredWallets, saveWallets, defaultWallets } from './WalletUtils';
 import { CreateWallet } from './CreateWallet';
 import { NewWallet } from './NewWallet';
+import { ImportWallet, ImportWalletProps } from './ImportWallet';
 import './Popup.css';
 
 const Popup = () => {
@@ -20,6 +21,7 @@ const Popup = () => {
   const [wallets, setWallets] = useState<Wallet[]>(getStoredWallets());
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
+  const [importWalletFile, setImportWalletFile] = useState<boolean>(false);
 
   React.useEffect(() => {
     if (wallets) {
@@ -62,12 +64,22 @@ const Popup = () => {
               setPage('new-wallet');
               return;
             } else if (type === "import-file") {
-              setPage('import-wallet');
-              return;
+              setImportWalletFile(true);
+            } else if (type === "manual-import") {
+              setImportWalletFile(false);
+            } else {
+              console.error("Unknown wallet creation type:", type);
+              setPage('main');
             }
-            setPage('main');
+            setPage('import-wallet');
+            return;
           }} />}
           {page === 'new-wallet' && <NewWallet onBack={() => setPage('create-wallet')} onComplete={(wallet: Wallet) => {
+            setWallets([...wallets, wallet]);
+            setSelectedWallet(wallet);
+            setPage('main');
+          }} />}
+          {page === "import-wallet" && <ImportWallet onBack={() => setPage('create-wallet')} fromFile={importWalletFile} onImport={(wallet: Wallet) => {
             setWallets([...wallets, wallet]);
             setSelectedWallet(wallet);
             setPage('main');
