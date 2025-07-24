@@ -1,26 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-// Dropdown Component
-export const Dropdown = ({
-  trigger,
-  children,
-  isOpen,
-  onToggle
-}: {
+interface DropdownProps {
   trigger: React.ReactNode;
   children: React.ReactNode;
   isOpen: boolean;
   onToggle: () => void;
+  enabled?: boolean;
+}
+
+// Dropdown Component
+export const Dropdown: React.FC<DropdownProps> = ({
+  trigger,
+  children,
+  isOpen,
+  onToggle,
+  enabled = true,
 }) => {
   return (
     <div className="dropdown">
       <div
-        onClick={onToggle}
+        onClick={enabled ? onToggle : undefined}
         className="dropdown-trigger dropdown-anim"
         tabIndex={0}
         role="button"
         aria-expanded={isOpen}
-        style={{ cursor: 'pointer', outline: 'none', transition: 'background 0.2s' }}
+        aria-disabled={!enabled}
+        style={{
+          cursor: enabled ? 'pointer' : 'not-allowed',
+          transition: 'background 0.2s',
+          opacity: !enabled ? 0.6 : 1,
+        }}
       >
         {trigger}
       </div>

@@ -66,13 +66,22 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
       {/* Tokens Dropdown */}
       <Dropdown
         trigger={
-          <div className="tokens-trigger">
-            <span>View Tokens ({chain.tokens.length})</span>
+          // If token support is disabled, show a disabled state
+          <div className="tokens-trigger"
+            aria-disabled={!chain.tokenSupport}
+            style={{
+              cursor: chain.tokenSupport ? 'pointer' : 'not-allowed',
+              opacity: chain.tokenSupport ? 1 : 0.6,
+            }}
+          >
+            {/* Dropdown Button */}
+            <span>View Tokens {chain.tokenSupport ? chain.tokens.length : ' (Disabled)'} {/*isTokenMenuOpen ? '▲' : '▼'*/}</span>
             <ChevronDownIcon />
           </div>
         }
         isOpen={isTokenMenuOpen}
         onToggle={() => setIsTokenMenuOpen(!isTokenMenuOpen)}
+        enabled={chain.tokenSupport} // Only show if token support is enabled
       >
         <div className="tokens-list">
           {chain.tokens.map((token, idx) => (

@@ -68,7 +68,8 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
             change24h: 0,
             tokens: [], // Start with empty tokens array
             chartData: [], // Empty chart data
-            color: token.Color // Add color property as required by ChainData
+            color: token.Color, // Add color property as required by ChainData
+            tokenSupport: token.TokenSupport || false // Does the chain support tokens?
         }));
 
         // Update the selected wallet with new chains

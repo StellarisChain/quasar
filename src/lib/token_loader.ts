@@ -6,6 +6,7 @@ export interface Chain {
     Symbol: string;
     Color: string;
     Node: string;
+    TokenSupport?: boolean; // Optional, for compatibility with existing data
 }
 
 
@@ -26,6 +27,7 @@ export async function loadTokensXmlAsJson(url: string = 'tokens.xml'): Promise<C
         Symbol: tokenEl.getElementsByTagName('Symbol')[0]?.textContent || '',
         Color: tokenEl.getElementsByTagName('Color')[0]?.textContent || '',
         Node: tokenEl.getElementsByTagName('Node')[0]?.textContent || '',
+        TokenSupport: tokenEl.getElementsByTagName('TokenSupport')[0]?.textContent === 'true',
     }));
 
     return tokens;

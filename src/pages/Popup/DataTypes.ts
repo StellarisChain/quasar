@@ -13,6 +13,7 @@ export interface ChainData {
   balance: string;
   fiatValue: number;
   change24h: number;
+  tokenSupport: boolean;
   tokens: Token[];
   chartData: number[];
   color: string;
