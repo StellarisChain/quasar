@@ -84,7 +84,7 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
         enabled={chain.tokenSupport} // Only show if token support is enabled
       >
         <div className="tokens-list">
-          {chain.tokens.map((token, idx) => (
+          {chain.tokens.length > 0 ? chain.tokens.map((token, idx) => (
             <div key={idx} className="token-item token-anim">
               <div className="token-info">
                 <div className="token-icon">
@@ -102,7 +102,25 @@ export const ChainCard = ({ chain }: { chain: ChainData }) => {
                 </div>
               </div>
             </div>
-          ))}
+          )) : (
+            /* If no tokens, show a placeholder item */
+            <div key="no-assets" className="token-item token-anim">
+              <div className="token-info">
+                {/*<div className="token-icon">
+                  {token.symbol.slice(0, 2)}
+                </div>*/}
+                <div>
+                  <div className="token-name">No Assets</div>
+                </div>
+              </div>
+              {/*<div className="token-value">
+                <div className="token-balance">{token.balance}</div>
+                <div className={`token-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
+                  {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
+                </div>
+              </div>*/}
+            </div>
+          )}
         </div>
       </Dropdown>
     </div>
