@@ -1,8 +1,8 @@
 /*
     /// TODOLIST ///
-    - [ ] Replace elliptic with @noble/curves
-    - [ ] Replace bip39 with @scure/bip39
-    - [ ] Rewrite this to be more simple (Less type conversions)
+    - [ ] Replace elliptic with @noble/curves ✓
+    - [ ] Replace bip39 with @scure/bip39 ✓
+    - [ ] Rewrite this to be more simple (Less type conversions) ✓
     /// connor33341 <connor@connor33341.dev> ///
 */
 
@@ -218,11 +218,27 @@ export function generate({
 }): Wallet {
     let localMnemonic = mnemonicPhrase;
     let localPassphrase = passphrase ?? '';
-    if (walletVersion === '0.2.3') localPassphrase = '';
-    if (!localMnemonic) localMnemonic = generateMnemonic();
+
+    // Handle wallet version 0.2.3 compatibility
+    if (walletVersion === '0.2.3') {
+        localPassphrase = '';
+    }
+
+    // Generate mnemonic if not provided
+    if (!localMnemonic) {
+        localMnemonic = generateMnemonic();
+    }
+
+    // Validate mnemonic
+    if (!isValidMnemonic(localMnemonic)) {
+        throw new Error('Invalid mnemonic phrase');
+    }
+
     if (!localPassphrase) localPassphrase = '';
+
     const seed = bip39.mnemonicToSeedSync(localMnemonic, localPassphrase);
     const root = HDKey.fromMasterSeed(seed);
+
     let privateKeyHex: string;
     let publicKeyHex: string;
     let publicKeyPoint: any;
@@ -230,35 +246,43 @@ export function generate({
     const result: Wallet = {} as Wallet;
 
     if (deterministic) {
-        // Derive child key at m/0/index
+        // Derive child key at m/0/index path for deterministic generation
         const child = root.derive(`m/0/${index}`);
         if (!child.privateKey) throw new Error('Failed to derive child private key');
-        privateKeyHex = bytesToHex(child.privateKey); // 'hex'
-        // Use elliptic to get public key point and compressed hex
+
+        privateKeyHex = bytesToHex(child.privateKey);
         const { point, compressed } = privateToPublicKey(privateKeyHex);
         publicKeyPoint = point;
         publicKeyHex = compressed;
-        address = pointToString(publicKeyPoint, AddressFormat.FULL_HEX);
+        address = pointToString(publicKeyPoint, AddressFormat.COMPRESSED);
+
+        // Set default fields for deterministic generation
         if (!fields) fields = ['mnemonic', 'id', 'private_key', 'public_key', 'address'];
+
         if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
         if (fields.includes('id')) result.id = index;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
     } else {
-        // Use root key directly
+        // Use root key directly for non-deterministic generation
         if (!root.privateKey) throw new Error('Failed to get root private key');
-        privateKeyHex = bytesToHex(root.privateKey); // convert Uint8Array to hex string
+
+        privateKeyHex = bytesToHex(root.privateKey);
         const { point, compressed } = privateToPublicKey(privateKeyHex);
         publicKeyPoint = point;
         publicKeyHex = compressed;
-        address = pointToString(publicKeyPoint);
+        address = pointToString(publicKeyPoint, AddressFormat.COMPRESSED);
+
+        // Set default fields for non-deterministic generation
         if (!fields) fields = ['mnemonic', 'private_key', 'public_key', 'address'];
+
         if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
     }
+
     return result;
 }
 

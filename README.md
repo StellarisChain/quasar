@@ -1,158 +1,272 @@
-# <img src="src/assets/img/icon-128.png" width="64" align="center"/> Quasar (MV3)
+# <img src="src/assets/img/icon-128.png" width="64" align="center"/> Quasar - Stellaris Wallet Browser Extension
 
 [![Static Badge](https://img.shields.io/badge/telegram-voxacommunications-blue?link=https%3A%2F%2Ft.me%2Fvoxacommunications)](https://t.me/voxacommunications)
-[![npm](https://img.shields.io/npm/v/chrome-extension-boilerplate-react)](https://www.npmjs.com/package/chrome-extension-boilerplate-react)
-[![npm-download](https://img.shields.io/npm/dw/chrome-extension-boilerplate-react)](https://www.npmjs.com/package/chrome-extension-boilerplate-react)
-[![npm](https://img.shields.io/npm/dm/chrome-extension-boilerplate-react)](https://www.npmjs.com/package/chrome-extension-boilerplate-react)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
+[![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-MV3-green)](https://developer.chrome.com/docs/extensions/mv3/)
 
-## Announcements
+A secure, feature-rich browser wallet extension for Stellaris and Stellaris-based blockchain networks. Built with modern web technologies and designed for seamless cryptocurrency management directly in your browser.
 
-- Recently updated from **[React](https://reactjs.org)** ~~17~~ to **18**!
-- **_This boilerplate adopts [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/mv3-overview/)!_**
-  - For V2 users, please check out the [manifest-v2](https://github.com/lxieyang/chrome-extension-boilerplate-react/tree/manifest-v2) branch, or use version [3.x](https://www.npmjs.com/package/chrome-extension-boilerplate-react/v/3.3.0).
-  - Check out the [Manifest V3 Migration Guide](https://developer.chrome.com/docs/extensions/mv3/intro/mv3-migration/).
-- Recently added [devtools](https://developer.chrome.com/docs/extensions/mv3/devtools/) Support! Thanks [GeekaholicLin](https://github.com/lxieyang/chrome-extension-boilerplate-react/issues/17)!
-- Recently updated from **[Webpack Dev Server](https://webpack.js.org/configuration/dev-server/)** ~~3.x~~ to **4.x** and **[Webpack](https://webpack.js.org/)** ~~4~~ to **5**!
-- Recently added [TypeScript](https://www.typescriptlang.org/) Support!
+## What's New
 
-## Features
+- **🔒 Enhanced Security**: Core cryptographic utilities now match the Python stellaris-wallet implementation
+- **🔧 Browser-Compatible**: All wallet verification and cryptographic functions work natively in browsers
+- **⚡ Performance Optimized**: Updated with React 18, Webpack 5, and modern TypeScript
+- **🛡️ Secure Verification**: Two-layer password hashing (PBKDF2 + Scrypt-like), HMAC validation, and timing-safe comparisons
+- **🌐 Node Validation**: Built-in blockchain node validation and connection testing
+- **📱 Modern UI**: Clean, responsive interface with Tailwind CSS and Framer Motion
 
-This is a basic Chrome Extensions boilerplate to help you write modular and modern Javascript code, load CSS easily and [automatic reload the browser on code changes](https://webpack.github.io/docs/webpack-dev-server.html#automatic-refresh).
+## Key Features
 
-This boilerplate is updated with:
+### Wallet Functionality
+- **Multi-Chain Support**: Compatible with Stellaris and Stellaris-based networks
+- **Secure Key Management**: Browser-compatible cryptographic utilities with secure password hashing
+- **Transaction Handling**: Send, receive, and manage cryptocurrency transactions
+- **Asset Management**: Support for multiple tokens and assets
+- **Import/Export**: Wallet backup and recovery capabilities
 
-- [Chrome Extension Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/mv3-overview/)
-- [React 18](https://reactjs.org)
-- [Webpack 5](https://webpack.js.org/)
-- [Webpack Dev Server 4](https://webpack.js.org/configuration/dev-server/)
-- [React Refresh](https://www.npmjs.com/package/react-refresh)
-- [react-refresh-webpack-plugin](https://github.com/pmmmwh/react-refresh-webpack-plugin)
-- [eslint-config-react-app](https://www.npmjs.com/package/eslint-config-react-app)
-- [Prettier](https://prettier.io/)
-- [TypeScript](https://www.typescriptlang.org/)
+### Security Features
+- **Two-Factor Authentication**: TOTP support for enhanced security
+- **Password Verification**: Multi-layer hashing with PBKDF2 and Scrypt-like algorithms
+- **HMAC Validation**: Message authentication for data integrity
+- **Node Validation**: Automatic blockchain node verification and validation
+- **Secure Memory**: Best-effort secure memory cleanup in browser environment
 
-This boilerplate is heavily inspired by and adapted from [https://github.com/samuelsimoes/chrome-extension-webpack-boilerplate](https://github.com/samuelsimoes/chrome-extension-webpack-boilerplate), with additional support for React 18 features, Webpack 5, and Webpack Dev Server 4.
+### Technical Features
+- **Chrome Extension Manifest V3**: Latest extension standards for enhanced security
+- **TypeScript Support**: Full type safety and modern development experience
+- **Hot Reload**: Automatic browser refresh during development
+- **Modular Architecture**: Clean separation of concerns with reusable components
 
-Please open up an issue to nudge me to keep the npm packages up-to-date. FYI, it takes time to make different packages with different versions work together nicely.
+## Technology Stack
 
-## Installing and Running
+- **[Chrome Extension Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/mv3-overview/)** - Latest extension security standards
+- **[React 18](https://reactjs.org)** - Modern UI framework with concurrent features
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development experience
+- **[Webpack 5](https://webpack.js.org/)** - Advanced bundling and optimization
+- **[Webpack Dev Server 4](https://webpack.js.org/configuration/dev-server/)** - Fast development server
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Framer Motion](https://www.framer.com/motion/)** - Production-ready motion library
+- **[Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)** - Browser-native cryptographic operations
 
-### Procedures:
+## Architecture
 
-1. Check if your [Node.js](https://nodejs.org/) version is >= **18**.
-2. Clone this repository.
-3. Change the package's `name`, `description`, and `repository` fields in `package.json`.
-4. Change the name of your extension on `src/manifest.json`.
-5. Run `npm install` to install the dependencies.
-6. Run `npm start`
-7. Load your extension on Chrome following:
-   1. Access `chrome://extensions/`
-   2. Check `Developer mode`
-   3. Click on `Load unpacked extension`
-   4. Select the `build` folder.
-8. Happy hacking.
+### Core Libraries (`src/lib/`)
+- **`verification_utils.ts`** - Password verification, HMAC validation, node connectivity
+- **`cryptographic_utils.ts`** - Encryption, TOTP, proof-of-work algorithms
+- **`data_manipulation_utils.ts`** - Data scrambling, attempt tracking, secure cleanup
+- **`wallet_generation_utils.ts`** - Wallet creation and key derivation
+- **`wallet_client.ts`** - Blockchain interaction and transaction handling
 
-## Structure
+### Browser Compatibility
+All cryptographic operations have been adapted from the Python stellaris-wallet implementation to work natively in browser environments using the Web Crypto API and other browser-standard technologies.
 
-All your extension's code must be placed in the `src` folder.
+## Installation & Development
 
-The boilerplate is already prepared to have a popup, an options page, a background page, and a new tab page (which replaces the new tab page of your browser). But feel free to customize these.
+### Prerequisites:
+- [Node.js](https://nodejs.org/) version >= **18**
+- Chrome or Chromium-based browser
+- Git
 
-## TypeScript
+### Setup Procedures:
 
-This boilerplate now supports TypeScript! The `Options` Page is implemented using TypeScript. Please refer to `src/pages/Options/` for example usages.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/StellarisChain/quasar.git
+   cd quasar
+   ```
 
-## Webpack auto-reload and HRM
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   pnpm install
+   ```
 
-To make your workflow much more efficient this boilerplate uses the [webpack server](https://webpack.github.io/docs/webpack-dev-server.html) to development (started with `npm start`) with auto reload feature that reloads the browser automatically every time that you save some file in your editor.
+3. **Start development server**
+   ```bash
+   npm start
+   ```
 
-You can run the dev mode on other port if you want. Just specify the env var `port` like this:
+4. **Load extension in Chrome**
+   1. Open `chrome://extensions/`
+   2. Enable `Developer mode` (top right toggle)
+   3. Click `Load unpacked extension`
+   4. Select the `build` folder from the project directory
+
+5. **Start developing!**
+   - The extension will auto-reload on code changes
+   - Check the browser console for any errors
+   - Use Chrome DevTools to debug the extension
+
+### Production Build
+
+```bash
+NODE_ENV=production npm run build
+```
+
+The `build` folder will contain the production-ready extension for Chrome Web Store submission.
+
+## Project Structure
 
 ```
-$ PORT=6002 npm run start
+src/
+├── components/          # Reusable React components
+├── pages/              # Extension pages (popup, options, etc.)
+├── lib/                # Core wallet libraries
+│   ├── verification_utils.ts      # Password & node verification
+│   ├── cryptographic_utils.ts     # Encryption & TOTP
+│   ├── data_manipulation_utils.ts # Data handling & security
+│   ├── wallet_generation_utils.ts # Wallet creation
+│   └── wallet_client.ts          # Blockchain interaction
+├── assets/             # Images, icons, static files
+└── manifest.jsonc      # Extension configuration
 ```
 
-## Content Scripts
+The extension is structured as a modern React application with the following entry points:
+- **Popup**: Main wallet interface (`src/pages/Popup/`)
+- **Options**: Settings and configuration (`src/pages/Options/`)
+- **Background**: Service worker for blockchain operations
+- **Content Scripts**: Web page integration (if needed)
 
-Although this boilerplate uses the webpack dev server, it's also prepared to write all your bundles files on the disk at every code change, so you can point, on your extension manifest, to your bundles that you want to use as [content scripts](https://developer.chrome.com/extensions/content_scripts), but you need to exclude these entry points from hot reloading [(why?)](https://github.com/samuelsimoes/chrome-extension-webpack-boilerplate/issues/4#issuecomment-261788690). To do so you need to expose which entry points are content scripts on the `webpack.config.js` using the `chromeExtensionBoilerplate -> notHotReload` config. Look the example below.
+## Security Features
 
-Let's say that you want use the `myContentScript` entry point as content script, so on your `webpack.config.js` you will configure the entry point and exclude it from hot reloading, like this:
+### Cryptographic Implementation
+The wallet implements industry-standard security practices:
+
+- **Password Hashing**: Two-layer approach using PBKDF2 (100,000 iterations) + Scrypt-like algorithm
+- **HMAC Validation**: Message authentication for data integrity verification
+- **Timing-Safe Comparisons**: Protection against timing attacks
+- **Secure Memory Management**: Best-effort cleanup of sensitive data in browser environment
+
+### Node Validation
+- Automatic verification of blockchain nodes
+- Block hash comparison with trusted reference nodes
+- Connection testing with fallback protocols
+- Protection against malicious or compromised nodes
+
+## Development
+
+### Hot Reload & Auto-refresh
+The development server automatically reloads the extension when you save changes, making development fast and efficient.
+
+**Custom Port:**
+```bash
+PORT=6002 npm run start
+```
+
+### TypeScript Support
+Full TypeScript support with type checking and IntelliSense. All wallet libraries are written in TypeScript for better code quality and developer experience.
+
+### Debugging
+- Use Chrome DevTools to debug extension pages
+- Background script logs appear in the extension's service worker console
+- React DevTools work normally for component debugging
+
+### Code Quality
+- **ESLint**: Configured with `eslint-config-react-app`
+- **Prettier**: Automatic code formatting
+- **TypeScript**: Compile-time type checking
+
+## Advanced Configuration
+
+### Content Scripts
+If you need to inject scripts into web pages, configure them in `webpack.config.js`:
 
 ```js
 {
-  …
   entry: {
     myContentScript: "./src/js/myContentScript.js"
   },
   chromeExtensionBoilerplate: {
-    notHotReload: ["myContentScript"]
+    notHotReload: ["myContentScript"]  // Exclude from hot reload
   }
-  …
 }
 ```
 
-and on your `src/manifest.json`:
-
+And reference in `src/manifest.jsonc`:
 ```json
 {
   "content_scripts": [
     {
-      "matches": ["https://www.google.com/*"],
+      "matches": ["https://example.com/*"],
       "js": ["myContentScript.bundle.js"]
     }
   ]
 }
 ```
 
-## Intelligent Code Completion
+### Environment Variables & Secrets
+For API keys and environment-specific configuration:
 
-Thanks to [@hudidit](https://github.com/lxieyang/chrome-extension-boilerplate-react/issues/4)'s kind suggestions, this boilerplate supports chrome-specific intelligent code completion using [@types/chrome](https://www.npmjs.com/package/@types/chrome).
-
-## Packing
-
-After the development of your extension run the command
-
-```
-$ NODE_ENV=production npm run build
-```
-
-Now, the content of `build` folder will be the extension ready to be submitted to the Chrome Web Store. Just take a look at the [official guide](https://developer.chrome.com/webstore/publish) to more infos about publishing.
-
-## Secrets
-
-If you are developing an extension that talks with some API you probably are using different keys for testing and production. Is a good practice you not commit your secret keys and expose to anyone that have access to the repository.
-
-To this task this boilerplate import the file `./secrets.<THE-NODE_ENV>.js` on your modules through the module named as `secrets`, so you can do things like this:
-
-_./secrets.development.js_
-
+**Development:** `./secrets.development.js`
 ```js
-export default { key: '123' };
+export default { 
+  apiKey: 'dev-key-123',
+  nodeUrl: 'https://test-node.stellaris.dev'
+};
 ```
 
-_./src/popup.js_
-
+**Usage in code:**
 ```js
 import secrets from 'secrets';
-ApiCall({ key: secrets.key });
+console.log(secrets.apiKey);
 ```
 
-:point_right: The files with name `secrets.*.js` already are ignored on the repository.
+> **Note:** Files matching `secrets.*.js` are automatically ignored by git.
 
-## Resources:
+## Contributing
 
-- [Webpack documentation](https://webpack.js.org/concepts/)
-- [Chrome Extension documentation](https://developer.chrome.com/extensions/getstarted)
+We welcome contributions to Quasar! Please follow these guidelines:
 
-## Images:
+1. **Fork the repository** and create a feature branch
+2. **Follow TypeScript conventions** and maintain type safety
+3. **Test your changes** thoroughly in both development and production builds
+4. **Update documentation** if you're adding new features
+5. **Submit a pull request** with a clear description of changes
 
+### Development Guidelines
+- Use TypeScript for all new code
+- Follow the existing code style and formatting
+- Ensure browser compatibility for all cryptographic operations
+- Test wallet functionality with multiple blockchain networks
+- Maintain security best practices
 
-<div style="display: flex; gap: 16px; align-items: flex-start;">
-  <img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/screenshot2.png?raw=true" style="border-radius: 8px; max-width: 48%; height: auto;">
-  <img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/create.png?raw=true" style="border-radius: 8px; max-width: 48%; height: auto;">
+## Resources & Documentation
+
+- **[Stellaris Blockchain](https://stellaris.dev)** - Official Stellaris network documentation
+- **[Chrome Extension Development](https://developer.chrome.com/docs/extensions/)** - Official Chrome extension guides
+- **[Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)** - Browser cryptography documentation
+- **[Webpack Documentation](https://webpack.js.org/concepts/)** - Build system configuration
+- **[React 18 Documentation](https://react.dev/)** - UI framework documentation
+
+## Support & Community
+
+- **Telegram**: [VoxaCommunications](https://t.me/voxacommunications)
+- **GitHub Issues**: Report bugs and request features
+- **Discussions**: Join community discussions on GitHub
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Screenshots
+
+<div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+  <img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/screenshot2.png?raw=true" alt="Quasar Wallet Interface" style="border-radius: 8px; max-width: 48%; height: auto; min-width: 300px;">
+  <img src="https://github.com/StellarisChain/quasar/blob/master/docs/images/create.png?raw=true" alt="Wallet Creation Flow" style="border-radius: 8px; max-width: 48%; height: auto; min-width: 300px;">
 </div>
+
+*Quasar provides a clean, intuitive interface for managing your Stellaris assets directly in your browser.*
 
 ---
 
-Connor W | [Website](https://connor33341.dev)
-Michael Xieyang Liu | [Website](https://lxieyang.github.io)
+## Acknowledgments
+
+This project builds upon the excellent work of the Chrome extension boilerplate community and integrates seamlessly with the Stellaris blockchain ecosystem. Special thanks to:
+
+- **Michael Xieyang Liu** - Original Chrome extension boilerplate ([Website](https://lxieyang.github.io))
+- **Stellaris Development Team** - Blockchain protocol and Python wallet implementation
+- **Open Source Community** - Various cryptographic and web3 libraries
+
+**Developed by Connor W** | [Website](https://connor33341.dev) | [Stellaris Chain](https://stellaris.dev)
