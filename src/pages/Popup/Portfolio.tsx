@@ -12,7 +12,7 @@ import { getStoredWallets, saveWallets } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
 import { SendModal } from '../../components/SendModal';
-import { loadTokensXmlAsJson, Chain as TokenFromXML } from '../../lib/token_loader';
+import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
 import './Popup.css';
 
@@ -126,19 +126,37 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 }
                 // Update wallets with price info
                 const updatedWallets = await Promise.all(wallets.map(async wallet => {
+                    const tokenFromXMLData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
                     const chains = await Promise.all(
                         (wallet.chains ?? []).map(async chain => {
                             const chainPrice = priceData[chain.symbol]?.price ?? 0;
                             const chainChange = priceData[chain.symbol]?.change24h ?? 0;
-                            const tokenData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
+                            const tokenData: TokenFromXML = tokenFromXMLData.find(token => token.Symbol === chain.symbol) || {
+                                Name: 'Fallback',
+                                Symbol: chain.symbol,
+                                Color: '',
+                                TokenSupport: false,
+                                Node: 'ur fucked',
+                                // Add any other required properties with default values
+                            };
+                            const subTokens: SubToken[] = tokenData.SubTokens || [];
+
+                            // Map subTokens to Token format
+                            chain.tokens = subTokens.map(subToken => ({
+                                symbol: subToken.Symbol,
+                                name: subToken.Name,
+                                balance: '0.00', // Default balance
+                                price: 0,
+                                change24h: 0 // Default change
+                            }));
 
                             // Cosmetic
-                            chain.color = tokenData.find(token => token.Symbol === chain.symbol)?.Color || '';
+                            chain.color = tokenData.Color || '';
 
                             // Load Balance
                             const [balance] = await getBalanceInfo(
                                 selectedWallet?.address || '',
-                                tokenData.find(token => token.Symbol === chain.symbol)?.Node || ''
+                                tokenData.Node || ''
                             );
                             chain.balance = (balance !== null && balance !== undefined) ? balance.toString() : '0.00'; // Ensure balance is a string
 
