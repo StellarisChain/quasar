@@ -7,8 +7,15 @@ export interface Chain {
     Color: string;
     Node: string;
     TokenSupport?: boolean; // Optional, for compatibility with existing data
+    SubTokens?: SubToken[]; // Optional, for contract tokens
 }
 
+// contract tokens
+export interface SubToken {
+    Symbol: string;
+    Name: string;
+    Color: string;
+}
 
 /**
  * Loads and parses the tokens.xml file from the public/static assets folder.
@@ -28,6 +35,11 @@ export async function loadTokensXmlAsJson(url: string = 'tokens.xml'): Promise<C
         Color: tokenEl.getElementsByTagName('Color')[0]?.textContent || '',
         Node: tokenEl.getElementsByTagName('Node')[0]?.textContent || '',
         TokenSupport: tokenEl.getElementsByTagName('TokenSupport')[0]?.textContent === 'true',
+        SubTokens: Array.from(tokenEl.getElementsByTagName('SubToken')).map(subTokenEl => ({
+            Symbol: subTokenEl.getElementsByTagName('Symbol')[0]?.textContent || '',
+            Name: subTokenEl.getElementsByTagName('Name')[0]?.textContent || '',
+            Color: subTokenEl.getElementsByTagName('Color')[0]?.textContent || ''
+        }))
     }));
 
     return tokens;

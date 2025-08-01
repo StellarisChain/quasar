@@ -1,6 +1,25 @@
 <!-- For Stellaris/Denaro API Compatable Tokens -->
 <Tokens>
     <Token>
+        <Name>Halogen</Name>
+        <Symbol>HAL</Symbol>
+        <Color>#ff4545ff</Color>
+        <Node>https://halogen-node.connor33341.dev</Node>
+        <TokenSupport>true</TokenSupport>
+        <SubTokens>
+            <SubToken>
+                <Symbol>ARG</Symbol>
+                <Name>Argentum</Name>
+                <Color>#c0c0c0</Color>
+            </SubToken>
+            <SubToken>
+                <Symbol>AST</Symbol>
+                <Name>Astatine</Name>
+                <Color>#ffcc00</Color>
+            </SubToken>
+        </SubTokens>
+    </Token>
+    <Token>
         <Name>Stellaris</Name>
         <Symbol>STE</Symbol>
         <Color>#9945FF</Color>

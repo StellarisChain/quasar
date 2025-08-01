@@ -9,13 +9,13 @@
 export { Verification } from './verification_utils';
 
 // Cryptographic utilities
-export { 
-    ProofOfWork, 
-    TOTP, 
-    EncryptDecryptUtils, 
+export {
+    ProofOfWork,
+    TOTP,
+    EncryptDecryptUtils,
     CryptoUtils,
     FAILED_ATTEMPTS,
-    MAX_ATTEMPTS 
+    MAX_ATTEMPTS
 } from './cryptographic_utils';
 
 // Data manipulation utilities

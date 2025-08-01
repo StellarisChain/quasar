@@ -28,7 +28,7 @@ export class Verification {
             pwKey,
             256
         );
-        
+
         // Second layer of hashing using Scrypt (N=2^14, r=8, p=1, key_len=32)
         // Note: This requires a scrypt implementation for browsers
         // For now, we'll use a simplified approach with another PBKDF2 round
@@ -40,7 +40,7 @@ export class Verification {
             false,
             ['deriveBits']
         );
-        
+
         const result = await window.crypto.subtle.deriveBits(
             {
                 name: 'PBKDF2',
@@ -51,7 +51,7 @@ export class Verification {
             scryptKey,
             256
         );
-        
+
         // dataManipulationUtil.DataManipulation.secureDelete([password, salt]);
         return result;
     }
@@ -64,7 +64,7 @@ export class Verification {
         const verifier = await Verification.hashPassword(providedPassword, salt);
         // Securely compare the generated hash with the stored hash
         const isVerified = Verification.timingSafeEqual(new Uint8Array(verifier), new Uint8Array(storedPasswordHash));
-        
+
         // Nullify verifier if not verified (matching Python behavior)
         const resultVerifier = isVerified ? verifier : null;
         const result: [boolean, ArrayBuffer | null] = [isVerified, resultVerifier];
@@ -93,7 +93,7 @@ export class Verification {
             ['deriveKey']
         );
         const saltBytes = typeof hmacSalt === 'string' ? enc.encode(hmacSalt) : hmacSalt;
-        
+
         // Using PBKDF2 to approximate scrypt behavior
         const hmacKey = await window.crypto.subtle.deriveKey(
             {
@@ -107,10 +107,10 @@ export class Verification {
             false,
             ['sign', 'verify']
         );
-        
+
         // Generate HMAC of the message
         const computedHmac = await window.crypto.subtle.sign('HMAC', hmacKey, hmacMsg);
-        
+
         // If in verify mode, securely compare the computed HMAC with the stored HMAC
         if (verify && storedHmac) {
             const result = Verification.timingSafeEqual(new Uint8Array(computedHmac), new Uint8Array(storedHmac));
@@ -129,7 +129,7 @@ export class Verification {
         // Decode base64 to ArrayBuffer (matching Python implementation)
         const storedVerifier = Verification.base64ToArrayBuffer(data.wallet_data.verifier);
         const [passwordVerified] = await Verification.verifyPassword(storedVerifier, password, verificationSalt);
-        
+
         // Prepare and verify the HMAC message (matching Python logic exactly)
         let hmacMsg = new TextEncoder().encode(JSON.stringify(data.wallet_data.entry_data.entries));
         if (data.wallet_data.entry_data.imported_entries) {
@@ -140,10 +140,10 @@ export class Verification {
             const keyData = new TextEncoder().encode(JSON.stringify(data.wallet_data.entry_data.key_data));
             hmacMsg = Verification.concatUint8Arrays(hmacMsg, keyData);
         }
-        
+
         const storedHmac = Verification.base64ToArrayBuffer(data.wallet_data.hmac);
         const hmacVerified = await Verification.hmacUtil({ password, hmacSalt, storedHmac, hmacMsg, verify: true }) as boolean;
-        
+
         // dataManipulationUtil.DataManipulation.secureDelete([...]);
         return [passwordVerified, hmacVerified, storedVerifier];
     }
@@ -161,7 +161,7 @@ export class Verification {
         // } else {
         //     return ['', false];
         // }
-        
+
         // For now, return empty values - this should be implemented when cryptographic utilities are ready
         console.warn('TOTP secret verification not yet implemented in browser version');
         return ['', false];
@@ -175,7 +175,7 @@ export class Verification {
         // This would require a TOTP library that works in browsers
         // const totp = new TOTP(secret);
         // return totp.verify(code);
-        
+
         console.warn('TOTP code validation not yet implemented in browser version');
         return false;
     }
@@ -254,7 +254,7 @@ export class Verification {
         // Attempt connection
         if (checkConnection) {
             const [success, validNode, resultMsg] = await Verification.tryRequest(nodeAddress, chosenProtocol, nodeValidation, fromGui);
-            
+
             if (success) {
                 const returnMsg = fromGui ? "Successfully established connection with node." : `Successfully established connection with valid node at: ${validNode}`;
                 if (!fromGui) {
@@ -276,34 +276,34 @@ export class Verification {
         const mainNodeUrl = 'stellaris-node.connor33341.dev';
         const protocols = ['https://', 'http://'];
         let protocolsToTry: string[];
-        
+
         // Check if the address already includes a protocol
         if (/^https?:\/\//.test(address)) {
             protocolsToTry = [''];
         } else {
             protocolsToTry = chosenProtocol === 2 ? protocols : [protocols[chosenProtocol], protocols[1 - chosenProtocol]];
         }
-        
+
         for (let index = 0; index < protocolsToTry.length; index++) {
             const protocol = protocolsToTry[index];
             const fullAddress = protocol + address;
-            
+
             // Skip validation if connecting to main node
             const currentNodeValidation = fullAddress.replace('https://', '').replace('http://', '') === mainNodeUrl ? false : nodeValidation;
-            
+
             try {
                 if (currentNodeValidation) {
                     // Get the last block number from the main node
-                    const mainResponse = await fetch(`https://${mainNodeUrl}/get_mining_info`, { 
-                        signal: AbortSignal.timeout(5000) 
+                    const mainResponse = await fetch(`https://${mainNodeUrl}/get_mining_info`, {
+                        signal: AbortSignal.timeout(5000)
                     });
-                    
+
                     if (!mainResponse.ok) continue;
-                    
+
                     const mainData = await mainResponse.json();
                     const lastBlockInfo = mainData?.result?.last_block;
                     const lastBlockNumber = lastBlockInfo?.id;
-                    
+
                     if (lastBlockNumber == null) {
                         const returnMsg = "Node validation failed.";
                         if (!fromGui) {
@@ -311,21 +311,21 @@ export class Verification {
                         }
                         continue;
                     }
-                    
+
                     // Generate a random block number
                     const randomBlockId = Math.floor(Math.random() * lastBlockNumber);
-                    
+
                     // Get the block hash from the main node
-                    const mainBlockResponse = await fetch(`https://${mainNodeUrl}/get_block?block=${randomBlockId}`, { 
-                        signal: AbortSignal.timeout(5000) 
+                    const mainBlockResponse = await fetch(`https://${mainNodeUrl}/get_block?block=${randomBlockId}`, {
+                        signal: AbortSignal.timeout(5000)
                     });
-                    
+
                     if (!mainBlockResponse.ok) continue;
-                    
+
                     const mainBlockData = await mainBlockResponse.json();
                     const mainNodeBlockInfo = mainBlockData?.result?.block;
                     const mainNodeBlockHash = mainNodeBlockInfo?.hash;
-                    
+
                     if (mainNodeBlockHash == null) {
                         const returnMsg = "Node validation failed.";
                         if (!fromGui) {
@@ -333,18 +333,18 @@ export class Verification {
                         }
                         continue;
                     }
-                    
+
                     // Get the block hash from the user-specified node
-                    const userBlockResponse = await fetch(`${fullAddress}/get_block?block=${randomBlockId}`, { 
-                        signal: AbortSignal.timeout(5000) 
+                    const userBlockResponse = await fetch(`${fullAddress}/get_block?block=${randomBlockId}`, {
+                        signal: AbortSignal.timeout(5000)
                     });
-                    
+
                     if (!userBlockResponse.ok) continue;
-                    
+
                     const userBlockData = await userBlockResponse.json();
                     const userNodeBlockInfo = userBlockData?.result?.block;
                     const userNodeBlockHash = userNodeBlockInfo?.hash;
-                    
+
                     if (userNodeBlockHash == null) {
                         const returnMsg = "Node validation failed.";
                         if (!fromGui) {
@@ -352,7 +352,7 @@ export class Verification {
                         }
                         continue;
                     }
-                    
+
                     // Compare the block hashes
                     if (mainNodeBlockHash === userNodeBlockHash) {
                         return [true, fullAddress, ""];
@@ -364,12 +364,12 @@ export class Verification {
                         continue;
                     }
                 } else {
-                    const mainResponse = await fetch(`${fullAddress}/get_mining_info`, { 
-                        signal: AbortSignal.timeout(5000) 
+                    const mainResponse = await fetch(`${fullAddress}/get_mining_info`, {
+                        signal: AbortSignal.timeout(5000)
                     });
-                    
+
                     if (!mainResponse.ok) continue;
-                    
+
                     const mainData = await mainResponse.json();
                     if (!mainData?.ok) {
                         continue;
@@ -377,7 +377,7 @@ export class Verification {
                         return [true, fullAddress, ""];
                     }
                 }
-                
+
             } catch (e) {
                 let returnMsg: string;
                 if (index < protocolsToTry.length - 1) {
@@ -395,7 +395,7 @@ export class Verification {
                 continue;
             }
         }
-        
+
         return [null, false, "ERROR: Connection to node failed."];
     }
     // Utility: timing-safe comparison for Uint8Array

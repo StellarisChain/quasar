@@ -15,23 +15,23 @@ export class ProofOfWork {
     static async generateProof(challenge: Uint8Array): Promise<number> {
         let proof = 0;
         const target = "1".repeat(DIFFICULTY);
-        
+
         while (true) {
             const input = new Uint8Array(challenge.length + proof.toString().length);
             input.set(challenge, 0);
             input.set(new TextEncoder().encode(proof.toString()), challenge.length);
-            
+
             const hash = await crypto.subtle.digest('SHA-256', input);
             const hashHex = Array.from(new Uint8Array(hash))
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('');
-            
+
             if (hashHex.startsWith(target)) {
                 break;
             }
             proof++;
         }
-        
+
         return proof;
     }
 
@@ -39,12 +39,12 @@ export class ProofOfWork {
         const input = new Uint8Array(challenge.length + proof.toString().length);
         input.set(challenge, 0);
         input.set(new TextEncoder().encode(proof.toString()), challenge.length);
-        
+
         const hash = await crypto.subtle.digest('SHA-256', input);
         const hashHex = Array.from(new Uint8Array(hash))
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
-        
+
         return hashHex.startsWith("1".repeat(DIFFICULTY));
     }
 }
@@ -84,7 +84,7 @@ export class EncryptDecryptUtils {
     /**
      * Handles encryption and decryption tasks using Web Crypto API.
      */
-    
+
     static async aesGcmEncrypt(data: Uint8Array, key: CryptoKey, nonce: Uint8Array): Promise<[Uint8Array, Uint8Array]> {
         // Set the nonce as IV for AES-GCM
         const encrypted = await crypto.subtle.encrypt(
@@ -92,12 +92,12 @@ export class EncryptDecryptUtils {
             key,
             data
         );
-        
+
         // AES-GCM returns ciphertext + tag combined
         const encryptedArray = new Uint8Array(encrypted);
         const ciphertext = encryptedArray.slice(0, -16); // Last 16 bytes are the tag
         const tag = encryptedArray.slice(-16);
-        
+
         return [ciphertext, tag];
     }
 
@@ -106,13 +106,13 @@ export class EncryptDecryptUtils {
         const combined = new Uint8Array(ciphertext.length + tag.length);
         combined.set(ciphertext, 0);
         combined.set(tag, ciphertext.length);
-        
+
         const decrypted = await crypto.subtle.decrypt(
             { name: 'AES-GCM', iv: nonce },
             key,
             combined
         );
-        
+
         return new Uint8Array(decrypted);
     }
 
