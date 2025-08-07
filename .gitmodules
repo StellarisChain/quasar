@@ -1,0 +1,3 @@
+[submodule "stellaris-wallet"]
+	path = stellaris-wallet
+	url = https://github.com/StellarisChain/stellaris-wallet.git
