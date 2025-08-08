@@ -1,6 +1,6 @@
 {
   "name": "quasar",
-  "version": "5.0.4",
+  "version": "5.0.5",
   "description": "Browser Wallet for Stellaris and Stellaris based chains",
   "license": "MIT",
   "repository": {
@@ -23,9 +23,14 @@
     "dist:chrome": "npm run esbuild:chrome && npm run package:chrome:esbuild",
     "dist:firefox": "npm run esbuild:firefox && npm run package:firefox:esbuild",
     "dist:all": "npm run dist:chrome && npm run dist:firefox",
+    "test:workflow": "scripts/test-workflow.sh",
     "start": "node utils/webserver.js",
     "tests": "node tests/cli.js",
-    "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
+    "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major",
+    "version:auto": "npm version patch --no-git-tag-version"
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",

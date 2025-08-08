@@ -1,0 +1,121 @@
+name: CI - Build and Validate
+
+on:
+  # Run on pull requests
+  pull_request:
+    branches: [ master, dev ]
+  
+  # Run on pushes to dev branch (but not master to avoid duplicate runs)
+  push:
+    branches: [ dev ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+
+jobs:
+  build-validate:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build Chrome extension
+        run: pnpm run esbuild:chrome
+        env:
+          NODE_ENV: production
+      
+      - name: Build Firefox extension
+        run: pnpm run esbuild:firefox
+        env:
+          NODE_ENV: production
+      
+      - name: Verify builds
+        run: |
+          echo "Checking build outputs..."
+          
+          # Check Chrome build
+          if [ ! -f "build/chrome/manifest.json" ]; then
+            echo "❌ Chrome manifest.json not found"
+            exit 1
+          fi
+          
+          if [ ! -f "build/chrome/background.bundle.js" ]; then
+            echo "❌ Chrome background script not found"
+            exit 1
+          fi
+          
+          if [ ! -f "build/chrome/popup.html" ]; then
+            echo "❌ Chrome popup.html not found"
+            exit 1
+          fi
+          
+          # Check Firefox build
+          if [ ! -f "build/firefox/manifest.json" ]; then
+            echo "❌ Firefox manifest.json not found"
+            exit 1
+          fi
+          
+          if [ ! -f "build/firefox/background.bundle.js" ]; then
+            echo "❌ Firefox background script not found"
+            exit 1
+          fi
+          
+          if [ ! -f "build/firefox/popup.html" ]; then
+            echo "❌ Firefox popup.html not found"
+            exit 1
+          fi
+          
+          # Verify manifest versions
+          CHROME_MV=$(node -p "JSON.parse(require('fs').readFileSync('build/chrome/manifest.json', 'utf8')).manifest_version")
+          FIREFOX_MV=$(node -p "JSON.parse(require('fs').readFileSync('build/firefox/manifest.json', 'utf8')).manifest_version")
+          
+          if [ "$CHROME_MV" != "3" ]; then
+            echo "❌ Chrome should use Manifest V3, got V$CHROME_MV"
+            exit 1
+          fi
+          
+          if [ "$FIREFOX_MV" != "2" ]; then
+            echo "❌ Firefox should use Manifest V2, got V$FIREFOX_MV"
+            exit 1
+          fi
+          
+          echo "✅ All builds verified successfully"
+          echo "✅ Chrome: Manifest V$CHROME_MV"
+          echo "✅ Firefox: Manifest V$FIREFOX_MV"
+      
+      - name: Upload Chrome build artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == 18  # Only upload once
+        with:
+          name: chrome-build-${{ github.sha }}
+          path: build/chrome/
+          retention-days: 7
+      
+      - name: Upload Firefox build artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.node-version == 18  # Only upload once
+        with:
+          name: firefox-build-${{ github.sha }}
+          path: build/firefox/
+          retention-days: 7
