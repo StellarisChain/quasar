@@ -8,9 +8,10 @@ export class ManifestJsoncPlugin {
         this.input = options.input || 'src/manifest.jsonc';
         this.output = options.output || 'build/manifest.json';
         this.packageJson = options.packageJson || 'package.json';
+        this.browser = options.browser || 'chrome'; // 'chrome' or 'firefox'
     }
 
-    parse(){
+    parse() {
         let manifestContent = fs.readFileSync(this.inputPath, 'utf8');
         manifestContent = stripJsonComments(manifestContent);
         let manifest = JSON.parse(manifestContent);
@@ -20,6 +21,24 @@ export class ManifestJsoncPlugin {
             const pkg = JSON.parse(fs.readFileSync(this.pkgPath, 'utf8'));
             manifest.description = pkg.description || manifest.description;
             manifest.version = pkg.version || manifest.version;
+        }
+
+        // Browser-specific adjustments
+        if (this.browser === 'firefox') {
+            // Firefox-specific manifest adjustments
+            manifest.applications = {
+                gecko: {
+                    id: "quasar@stellarischain.org",
+                    strict_min_version: "91.0"
+                }
+            };
+
+            // Convert Chrome APIs to Firefox equivalents if needed
+            if (manifest.host_permissions) {
+                manifest.permissions = manifest.permissions || [];
+                manifest.permissions = manifest.permissions.concat(manifest.host_permissions);
+                delete manifest.host_permissions;
+            }
         }
 
         this.json = JSON.stringify(manifest, null, 2);

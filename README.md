@@ -99,6 +99,136 @@ All cryptographic operations have been adapted from the Python stellaris-wallet 
    - Check the browser console for any errors
    - Use Chrome DevTools to debug the extension
 
+## Browser-Specific Builds
+
+Quasar supports both **Chrome** and **Firefox** with browser-specific optimizations and manifest versions.
+
+### Quick Start
+
+#### Chrome (Manifest V3)
+```bash
+# Using esbuild (faster)
+npm run dist:chrome
+
+# Using webpack (more features)
+npm run build:chrome && npm run package:chrome
+```
+
+#### Firefox (Manifest V2)
+```bash
+# Using esbuild (faster)
+npm run dist:firefox
+
+# Using webpack (more features)
+npm run build:firefox && npm run package:firefox
+```
+
+#### Both Browsers
+```bash
+# Build for all browsers using esbuild
+npm run esbuild:all
+
+# Create distribution packages for all browsers
+npm run dist:all
+```
+
+### Available Build Scripts
+
+#### ESBuild (Recommended for speed)
+- `npm run esbuild:chrome` - Build for Chrome using esbuild
+- `npm run esbuild:firefox` - Build for Firefox using esbuild
+- `npm run esbuild:all` - Build for both browsers using esbuild
+
+#### Webpack (Advanced features)
+- `npm run build:chrome` - Build for Chrome using webpack
+- `npm run build:firefox` - Build for Firefox using webpack
+- `npm run build:all` - Build for both browsers using webpack
+
+#### Distribution Packages
+- `npm run dist:chrome` - Build and package for Chrome
+- `npm run dist:firefox` - Build and package for Firefox
+- `npm run dist:all` - Build and package for both browsers
+
+### Browser Differences
+
+#### Chrome (Manifest V3)
+- **Service Worker**: Uses background service worker
+- **API**: Uses `chrome.action` API
+- **Permissions**: Uses `scripting` permission for content injection
+- **Security**: Enhanced security with stricter CSP
+
+#### Firefox (Manifest V2)
+- **Background Scripts**: Uses persistent background scripts
+- **API**: Uses `browser.browserAction` API
+- **Permissions**: Uses `<all_urls>` for content access
+- **Compatibility**: Uses webextension-polyfill for cross-browser compatibility
+
+### Output Structure
+
+After building, you'll find browser-specific builds in:
+```
+build/
+├── chrome/          # Chrome-optimized build (Manifest V3)
+│   ├── manifest.json
+│   ├── background.bundle.js
+│   ├── popup.html
+│   └── ...
+└── firefox/         # Firefox-optimized build (Manifest V2)
+    ├── manifest.json
+    ├── background.bundle.js
+    ├── popup.html
+    └── ...
+```
+
+Distribution packages are created in:
+```
+zip/
+├── quasar-chrome-5.0.4.zip   # Ready for Chrome Web Store
+└── quasar-firefox-5.0.4.zip  # Ready for Firefox Add-ons
+```
+
+### Loading in Different Browsers
+
+#### Chrome
+1. Open `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select the `build/chrome` folder
+
+#### Firefox
+1. Open `about:debugging`
+2. Click "This Firefox"
+3. Click "Load Temporary Add-on"
+4. Select any file in the `build/firefox` folder
+
+#### Edge
+1. Open `edge://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select the `build/chrome` folder (Edge supports Chrome extensions)
+
+### Development Tips
+
+1. **Use esbuild for development** - It's significantly faster than webpack
+2. **Test on both browsers** - Use `npm run esbuild:all` during development
+3. **Check manifests** - Ensure browser-specific features are working correctly
+4. **Use the browser compatibility layer** - Import from `src/lib/browser-compat.ts` for cross-browser APIs
+
+### Browser Compatibility Features
+
+The extension includes a comprehensive browser compatibility layer:
+
+```typescript
+import { browserAPI, getBrowserType } from 'src/lib/browser-compat';
+
+// Detect browser type
+const browser = getBrowserType(); // 'chrome', 'firefox', 'edge', or 'unknown'
+
+// Use unified APIs
+await browserAPI.storage.local.set({ key: 'value' });
+const tabs = await browserAPI.tabs.query({ active: true });
+```
+
 ### Production Build
 
 ```bash

@@ -37,6 +37,7 @@ if (fileSystem.existsSync(secretsPath)) {
 }
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
+const targetBrowser = process.env.TARGET_BROWSER || 'chrome';
 
 var options = {
   mode: process.env.NODE_ENV || 'development',
@@ -146,11 +147,12 @@ var options = {
     new CleanWebpackPlugin({ verbose: false }),
     new webpack.ProgressPlugin(),
     // expose and write the allowed env vars on the compiled bundle
-    new webpack.EnvironmentPlugin(['NODE_ENV']),
+    new webpack.EnvironmentPlugin(['NODE_ENV', 'TARGET_BROWSER']),
     new ManifestJsoncPlugin.ManifestJsoncPlugin({
-      input: 'src/manifest.jsonc',
+      input: process.env.TARGET_BROWSER ? `src/manifest-${process.env.TARGET_BROWSER}.jsonc` : 'src/manifest.jsonc',
       output: 'build/manifest.json',
       packageJson: 'package.json',
+      browser: process.env.TARGET_BROWSER || 'chrome',
     }),
     new CopyWebpackPlugin({
       patterns: [

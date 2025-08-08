@@ -1,0 +1,31 @@
+{
+    "manifest_version": 2,
+    "name": "quasar",
+    "description": "Browser Wallet for Stellaris and Stellaris based chains",
+    "options_page": "options.html",
+    "background": {
+        "scripts": [
+            "background.bundle.js"
+        ],
+        "persistent": false
+    },
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "storage",
+        "<all_urls>"
+    ],
+    "browser_action": {
+        "default_popup": "popup.html",
+        "default_icon": "icon-34.png"
+    },
+    "icons": {
+        "128": "icon-128.png"
+    },
+    "devtools_page": "devtools.html",
+    "web_accessible_resources": [
+        "content.styles.css",
+        "icon-128.png",
+        "icon-34.png"
+    ]
+}
