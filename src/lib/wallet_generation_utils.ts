@@ -260,7 +260,7 @@ export function generate({
         if (!fields) fields = ['mnemonic', 'id', 'private_key', 'public_key', 'address'];
 
         if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
-        if (fields.includes('id')) result.id = index;
+        if (fields.includes('id')) result.id = `${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
@@ -278,6 +278,7 @@ export function generate({
         if (!fields) fields = ['mnemonic', 'private_key', 'public_key', 'address'];
 
         if (fields.includes('mnemonic')) result.mnemonic = localMnemonic;
+        if (fields.includes('id')) result.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;

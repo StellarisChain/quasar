@@ -38,7 +38,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
             // Only select the first entry
             const selectedWallet = walletData.wallet_data.entry_data.entries[0];
             const wallet: Wallet = {
-                id: selectedWallet.id,
+                id: selectedWallet.id || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name: "Imported Wallet", // Default name
                 address: selectedWallet.address,
                 public_key: selectedWallet.public_key,
