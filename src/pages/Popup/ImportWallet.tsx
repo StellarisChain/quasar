@@ -34,7 +34,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
 
 
             const walletData: JsonWallet = walletJson as JsonWallet;
-            
+
             // Only select the first entry
             const selectedWallet = walletData.wallet_data.entry_data.entries[0];
             const wallet: Wallet = {
@@ -144,7 +144,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                     <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'white', margin: '0 0 16px' }}>
                         Wallet Details
                     </h3>
-                    
+
                     {!walletData ? (
                         <div style={{ textAlign: 'center', padding: '32px 0' }}>
                             <div style={{
@@ -190,23 +190,23 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                 <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
                                     Name
                                 </label>
-                                <input 
-                                type="text"
-                                value={walletData.name || 'Unnamed Wallet'}
-                                onChange={(e) => {
-                                    const wallet = { ...walletData, name: e.target.value };
-                                    setWalletData(wallet);
-                                }}
-                                style={{
-                                    background: '#111827',
-                                    border: '1px solid #374151',
-                                    borderRadius: '8px',
-                                    padding: '12px',
-                                    color: 'white',
-                                    fontSize: '14px'
-                                }}/>
+                                <input
+                                    type="text"
+                                    value={walletData.name || 'Unnamed Wallet'}
+                                    onChange={(e) => {
+                                        const wallet = { ...walletData, name: e.target.value };
+                                        setWalletData(wallet);
+                                    }}
+                                    style={{
+                                        background: '#111827',
+                                        border: '1px solid #374151',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        color: 'white',
+                                        fontSize: '14px'
+                                    }} />
                             </div>
-                            
+
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
                                     Address
@@ -224,7 +224,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                     {walletData.address}
                                 </div>
                             </div>
-                            
+
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
                                     Public Key
@@ -345,7 +345,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                             <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 20px' }}>
                                 Choose a .json wallet file to import
                             </p>
-                            
+
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -362,7 +362,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                     marginBottom: '16px'
                                 }}
                             />
-                            
+
                             {error && (
                                 <div style={{
                                     background: '#7f1d1d',
@@ -376,7 +376,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                     {error}
                                 </div>
                             )}
-                            
+
                             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                                 <button
                                     onClick={handleDialogClose}
@@ -396,7 +396,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                     Cancel
                                 </button>
                             </div>
-                            
+
                             {loading && (
                                 <div style={{ textAlign: 'center', marginTop: '16px' }}>
                                     <div style={{

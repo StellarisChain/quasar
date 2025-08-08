@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { ManifestJsoncPlugin } = require('./manifest-jsonc-plugin');
 const progress = require('esbuild-plugin-progress');
+const packageJson = require('../package.json');
 
 // Get browser target from command line arguments
 const args = process.argv.slice(2);
@@ -34,6 +35,11 @@ function copyAssets(src, dest) {
 function injectScriptToHtml(srcHtml, destHtml, scriptName, cssName) {
     if (!fs.existsSync(srcHtml)) return;
     let html = fs.readFileSync(srcHtml, 'utf8');
+
+    // Add version comment at the top of the HTML file
+    const versionComment = `<!-- Version: ${packageJson.version} -->\n`;
+    html = versionComment + html;
+
     // Insert CSS link before </head> or at start if not found
     let cssTag = '';
     if (cssName) {

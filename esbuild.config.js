@@ -5,6 +5,7 @@ const fs = require('fs');
 const { ManifestJsoncPlugin } = require('./utils/manifest-jsonc-plugin');
 const ignorePlugin = require('./utils/ignore-plugin');
 const progress = require('esbuild-plugin-progress');
+const packageJson = require('../package.json');
 
 // Helper to copy static assets
 function copyAssets(src, dest) {
@@ -22,7 +23,12 @@ function copyAssets(src, dest) {
 function injectScriptToHtml(srcHtml, destHtml, scriptName, cssName) {
     if (!fs.existsSync(srcHtml)) return;
     let html = fs.readFileSync(srcHtml, 'utf8');
-    // Insert CSS link before </head> or at start if not found
+    
+    // Add version comment at the top of the HTML file
+    const versionComment = `<!-- Version: ${packageJson.version} -->\n`;
+    html = versionComment + html;
+    
+        // Insert CSS link before </head> or at start if not found
     let cssTag = '';
     if (cssName) {
         cssTag = `<link rel="stylesheet" href="./${cssName}">`;
