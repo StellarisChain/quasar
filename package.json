@@ -98,7 +98,8 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@parcel/watcher",
-      "core-js-pure"
+      "core-js-pure",
+      "esbuild"
     ]
   }
 }
