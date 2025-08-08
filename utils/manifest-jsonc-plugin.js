@@ -28,7 +28,7 @@ export class ManifestJsoncPlugin {
             // Firefox-specific manifest adjustments
             manifest.applications = {
                 gecko: {
-                    id: "quasar@stellarischain.org",
+                    id: "quasar@stellarischain.connor33341.dev",
                     strict_min_version: "91.0"
                 }
             };
