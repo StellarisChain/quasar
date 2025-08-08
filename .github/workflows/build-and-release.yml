@@ -1,0 +1,260 @@
+name: Build and Release Extension
+
+on:
+  # Trigger on push to master branch
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  
+  # Allow manual dispatch
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Get package version
+        id: package_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.package_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Auto-increment patch version
+        id: auto_version
+        run: |
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/master" ]; then
+            # Auto-increment patch version for pushes to master
+            pnpm version patch --no-git-tag-version
+            NEW_VERSION=$(node -p "require('./package.json').version")
+            echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+            echo "NEW_TAG=v$NEW_VERSION" >> $GITHUB_ENV
+            echo "auto_bumped=true" >> $GITHUB_OUTPUT
+          else
+            echo "auto_bumped=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Bump version (if manual dispatch)
+        if: github.event_name == 'workflow_dispatch' && steps.check_tag.outputs.exists == 'true'
+        run: |
+          pnpm version ${{ github.event.inputs.release_type }} --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "NEW_TAG=v$NEW_VERSION" >> $GITHUB_ENV
+      
+      - name: Update version variables (if bumped)
+        if: env.NEW_VERSION
+        run: |
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        id: updated_version
+      
+      - name: Set final version
+        id: final_version
+        run: |
+          if [ "${{ env.NEW_VERSION }}" ]; then
+            echo "version=${{ env.NEW_VERSION }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ env.NEW_TAG }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ steps.package_version.outputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=${{ steps.package_version.outputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Build extension for all browsers
+        run: pnpm run dist:all
+        env:
+          NODE_ENV: production
+      
+      - name: Verify build outputs
+        run: |
+          echo "Checking build outputs..."
+          ls -la build/
+          ls -la zip/
+          
+          # Verify Chrome build
+          if [ ! -d "build/chrome" ]; then
+            echo "❌ Chrome build directory not found"
+            exit 1
+          fi
+          
+          # Verify Firefox build
+          if [ ! -d "build/firefox" ]; then
+            echo "❌ Firefox build directory not found"
+            exit 1
+          fi
+          
+          # Verify zip files
+          if [ ! -f "zip/quasar-chrome-${{ steps.final_version.outputs.version }}.zip" ]; then
+            echo "❌ Chrome zip file not found"
+            exit 1
+          fi
+          
+          if [ ! -f "zip/quasar-firefox-${{ steps.final_version.outputs.version }}.zip" ]; then
+            echo "❌ Firefox zip file not found"
+            exit 1
+          fi
+          
+          echo "✅ All build outputs verified"
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Create a simple changelog from git commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            CHANGELOG="Initial release"
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" $LAST_TAG..HEAD | head -20)
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="- Bug fixes and improvements"
+            fi
+          fi
+          
+          # Create full changelog content
+          cat > CHANGELOG.md << EOF
+          ## What's Changed
+          
+          $CHANGELOG
+          
+          ## Downloads
+          
+          - **Chrome Extension**: \`quasar-chrome-${{ steps.final_version.outputs.version }}.zip\`
+          - **Firefox Add-on**: \`quasar-firefox-${{ steps.final_version.outputs.version }}.zip\`
+          
+          ## Installation
+          
+          ### Chrome
+          1. Download the Chrome zip file
+          2. Extract the contents
+          3. Open \`chrome://extensions/\`
+          4. Enable "Developer mode"
+          5. Click "Load unpacked" and select the extracted folder
+          
+          ### Firefox
+          1. Download the Firefox zip file
+          2. Extract the contents
+          3. Open \`about:debugging\`
+          4. Click "This Firefox" → "Load Temporary Add-on"
+          5. Select any file in the extracted folder
+          
+          **Full Changelog**: https://github.com/\${{ github.repository }}/compare/\$LAST_TAG...${{ steps.final_version.outputs.tag }}
+          EOF
+          
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Commit version bump (auto or manual)
+        if: env.NEW_VERSION
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json
+          if [ "${{ steps.auto_version.outputs.auto_bumped }}" == "true" ]; then
+            git commit -m "chore: auto-bump version to ${{ env.NEW_VERSION }} [skip ci]"
+          else
+            git commit -m "chore: bump version to ${{ env.NEW_VERSION }}"
+          fi
+          git push
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.final_version.outputs.tag }}
+          name: Quasar v${{ steps.final_version.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          files: |
+            zip/quasar-chrome-${{ steps.final_version.outputs.version }}.zip
+            zip/quasar-firefox-${{ steps.final_version.outputs.version }}.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Chrome Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quasar-chrome-extension
+          path: |
+            build/chrome/**/*
+            zip/quasar-chrome-${{ steps.final_version.outputs.version }}.zip
+          retention-days: 30
+      
+      - name: Upload Firefox Extension Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quasar-firefox-extension
+          path: |
+            build/firefox/**/*
+            zip/quasar-firefox-${{ steps.final_version.outputs.version }}.zip
+          retention-days: 30
+      
+      - name: Summary
+        run: |
+          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: \`${{ steps.final_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag**: \`${{ steps.final_version.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Built Extensions" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Chrome Extension (Manifest V3)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Firefox Extension (Manifest V2)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Release Assets" >> $GITHUB_STEP_SUMMARY
+          echo "- \`quasar-chrome-${{ steps.final_version.outputs.version }}.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`quasar-firefox-${{ steps.final_version.outputs.version }}.zip\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Release Page](https://github.com/${{ github.repository }}/releases/tag/${{ steps.final_version.outputs.tag }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Chrome Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Firefox Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
