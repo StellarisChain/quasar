@@ -1,3 +1,4 @@
+const packageJson = require('./package.json');
 
 var webpack = require('webpack'),
   path = require('path'),
@@ -11,6 +12,8 @@ var ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 var ReactRefreshTypeScript = require('react-refresh-typescript');
 var ManifestJsoncPlugin = require('./utils/manifest-jsonc-plugin');
 //var stripJsonComments = require('strip-json-comments');
+
+console.warn("DEPRECATED: webpack.config.js is deprecated switch to ESBuild");
 
 const ASSET_PATH = process.env.ASSET_PATH || '/';
 
@@ -188,30 +191,45 @@ var options = {
       filename: 'newtab.html',
       chunks: ['newtab'],
       cache: false,
+      templateParameters: {
+        version: packageJson.version,
+      },
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'pages', 'Options', 'index.html'),
       filename: 'options.html',
       chunks: ['options'],
       cache: false,
+      templateParameters: {
+        version: packageJson.version,
+      },
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'pages', 'Popup', 'index.html'),
       filename: 'popup.html',
       chunks: ['popup'],
       cache: false,
+      templateParameters: {
+        version: packageJson.version,
+      },
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'pages', 'Devtools', 'index.html'),
       filename: 'devtools.html',
       chunks: ['devtools'],
       cache: false,
+      templateParameters: {
+        version: packageJson.version,
+      },
     }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, 'src', 'pages', 'Panel', 'index.html'),
       filename: 'panel.html',
       chunks: ['panel'],
       cache: false,
+      templateParameters: {
+        version: packageJson.version,
+      },
     }),
   ].filter(Boolean),
   infrastructureLogging: {
