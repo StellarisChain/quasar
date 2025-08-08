@@ -40,7 +40,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
             // Use id if present and unique, else fallback to address or index
             let key = wallet.id;
             if (!key || walletList.filter(w => w.id === key).length > 1) {
-              key = wallet.address ? `address-${wallet.address}${Math.random() * 5}` : `idx-${idx}`;
+              key = wallet.address ? `address-${wallet.address}-${idx}` : `idx-${idx}`;
             }
             return (
               <div
