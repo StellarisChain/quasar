@@ -4,6 +4,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
 [![Chrome Extension](https://img.shields.io/badge/Chrome%20Extension-MV3-green)](https://developer.chrome.com/docs/extensions/mv3/)
+[![CI - Build and Validate](https://github.com/StellarisChain/quasar/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/StellarisChain/quasar/actions/workflows/ci.yml)
+[![Dependabot Updates](https://github.com/StellarisChain/quasar/actions/workflows/dependabot/dependabot-updates/badge.svg?branch=dev)](https://github.com/StellarisChain/quasar/actions/workflows/dependabot/dependabot-updates)
+![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/t/StellarisChain/quasar/dev)
+
 
 A secure, feature-rich browser wallet extension for Stellaris and Stellaris-based blockchain networks. Built with modern web technologies and designed for seamless cryptocurrency management directly in your browser.
 
