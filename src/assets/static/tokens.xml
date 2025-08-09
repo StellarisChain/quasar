@@ -18,6 +18,7 @@
                 <Color>#ffcc00</Color>
             </SubToken>
         </SubTokens>
+        <Curve>secp256k1</Curve>
     </Token>
     <Token>
         <Name>Stellaris</Name>
@@ -25,6 +26,7 @@
         <Color>#9945FF</Color>
         <Node>https://stellaris-node.connor33341.dev</Node>
         <TokenSupport>true</TokenSupport>
+        <Curve>secp256k1</Curve>
     </Token>
     <Token>
         <Name>Classic Stellaris</Name>
@@ -32,6 +34,7 @@
         <Color>#161616</Color>
         <Node>https://cstellaris-node.connor33341.dev</Node>
         <TokenSupport>false</TokenSupport>
+        <Curve>p256</Curve>
     </Token>
     <Token>
         <Name>Denaro</Name>
@@ -39,6 +42,7 @@
         <Color>#21a9af</Color>
         <Node>https://denaro-node.gaetano.eu.org</Node>
         <TokenSupport>false</TokenSupport>
+        <Curve>p256</Curve>
     </Token>
     <!-- EXAMPLE
     <Token>
@@ -47,5 +51,6 @@
         <Color>#FFFFFF</Color>
         <Node>https://denaro.compatable.node.example</Node>
         <TokenSupport>has contract token support?</TokenSupport>
+        <Curve>secp256k1</Curve>
     </Token>-->
 </Tokens>
