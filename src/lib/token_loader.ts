@@ -8,6 +8,7 @@ export interface Chain {
     Node: string;
     TokenSupport?: boolean; // Optional, for compatibility with existing data
     SubTokens?: SubToken[]; // Optional, for contract tokens
+    Curve: string; // e.g., "secp256k1" or "p256"
 }
 
 // contract tokens
@@ -39,7 +40,8 @@ export async function loadTokensXmlAsJson(url: string = 'tokens.xml'): Promise<C
             Symbol: subTokenEl.getElementsByTagName('Symbol')[0]?.textContent || '',
             Name: subTokenEl.getElementsByTagName('Name')[0]?.textContent || '',
             Color: subTokenEl.getElementsByTagName('Color')[0]?.textContent || ''
-        }))
+        })),
+        Curve: tokenEl.getElementsByTagName('Curve')[0]?.textContent || '',
     }));
 
     return tokens;
