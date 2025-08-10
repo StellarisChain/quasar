@@ -12,13 +12,22 @@ import { Wallet } from '../pages/Popup/DataTypes';
 
 import * as bip39 from 'bip39';
 import bs58 from 'bs58';
-// import { p256 } from '@noble/curves/nist'; // removed p256 usage
+import { p256 } from '@noble/curves/p256';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
-// noble-curves secp256k1 instance
+export type CurveType = 'secp256k1' | 'p256';
+
+// Curve instances
+export const curves = {
+    secp256k1: secp256k1,
+    p256: p256
+};
+
+// Keep backward compatibility
 export const ec = secp256k1;
+
 export const ENDIAN: Endian = 'le'; // little-endian
 export const SMALLEST = 1000000;
 
@@ -61,22 +70,25 @@ export function normalizeBlock(block: any): any {
 }
 
 // ECDSA point conversion utilities using noble-curves
-export function xToY(x: bigint, isOdd = false): bigint {
+export function xToY(x: bigint, isOdd = false, curve: CurveType = 'secp256k1'): bigint {
     // noble-curves: get point from x and y parity
-    const point = ec.ProjectivePoint.fromHex(ec.ProjectivePoint.fromPrivateKey(x).toRawBytes(true));
+    const curveInstance = curves[curve];
+    const point = curveInstance.ProjectivePoint.fromHex(curveInstance.ProjectivePoint.fromPrivateKey(x).toRawBytes(true));
     return point.y;
 }
 
-export function xToYFromX(x: bigint, isOdd: boolean = false): bigint {
+export function xToYFromX(x: bigint, isOdd: boolean = false, curve: CurveType = 'secp256k1'): bigint {
     // noble-curves: get point from x and y parity
-    const point = ec.ProjectivePoint.fromHex(ec.ProjectivePoint.fromPrivateKey(x).toRawBytes(true));
+    const curveInstance = curves[curve];
+    const point = curveInstance.ProjectivePoint.fromHex(curveInstance.ProjectivePoint.fromPrivateKey(x).toRawBytes(true));
     return point.y;
 }
 
-export function bytesToPoint(pointBytes: Uint8Array): any {
+export function bytesToPoint(pointBytes: Uint8Array, curve: CurveType = 'secp256k1'): any {
     // noble-curves: accepts compressed/uncompressed
     try {
-        return ec.ProjectivePoint.fromHex(pointBytes);
+        const curveInstance = curves[curve];
+        return curveInstance.ProjectivePoint.fromHex(pointBytes);
     } catch (e) {
         console.error('[bytesToPoint] Invalid point bytes', { pointBytes: Array.from(pointBytes), error: e });
         throw new Error('Invalid EC point bytes: ' + (e instanceof Error ? e.message : e));
@@ -183,18 +195,20 @@ export function stringToPoint(str: string): Uint8Array {
     }
 }
 
-export function hexToPoint(xHex: string, yHex: string): any {
+export function hexToPoint(xHex: string, yHex: string, curve: CurveType = 'secp256k1'): any {
     // noble-curves: create point from x/y
     const x = BigInt('0x' + xHex);
     const y = BigInt('0x' + yHex);
-    return new ec.ProjectivePoint(x, y, BigInt(1));
+    const curveInstance = curves[curve];
+    return new curveInstance.ProjectivePoint(x, y, BigInt(1));
 }
 
-export function privateToPublicKey(privateKeyHex: string): { point: any, compressed: string } {
+export function privateToPublicKey(privateKeyHex: string, curve: CurveType = 'secp256k1'): { point: any, compressed: string } {
     // Convert hex to bigint
     const privateKeyInt = BigInt('0x' + privateKeyHex);
     // Derive public key point
-    const point = ec.ProjectivePoint.fromPrivateKey(privateKeyInt);
+    const curveInstance = curves[curve];
+    const point = curveInstance.ProjectivePoint.fromPrivateKey(privateKeyInt);
     // Get x and y coordinates
     const x = point.x;
     const y = point.y;
@@ -231,14 +245,16 @@ export function generate({
     index = 0,
     deterministic = false,
     fields,
-    walletVersion
+    walletVersion,
+    curve = 'secp256k1'
 }: {
     mnemonicPhrase?: string,
     passphrase?: string,
     index?: number,
     deterministic?: boolean,
     fields?: string[],
-    walletVersion?: string
+    walletVersion?: string,
+    curve?: CurveType
 }): Wallet {
     let localMnemonic = mnemonicPhrase;
     let localPassphrase = passphrase ?? '';
@@ -275,7 +291,7 @@ export function generate({
         if (!child.privateKey) throw new Error('Failed to derive child private key');
 
         privateKeyHex = bytesToHex(child.privateKey);
-        const { point, compressed } = privateToPublicKey(privateKeyHex);
+        const { point, compressed } = privateToPublicKey(privateKeyHex, curve);
         publicKeyPoint = point;
         publicKeyHex = compressed;
         address = pointToString(publicKeyPoint, AddressFormat.COMPRESSED);
@@ -288,12 +304,13 @@ export function generate({
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
+        result.curve = curve; // Always set the curve type
     } else {
         // Use root key directly for non-deterministic generation
         if (!root.privateKey) throw new Error('Failed to get root private key');
 
         privateKeyHex = bytesToHex(root.privateKey);
-        const { point, compressed } = privateToPublicKey(privateKeyHex);
+        const { point, compressed } = privateToPublicKey(privateKeyHex, curve);
         publicKeyPoint = point;
         publicKeyHex = compressed;
         address = pointToString(publicKeyPoint, AddressFormat.COMPRESSED);
@@ -306,19 +323,21 @@ export function generate({
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
         if (fields.includes('address')) result.address = address;
+        result.curve = curve; // Always set the curve type
     }
 
     return result;
 }
 
-export function generateFromPrivateKey(privateKeyHex: string, fields?: string[]): any {
-    const { point, compressed } = privateToPublicKey(privateKeyHex);
+export function generateFromPrivateKey(privateKeyHex: string, fields?: string[], curve: CurveType = 'secp256k1'): any {
+    const { point, compressed } = privateToPublicKey(privateKeyHex, curve);
     const address = pointToString(point);
     if (!fields) fields = ['private_key', 'public_key', 'address'];
     const result: any = {};
     if (fields.includes('private_key')) result.private_key = privateKeyHex;
     if (fields.includes('public_key')) result.public_key = compressed;
     if (fields.includes('address')) result.address = address;
+    result.curve = curve; // Always set the curve type
     return result;
 }
 

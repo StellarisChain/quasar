@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BackIcon, KeyIcon, WalletIcon, ArrowUpRightIcon } from '../../components/Icons';
-import { generateMnemonic, generate } from '../../lib/wallet_generation_utils';
+import { generateMnemonic, generate, CurveType } from '../../lib/wallet_generation_utils';
+import { loadTokensXmlAsJson, getAvailableCurves } from '../../lib/token_loader';
+import { CurveSelector } from '../../components/CurveSelector';
+import { CompatibleAssetsDisplay } from '../../components/CompatibleAssetsDisplay';
 import { Wallet } from '../Popup/DataTypes';
 import './Popup.css';
 
@@ -10,12 +13,29 @@ interface NewWalletProps {
 }
 
 export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
-    const [step, setStep] = useState<'generate' | 'confirm' | 'name'>('generate');
+    const [step, setStep] = useState<'curve' | 'generate' | 'confirm' | 'name'>('curve');
+    const [selectedCurve, setSelectedCurve] = useState<string>('secp256k1');
+    const [availableCurves, setAvailableCurves] = useState<string[]>(['secp256k1', 'p256']);
     const [seedPhrase, setSeedPhrase] = useState<string[]>([]);
     const [confirmPhrase, setConfirmPhrase] = useState<string[]>(new Array(12).fill(''));
     const [walletName, setWalletName] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedWords, setSelectedWords] = useState<number[]>([]);
+
+    // Load available curves from tokens.xml
+    useEffect(() => {
+        const loadCurves = async () => {
+            try {
+                const tokens = await loadTokensXmlAsJson('tokens.xml');
+                const curves = getAvailableCurves(tokens);
+                setAvailableCurves(curves.length > 0 ? curves : ['secp256k1', 'p256']);
+            } catch (error) {
+                console.warn('Could not load tokens.xml, using default curves:', error);
+                setAvailableCurves(['secp256k1', 'p256']);
+            }
+        };
+        loadCurves();
+    }, []);
 
     // Generate seed phrase
     useEffect(() => {
@@ -60,11 +80,116 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
             index: Date.now() + Math.random(), // Ensure uniqueness
             deterministic: false,
             fields: ['mnemonic', 'id', 'private_key', 'public_key', 'address'],
-            walletVersion: '0.2.3'
+            walletVersion: '0.2.3',
+            curve: selectedCurve as CurveType
         });
         newWallet.name = walletName || 'My Wallet';
         onComplete(newWallet);
     };
+
+    if (step === 'curve') {
+        return (
+            <div className="popup-content create-wallet-page" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
+                <div className="create-wallet-header">
+                    <button
+                        className="back-btn back-btn-anim"
+                        onClick={onBack}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#9ca3af',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '14px',
+                            marginBottom: '24px'
+                        }}
+                    >
+                        <BackIcon />
+                        Back
+                    </button>
+
+                    <div className="create-wallet-title" style={{ textAlign: 'center', marginBottom: '32px' }}>
+                        <div style={{
+                            width: '48px',
+                            height: '48px',
+                            background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 16px',
+                            boxShadow: '0 4px 16px rgba(139, 92, 246, 0.3)'
+                        }}>
+                            <KeyIcon />
+                        </div>
+                        <h2 style={{
+                            fontSize: '24px',
+                            fontWeight: '600',
+                            textAlign: 'center',
+                            margin: '0 0 8px',
+                            color: 'white'
+                        }}>Choose Cryptographic Curve</h2>
+                        <p style={{
+                            fontSize: '14px',
+                            color: '#9ca3af',
+                            textAlign: 'center',
+                            margin: '0 0 32px',
+                            lineHeight: '1.5'
+                        }}>Select the cryptographic curve for your wallet. This determines which assets you can use.</p>
+                    </div>
+                </div>
+
+                <div className="curve-selection-content" style={{ padding: '0 24px' }}>
+                    <CurveSelector
+                        selectedCurve={selectedCurve}
+                        onCurveChange={setSelectedCurve}
+                        availableCurves={availableCurves}
+                    />
+
+                    <div className="curve-info" style={{
+                        background: '#2a2a2a',
+                        border: '1px solid #3a3a3a',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        marginBottom: '24px'
+                    }}>
+                        <h4 style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            color: '#e5e7eb',
+                            marginBottom: '12px'
+                        }}>
+                            Available Assets for {selectedCurve}
+                        </h4>
+                        <CompatibleAssetsDisplay curve={selectedCurve} maxDisplay={4} />
+                    </div>
+                </div>
+
+                <div className="create-wallet-footer" style={{ padding: '0 24px 24px', marginTop: 'auto' }}>
+                    <button
+                        className="continue-btn continue-btn-anim"
+                        onClick={() => setStep('generate')}
+                        style={{
+                            width: '100%',
+                            background: '#8b5cf6',
+                            border: 'none',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            color: 'white',
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s cubic-bezier(.4, 0, .2, 1)'
+                        }}
+                    >
+                        Continue to Seed Generation
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (step === 'generate') {
         return (

@@ -1,6 +1,6 @@
 // Inprogress: Switching to @noble/curves/p256
 import { Decimal } from 'decimal.js';
-import { stringToPoint, pointToString, SMALLEST, ENDIAN, ec, intToBytes } from '../wallet_generation_utils';
+import { stringToPoint, pointToString, SMALLEST, ENDIAN, intToBytes, curves, CurveType } from '../wallet_generation_utils';
 
 export class TransactionInput {
     txHash: string;
@@ -11,6 +11,7 @@ export class TransactionInput {
     amount?: Decimal;
     publicKey?: Uint8Array;
     signed?: { r: string; s: string };
+    curve: CurveType;
 
     constructor(
         inputTxHash: string,
@@ -18,7 +19,8 @@ export class TransactionInput {
         privateKey?: string,
         transaction?: any,
         amount?: Decimal,
-        publicKey?: Uint8Array
+        publicKey?: Uint8Array,
+        curve: CurveType = 'secp256k1'
     ) {
         this.txHash = inputTxHash;
         this.index = index;
@@ -27,6 +29,7 @@ export class TransactionInput {
         this.transactionInfo = undefined;
         this.amount = amount;
         this.publicKey = publicKey;
+        this.curve = curve;
         if (transaction && amount === undefined) {
             this.getRelatedOutput();
         }
@@ -82,10 +85,11 @@ export class TransactionInput {
             throw new Error('Private key is required for signing');
         }
         const msg = Buffer.from(txHex, 'hex');
-        const signature = ec.sign(msg, priv);
-        this.signed = { 
-            r: Buffer.from(intToBytes(signature.r, 32)).toString('hex'), 
-            s: Buffer.from(intToBytes(signature.s, 32)).toString('hex') 
+        const curveInstance = curves[this.curve];
+        const signature = curveInstance.sign(msg, priv);
+        this.signed = {
+            r: Buffer.from(intToBytes(signature.r, 32)).toString('hex'),
+            s: Buffer.from(intToBytes(signature.s, 32)).toString('hex')
         };
     }
 
@@ -131,7 +135,8 @@ export class TransactionInput {
         const sBytes = Buffer.from(s.toString(16).padStart(64, '0'), 'hex');
         const signature = Buffer.concat([rBytes, sBytes]);
         try {
-            return ec.verify(msg, signature, publicKey);
+            const curveInstance = curves[this.curve];
+            return curveInstance.verify(msg, signature, publicKey);
         } catch {
             return false;
         }
