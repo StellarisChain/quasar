@@ -1,5 +1,5 @@
 import { Decimal } from 'decimal.js';
-import { pointToString, bytesToString, sha256, ec as CURVE, SMALLEST } from '../wallet_generation_utils';
+import { pointToString, bytesToString, sha256, SMALLEST, curves } from '../wallet_generation_utils';
 import { TransactionInput } from './transaction_input';
 import { TransactionOutput } from './transaction_outputs';
 import { CoinbaseTransaction } from './coinbase_transaction';
@@ -176,11 +176,13 @@ export class Transaction {
 
     sign(privateKeys: any[] = []): this {
         for (const privateKey of privateKeys) {
-            // noble/curves: get public key as Uint8Array, then hex
-            const pubKeyBytes = CURVE.getPublicKey(privateKey, false); // uncompressed
-            const pubKeyHex = Buffer.from(pubKeyBytes).toString('hex');
             for (const input of this.inputs) {
                 if (input.privateKey == null && (input.publicKey || input.transaction)) {
+                    // Use the curve specific to this input to derive the public key
+                    const curveInstance = curves[input.curve];
+                    const pubKeyBytes = curveInstance.getPublicKey(privateKey, false); // uncompressed
+                    const pubKeyHex = Buffer.from(pubKeyBytes).toString('hex');
+
                     const inputPublicKey = input.publicKey || (input.transaction && input.transaction.outputs[input.index].publicKey);
                     if (inputPublicKey && pubKeyHex === inputPublicKey) {
                         input.privateKey = privateKey;

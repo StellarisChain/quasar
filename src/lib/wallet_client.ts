@@ -2,7 +2,7 @@ import { Decimal } from 'decimal.js';
 import { Transaction } from './transaction/transaction';
 import { TransactionOutput } from './transaction/transaction_outputs';
 import { TransactionInput } from './transaction/transaction_input';
-import { stringToPoint, pointToString, SMALLEST, ENDIAN, ec } from './wallet_generation_utils';
+import { curves, CurveType } from './wallet_generation_utils';
 
 // Helper for decimal math using decimal.js
 function toDecimal(val: any): Decimal {
@@ -65,7 +65,8 @@ export async function getBalanceInfo(address: string, node: string): Promise<[nu
 export async function getAddressInfo(
     address: string,
     node: string,
-    privateKey?: string
+    privateKey?: string,
+    curve: CurveType = 'secp256k1'
 ): Promise<[
     Decimal | null,
     TransactionInput[] | null,
@@ -108,13 +109,14 @@ export async function getAddressInfo(
                 isPending = true;
                 continue;
             }
-            const txInput = new TransactionInput(spendableTxInput.tx_hash, spendableTxInput.index);
+            const txInput = new TransactionInput(spendableTxInput.tx_hash, spendableTxInput.index, undefined, undefined, undefined, undefined, curve);
             txInput.amount = new Decimal(String(spendableTxInput.amount));
             // Always set publicKey from privateKey, never from address
             if (!privateKey) {
                 throw new Error('privateKey is required to derive publicKey for transaction input');
             }
-            txInput.publicKey = ec.getPublicKey(privateKey);
+            const curveInstance = curves[curve];
+            txInput.publicKey = curveInstance.getPublicKey(privateKey);
             txInputs.push(txInput);
         }
 
@@ -140,7 +142,8 @@ export async function createTransaction(
     amount: Decimal | string | number,
     message?: Uint8Array | null,
     sendBackAddress?: string | null,
-    node?: string
+    node?: string,
+    curve: CurveType = 'secp256k1'
 ): Promise<Transaction | null> {
     const decAmount = toDecimal(amount);
     if (!sendBackAddress) sendBackAddress = sender;
@@ -161,7 +164,7 @@ export async function createTransaction(
     let pendingTransactionHashes: string[] | null = null;
 
     for (const key of privateKeys) {
-        const [bal, addressInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!, key);
+        const [bal, addressInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!, key, curve);
         console.debug('getAddressInfo result:', {
             key,
             bal: bal?.toString(),
@@ -251,10 +254,10 @@ export async function createTransaction(
 
     // Create the transaction
     const outputs: TransactionOutput[] = [
-        new TransactionOutput(receivingAddress, decAmount)
+        new TransactionOutput(receivingAddress, decAmount, curve)
     ];
     if (transactionAmount.greaterThan(decAmount)) {
-        outputs.push(new TransactionOutput(sendBackAddress!, transactionAmount.minus(decAmount)));
+        outputs.push(new TransactionOutput(sendBackAddress!, transactionAmount.minus(decAmount), curve));
     }
     console.debug('Transaction outputs:', outputs);
     const tx = new Transaction(transactionInputs, outputs, message ?? undefined);

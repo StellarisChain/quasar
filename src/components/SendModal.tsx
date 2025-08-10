@@ -7,6 +7,7 @@ import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { createTransaction } from '../lib/wallet_client';
 import { Transaction } from '../lib/transaction/transaction';
 import { loadTokensXmlAsJson } from '../lib/token_loader';
+import { CurveType } from '../lib/wallet_generation_utils';
 import './WalletSettings.css';
 
 interface SendModalProps {
@@ -87,14 +88,15 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         setIsProcessing(true);
         // Simulate transaction processing
         const tokenData = await loadTokensXmlAsJson("tokens.xml");
-        const result: Transaction | null= await createTransaction(
+        const result: Transaction | null = await createTransaction(
             [wallet.private_key ?? ''],
             wallet.address,
             recipientAddress,
             amount,
             memo ? new TextEncoder().encode(memo) : null,
             null,
-            tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined
+            tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined,
+            (wallet.curve ?? 'secp256k1') as CurveType
         );
         //await new Promise(resolve => setTimeout(resolve, 2000));
         setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));

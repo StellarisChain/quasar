@@ -26,6 +26,7 @@ export interface Wallet {
   public_key: string;
   private_key?: string;
   mnemonic?: string;
+  curve?: string; // Added curve support
   chains?: ChainData[];
 }
 

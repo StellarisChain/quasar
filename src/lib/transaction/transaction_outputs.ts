@@ -1,13 +1,14 @@
 import { Decimal } from 'decimal.js';
-import { stringToPoint, stringToBytes, byteLength, intToBytes, SMALLEST, ec } from '../wallet_generation_utils';
+import { stringToPoint, stringToBytes, byteLength, intToBytes, SMALLEST, curves, CurveType } from '../wallet_generation_utils';
 
 export class TransactionOutput {
     address: string;
     addressBytes: Uint8Array;
     publicKey: Uint8Array;
     amount: Decimal;
+    curve: CurveType;
 
-    constructor(address: string, amount: Decimal) {
+    constructor(address: string, amount: Decimal, curve: CurveType = 'secp256k1') {
         // Defensive: ensure address is not a Point (web: no runtime Point type, but check for object with x/y)
         if (typeof address === 'object' && address !== null && 'x' in address && 'y' in address) {
             throw new Error('TransactionOutput does not accept Point anymore. Pass the address string instead');
@@ -15,6 +16,7 @@ export class TransactionOutput {
         this.address = address;
         this.addressBytes = stringToBytes(address); // You may need to implement stringToBytes
         this.publicKey = stringToPoint(address);
+        this.curve = curve;
         if (!this.amountIsValid(amount)) {
             throw new Error('too many decimal digits');
         }
@@ -45,7 +47,8 @@ export class TransactionOutput {
         // this.amount > 0 and publicKey is a valid curve point
         if (!this.amount.gt(0)) return false;
         try {
-            ec.ProjectivePoint.fromHex(this.publicKey);
+            const curveInstance = curves[this.curve];
+            curveInstance.ProjectivePoint.fromHex(this.publicKey);
             return true;
         } catch {
             return false;
