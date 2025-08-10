@@ -37,15 +37,10 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
     // Check if wallet is locked
     const walletLocked = isWalletLocked(wallet);
 
-    // If wallet is locked, close the modal
-    useEffect(() => {
-        if (walletLocked) {
-            onClose();
-            return;
-        }
-    }, [walletLocked, onClose]);
+    // Don't automatically close on wallet lock - let parent handle this
+    // The parent component should not show SendModal if wallet is locked
 
-    // Filter assets by curve compatibility on component mount
+    // Filter assets by curve compatibility on component mount and when wallet state changes
     useEffect(() => {
         const filterAssetsByCurve = async () => {
             if (!wallet.chains || wallet.chains.length === 0) {
@@ -71,7 +66,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         };
 
         filterAssetsByCurve();
-    }, [wallet]);
+    }, [wallet, walletLocked]); // Also re-run when wallet lock status changes
 
     // Focus inputs when step changes
     useEffect(() => {

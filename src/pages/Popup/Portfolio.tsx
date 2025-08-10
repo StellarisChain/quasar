@@ -3,7 +3,7 @@ import Counter from '../../components/Counter';
 import { ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon, CopyIcon, SettingsIcon, DownloadIcon, LockClosedIcon } from '../../components/Icons';
 import { ChainCard } from '../../components/ChainCard';
 import { ChainData, Wallet } from './DataTypes';
-import { saveWallets, isWalletLocked, walletSession } from './WalletUtils';
+import { saveWallets, isWalletLocked, walletSession, getStoredWallets } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
 import { BulkExportModal } from '../../components/BulkExportModal';
@@ -61,6 +61,21 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
             setCopied(true);
             if (copyTimeout.current) clearTimeout(copyTimeout.current);
             copyTimeout.current = setTimeout(() => setCopied(false), 1200);
+        }
+    };
+
+    // Function to refresh selected wallet from localStorage to ensure we have latest data
+    const refreshSelectedWalletFromStorage = () => {
+        if (!selectedWallet) return;
+        
+        const storedWallets = getStoredWallets();
+        const updatedWallet = storedWallets.find((w: Wallet) => w.id === selectedWallet.id);
+        
+        if (updatedWallet) {
+            console.log('Refreshing selected wallet from storage. Chains before:', selectedWallet.chains?.length || 0, 'Chains after:', updatedWallet.chains?.length || 0);
+            setSelectedWallet(updatedWallet);
+            // Also update the wallets array to keep everything in sync
+            setWallets(storedWallets);
         }
     };
 
@@ -253,6 +268,13 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
             document.removeEventListener('scroll', handleUserActivity);
         };
     }, [selectedWallet]);
+
+    // Monitor wallet lock status and close send modal if wallet becomes locked
+    useEffect(() => {
+        if (showSendModal && selectedWallet && isWalletLocked(selectedWallet)) {
+            setShowSendModal(false);
+        }
+    }, [showSendModal, selectedWallet, walletIsLocked]);
 
     // Calculate total portfolio value
     const totalValue = selectedWallet && selectedWallet.chains
@@ -508,9 +530,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
             </div>
 
             {/* Send Modal */}
-            {showSendModal && selectedWallet && (
+            {showSendModal && selectedWallet && !isWalletLocked(selectedWallet) && (
                 <SendModal
-                    wallet={selectedWallet}
+                    wallet={(() => {
+                        // Always use the freshest wallet data from localStorage when showing SendModal
+                        const storedWallets = getStoredWallets();
+                        const freshWallet = storedWallets.find((w: Wallet) => w.id === selectedWallet.id);
+                        return freshWallet || selectedWallet;
+                    })()}
                     onClose={() => setShowSendModal(false)}
                 />
             )}
@@ -557,11 +584,33 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     wallet={selectedWallet}
                     onUnlock={() => {
                         setShowUnlockModal(false);
-                        // Small delay to ensure wallet state is updated before showing send modal
+                        
+                        // Refresh wallet data from storage to ensure we have the latest chains/assets
                         setTimeout(() => {
-                            if (!isWalletLocked(selectedWallet)) {
-                                setShowSendModal(true);
-                            }
+                            refreshSelectedWalletFromStorage();
+                            
+                            // Give more time for state to update after refresh
+                            setTimeout(() => {
+                                // Use localStorage data directly for the lock check to avoid stale state
+                                const storedWallets = getStoredWallets();
+                                const currentWallet = storedWallets.find((w: Wallet) => w.id === selectedWallet.id);
+                                
+                                if (currentWallet && !isWalletLocked(currentWallet)) {
+                                    setShowSendModal(true);
+                                } else {
+                                    console.warn('Wallet still locked after unlock, retrying...');
+                                    // Fallback: try again after a longer delay
+                                    setTimeout(() => {
+                                        const storedWallets2 = getStoredWallets();
+                                        const currentWallet2 = storedWallets2.find((w: Wallet) => w.id === selectedWallet.id);
+                                        if (currentWallet2 && !isWalletLocked(currentWallet2)) {
+                                            setShowSendModal(true);
+                                        } else {
+                                            console.error('Failed to unlock wallet properly');
+                                        }
+                                    }, 500);
+                                }
+                            }, 200);
                         }, 100);
                     }}
                     onClose={() => setShowUnlockModal(false)}
