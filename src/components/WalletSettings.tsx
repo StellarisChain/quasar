@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon } from './Icons';
+import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon, DownloadIcon } from './Icons';
 import { Wallet } from '../pages/Popup/DataTypes';
+import { exportWallet, ExportOptions, validateExportOptions } from '../lib/wallet_export_utils';
 import './WalletSettings.css';
 
 interface WalletSettingsModalProps {
@@ -17,6 +18,12 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
     const [showVerificationInput, setShowVerificationInput] = useState(false);
     const [copied, setCopied] = useState(false);
     const [error, setError] = useState('');
+    const [showExportModal, setShowExportModal] = useState(false);
+    const [exportOptions, setExportOptions] = useState<ExportOptions>({
+        includePrivateKey: true,
+        includeMnemonic: true
+    });
+    const [exporting, setExporting] = useState(false);
 
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +88,26 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
         if (key.length <= 4) return '•'.repeat(key.length);
         // Show only first 2 and last 2 chars
         return key.slice(0, 2) + '•'.repeat(Math.round((key.length - 4) / 3)) + key.slice(-2);
+    };
+
+    const handleExportWallet = async () => {
+        try {
+            setExporting(true);
+            const validation = validateExportOptions(exportOptions);
+            
+            if (validation.warnings.length > 0) {
+                // Show warnings in console for now
+                console.warn('Export warnings:', validation.warnings);
+            }
+            
+            exportWallet(wallet, exportOptions);
+            setShowExportModal(false);
+        } catch (error) {
+            console.error('Export failed:', error);
+            setError('Failed to export wallet');
+        } finally {
+            setExporting(false);
+        }
     };
 
     return (
@@ -553,6 +580,159 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
                                         }}
                                     >
                                         <EyeOffIcon />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Export Section */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#9ca3af',
+                            marginBottom: '8px'
+                        }}>
+                            Export Wallet
+                        </label>
+                        <p style={{
+                            fontSize: '12px',
+                            color: '#6b7280',
+                            margin: '0 0 12px 0',
+                            lineHeight: '1.4'
+                        }}>
+                            Download your wallet as a JSON file for backup or transfer purposes.
+                        </p>
+
+                        {!showExportModal ? (
+                            <button
+                                onClick={() => setShowExportModal(true)}
+                                style={{
+                                    background: '#10b981',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '12px 16px',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                            >
+                                <DownloadIcon /> Export Wallet to JSON
+                            </button>
+                        ) : (
+                            <div style={{
+                                background: '#1f2937',
+                                border: '1px solid #374151',
+                                borderRadius: '8px',
+                                padding: '16px'
+                            }}>
+                                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#fff' }}>
+                                    Export Options
+                                </h4>
+                                
+                                <div style={{ marginBottom: '12px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={exportOptions.includePrivateKey}
+                                            onChange={(e) => setExportOptions({
+                                                ...exportOptions,
+                                                includePrivateKey: e.target.checked
+                                            })}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <span style={{ fontSize: '14px', color: '#e5e7eb' }}>Include Private Key</span>
+                                    </label>
+                                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 24px' }}>
+                                        Required to import and use the wallet
+                                    </p>
+                                </div>
+
+                                <div style={{ marginBottom: '16px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={exportOptions.includeMnemonic}
+                                            onChange={(e) => setExportOptions({
+                                                ...exportOptions,
+                                                includeMnemonic: e.target.checked
+                                            })}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <span style={{ fontSize: '14px', color: '#e5e7eb' }}>Include Seed Phrase</span>
+                                    </label>
+                                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 24px' }}>
+                                        Include mnemonic phrase if available
+                                    </p>
+                                </div>
+
+                                {!exportOptions.includePrivateKey && (
+                                    <div style={{
+                                        background: '#7f1d1d',
+                                        border: '1px solid #dc2626',
+                                        borderRadius: '6px',
+                                        padding: '8px 12px',
+                                        marginBottom: '12px'
+                                    }}>
+                                        <p style={{ fontSize: '12px', color: '#fca5a5', margin: 0 }}>
+                                            ⚠️ Warning: Without the private key, this export will only contain public information and cannot be used to restore wallet functionality.
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                        onClick={handleExportWallet}
+                                        disabled={exporting}
+                                        style={{
+                                            background: exporting ? '#4b5563' : '#10b981',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '8px 16px',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            cursor: exporting ? 'not-allowed' : 'pointer',
+                                            transition: 'background 0.2s',
+                                            flex: 1
+                                        }}
+                                    >
+                                        {exporting ? 'Exporting...' : 'Export'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowExportModal(false)}
+                                        style={{
+                                            background: 'none',
+                                            border: '1px solid #374151',
+                                            borderRadius: '6px',
+                                            padding: '8px 16px',
+                                            color: '#9ca3af',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = '#6b7280';
+                                            e.currentTarget.style.color = '#e5e7eb';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = '#374151';
+                                            e.currentTarget.style.color = '#9ca3af';
+                                        }}
+                                    >
+                                        Cancel
                                     </button>
                                 </div>
                             </div>
