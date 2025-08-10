@@ -49,6 +49,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Bulk export modal state
     const [showBulkExport, setShowBulkExport] = useState(false);
 
+    // Hover state for address container
+    const [isAddressHovered, setIsAddressHovered] = useState(false);
+
     // Copy address handler
     const handleCopyAddress = () => {
         if (selectedWallet?.address) {
@@ -240,6 +243,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         className="wallet-address-container"
                         title={selectedWallet.address}
                         onClick={handleCopyAddress}
+                        onMouseEnter={() => setIsAddressHovered(true)}
+                        onMouseLeave={() => setIsAddressHovered(false)}
+                        style={{ position: 'relative' }}
                     >
                         <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
                             <span className="wallet-address-text">
@@ -247,7 +253,38 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 <span className="wallet-address-full">{selectedWallet.address}</span>
                             </span>
                         </span>
-                        <span className="wallet-copy-icon" style={{ opacity: 0.7, fontSize: 16, marginLeft: 8, display: 'flex', alignItems: 'center' }}>
+                        
+                        {/* Curve indicator dot - always visible */}
+                        {selectedWallet?.curve && (
+                            <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                background: selectedWallet.curve === 'secp256k1' ? '#10b981' : '#f59e0b',
+                                marginLeft: '8px',
+                                marginRight: '4px',
+                                opacity: isAddressHovered ? 0 : 0.7,
+                                transition: 'opacity 0.2s ease'
+                            }} />
+                        )}
+                        
+                        {/* Expanded curve text on hover */}
+                        {selectedWallet?.curve && (
+                            <span style={{
+                                fontSize: '12px',
+                                color: '#9ca3af',
+                                opacity: isAddressHovered ? 1 : 0,
+                                maxWidth: isAddressHovered ? '100px' : '0px',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                transition: 'all 0.2s ease',
+                                marginRight: isAddressHovered ? '8px' : '0px'
+                            }}>
+                                {selectedWallet.curve.toUpperCase()}
+                            </span>
+                        )}
+                        
+                        <span className="wallet-copy-icon" style={{ opacity: 0.7, fontSize: 16, marginLeft: selectedWallet?.curve && !isAddressHovered ? 0 : 8, display: 'flex', alignItems: 'center', transition: 'margin-left 0.2s ease' }}>
                             {copied ? '✓' : <CopyIcon />}
                         </span>
                         <span
@@ -270,31 +307,6 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         >
                             Copied!
                         </span>
-                    </div>
-                )}
-
-                {/* Curve Type Display */}
-                {selectedWallet?.curve && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        margin: '12px 0',
-                        padding: '8px 12px',
-                        background: '#2a2a2a',
-                        border: '1px solid #3a3a3a',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        color: '#9ca3af'
-                    }}>
-                        <span style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            background: selectedWallet.curve === 'secp256k1' ? '#10b981' : '#f59e0b'
-                        }} />
-                        <span>Curve: {selectedWallet.curve.toUpperCase()}</span>
                     </div>
                 )}
 

@@ -54,8 +54,26 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
                 role="button"
                 style={{ transition: 'background 0.2s, box-shadow 0.2s' }}
               >
-                <div className="wallet-name">{wallet.name}</div>
-                <div className="wallet-address">{wallet.address}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div>
+                    <div className="wallet-name">{wallet.name}</div>
+                    <div className="wallet-address">{wallet.address}</div>
+                  </div>
+                  {/* Curve name display */}
+                  {wallet.curve && (
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#9ca3af',
+                      fontWeight: '500',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      flexShrink: 0,
+                      marginLeft: '8px'
+                    }}>
+                      {wallet.curve}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
