@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Counter from '../../components/Counter';
 import StarBorder from '../../components/StarBorder';
 import Noise from '../../components/Noise';
-import { ChevronDownIcon, WalletIcon, ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon, CopyIcon, SettingsIcon } from '../../components/Icons';
+import { ChevronDownIcon, WalletIcon, ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon, CopyIcon, SettingsIcon, DownloadIcon } from '../../components/Icons';
 import { MiniChart } from '../../components/MiniChart';
 import { Dropdown } from '../../components/Dropdown';
 import { ChainCard } from '../../components/ChainCard';
@@ -11,6 +11,7 @@ import { WalletSelector } from '../../components/WalletSelector';
 import { getStoredWallets, saveWallets } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
+import { BulkExportModal } from '../../components/BulkExportModal';
 import { SendModal } from '../../components/SendModal';
 import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
@@ -44,6 +45,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
 
     // Wallet settings modal state
     const [showWalletSettings, setShowWalletSettings] = useState(false);
+
+    // Bulk export modal state
+    const [showBulkExport, setShowBulkExport] = useState(false);
 
     // Copy address handler
     const handleCopyAddress = () => {
@@ -378,6 +382,62 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         )) : null}
                     </div>
                 </div>
+
+                {/* Bulk Operations Section */}
+                {wallets.length > 1 && (
+                    <div style={{
+                        background: '#1a1a1a',
+                        border: '1px solid #3a3a3a',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        marginTop: '16px'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '12px'
+                        }}>
+                            <span style={{
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                color: '#e5e7eb'
+                            }}>
+                                Bulk Operations
+                            </span>
+                            <span style={{
+                                fontSize: '12px',
+                                color: '#9ca3af'
+                            }}>
+                                {wallets.length} wallets
+                            </span>
+                        </div>
+                        
+                        <button
+                            onClick={() => setShowBulkExport(true)}
+                            style={{
+                                background: '#10b981',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '12px 16px',
+                                color: 'white',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                        >
+                            <DownloadIcon /> Export All Wallets
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Send Modal */}
@@ -403,6 +463,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     wallet={selectedWallet}
                     onClose={() => setShowWalletSettings(false)}
                     onSave={() => { }}
+                />
+            )}
+
+            {/* Bulk Export Modal */}
+            {showBulkExport && (
+                <BulkExportModal
+                    wallets={wallets}
+                    onClose={() => setShowBulkExport(false)}
                 />
             )}
         </>
