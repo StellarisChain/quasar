@@ -67,10 +67,10 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Function to refresh selected wallet from localStorage to ensure we have latest data
     const refreshSelectedWalletFromStorage = () => {
         if (!selectedWallet) return;
-        
+
         const storedWallets = getStoredWallets();
         const updatedWallet = storedWallets.find((w: Wallet) => w.id === selectedWallet.id);
-        
+
         if (updatedWallet) {
             console.log('Refreshing selected wallet from storage. Chains before:', selectedWallet.chains?.length || 0, 'Chains after:', updatedWallet.chains?.length || 0);
             setSelectedWallet(updatedWallet);
@@ -538,6 +538,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         const freshWallet = storedWallets.find((w: Wallet) => w.id === selectedWallet.id);
                         return freshWallet || selectedWallet;
                     })()}
+                    allWallets={wallets}
                     onClose={() => setShowSendModal(false)}
                 />
             )}
@@ -584,17 +585,17 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     wallet={selectedWallet}
                     onUnlock={() => {
                         setShowUnlockModal(false);
-                        
+
                         // Refresh wallet data from storage to ensure we have the latest chains/assets
                         setTimeout(() => {
                             refreshSelectedWalletFromStorage();
-                            
+
                             // Give more time for state to update after refresh
                             setTimeout(() => {
                                 // Use localStorage data directly for the lock check to avoid stale state
                                 const storedWallets = getStoredWallets();
                                 const currentWallet = storedWallets.find((w: Wallet) => w.id === selectedWallet.id);
-                                
+
                                 if (currentWallet && !isWalletLocked(currentWallet)) {
                                     setShowSendModal(true);
                                 } else {
