@@ -1,11 +1,12 @@
-/* ManageAssets.css - Manage Assets Modal Styles */
+/* ManageAssets.css - Modern Manage Assets Modal Styles */
 .manage-assets-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -14,51 +15,67 @@
 }
 
 .manage-assets-modal {
-    background: #2a2a2a;
-    border: 1px solid #3a3a3a;
-    border-radius: 12px;
+    background: var(--surface-secondary);
+    border: 1px solid var(--surface-quaternary);
+    border-radius: var(--radius-2xl);
     width: 90%;
-    max-width: 500px;
+    max-width: 520px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
     animation: slideIn 0.3s ease-out;
+    box-shadow: var(--shadow-2xl);
+    overflow: hidden;
+    position: relative;
+}
+
+.manage-assets-modal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--gradient-border);
+    opacity: 0.6;
 }
 
 .manage-assets-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #3a3a3a;
+    padding: var(--space-6);
+    border-bottom: 1px solid var(--surface-quaternary);
+    background: var(--surface-tertiary);
 }
 
 .manage-assets-header h3 {
     margin: 0;
-    color: #fff;
-    font-size: 18px;
-    font-weight: 600;
+    color: var(--neutral-50);
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
 }
 
 .close-btn {
     background: none;
     border: none;
-    color: #9ca3af;
-    font-size: 24px;
+    color: var(--neutral-400);
+    font-size: var(--text-xl);
     cursor: pointer;
-    padding: 0;
-    width: 24px;
-    height: 24px;
+    padding: var(--space-2);
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s;
+    border-radius: var(--radius-lg);
+    transition: all var(--duration-normal) var(--ease-out);
 }
 
 .close-btn:hover {
-    background: #3a3a3a;
-    color: #fff;
+    background: var(--surface-quaternary);
+    color: var(--neutral-100);
+    transform: scale(1.1);
 }
 
 .manage-assets-content {

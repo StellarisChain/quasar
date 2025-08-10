@@ -45,12 +45,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                 const allTokens = await loadTokensXmlAsJson('tokens.xml');
                 const walletCurve = wallet.curve || 'secp256k1';
                 const compatibleTokenSymbols = filterTokensByCurve(allTokens, walletCurve).map(token => token.Symbol);
-                
+
                 // Filter wallet chains to only include compatible ones
-                const compatibleAssets = wallet.chains.filter(chain => 
+                const compatibleAssets = wallet.chains.filter(chain =>
                     compatibleTokenSymbols.includes(chain.symbol)
                 );
-                
+
                 setAvailableAssets(compatibleAssets);
             } catch (error) {
                 console.warn('Could not filter assets by curve, showing all:', error);
@@ -189,7 +189,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
             let isMounted = true;
             setIsLoading(true);
             setHasError(false);
-            
+
             getTokenImagePath(symbol).then(path => {
                 if (isMounted) {
                     setImgSrc(path);
@@ -204,14 +204,14 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                     setIsLoading(false);
                 }
             });
-            
+
             return () => { isMounted = false; };
         }, [symbol]);
 
         if (isLoading) {
             return (
-                <div style={{ 
-                    fontSize: '10px', 
+                <div style={{
+                    fontSize: '10px',
                     color: '#9ca3af',
                     display: 'flex',
                     alignItems: 'center',
@@ -225,11 +225,11 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         }
 
         return imgSrc && !hasError ? (
-            <img 
-                src={imgSrc} 
-                alt={alt} 
-                style={{ 
-                    width: '100%', 
+            <img
+                src={imgSrc}
+                alt={alt}
+                style={{
+                    width: '100%',
                     height: '100%',
                     objectFit: 'cover',
                     borderRadius: '50%'
@@ -237,8 +237,8 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                 onError={() => setHasError(true)}
             />
         ) : (
-            <span style={{ 
-                fontSize: '10px', 
+            <span style={{
+                fontSize: '10px',
                 fontWeight: 'bold',
                 color: 'white',
                 textShadow: '0 1px 2px rgba(0,0,0,0.5)'
@@ -276,7 +276,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                     </div>
                 )}
             </div>
-            
+
             {availableAssets.length === 0 ? (
                 <div style={{
                     textAlign: 'center',

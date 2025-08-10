@@ -27,7 +27,7 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
             let isMounted = true;
             setIsLoading(true);
             setHasError(false);
-            
+
             getTokenImagePath(symbol).then(path => {
                 if (isMounted) {
                     setImgSrc(path);
@@ -42,14 +42,14 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                     setIsLoading(false);
                 }
             });
-            
+
             return () => { isMounted = false; };
         }, [symbol]);
 
         if (isLoading) {
             return (
-                <div style={{ 
-                    fontSize: '10px', 
+                <div style={{
+                    fontSize: '10px',
                     color: '#9ca3af',
                     display: 'flex',
                     alignItems: 'center',
@@ -63,11 +63,11 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
         }
 
         return imgSrc && !hasError ? (
-            <img 
-                src={imgSrc} 
-                alt={alt} 
-                style={{ 
-                    width: '100%', 
+            <img
+                src={imgSrc}
+                alt={alt}
+                style={{
+                    width: '100%',
                     height: '100%',
                     objectFit: 'cover',
                     borderRadius: '50%'
@@ -75,8 +75,8 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                 onError={() => setHasError(true)}
             />
         ) : (
-            <span style={{ 
-                fontSize: '12px', 
+            <span style={{
+                fontSize: '12px',
                 fontWeight: 'bold',
                 color: 'white',
                 textShadow: '0 1px 2px rgba(0,0,0,0.5)'
@@ -93,12 +93,12 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                 setLoading(true);
                 setError(null);
                 const allTokens = await loadTokensXmlAsJson('tokens.xml');
-                
+
                 // Filter tokens by wallet's curve type
                 const walletCurve = selectedWallet?.curve || 'secp256k1';
                 const filteredTokens = filterTokensByCurve(allTokens, walletCurve);
                 setAvailableTokens(filteredTokens);
-                
+
                 // Pre-select tokens that are already in the wallet
                 if (selectedWallet?.chains) {
                     const walletTokenSymbols = selectedWallet.chains.map(chain => chain.symbol);
@@ -166,7 +166,7 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                     </div>
                     <button className="close-btn" onClick={onClose}>×</button>
                 </div>
-                
+
                 <div className="manage-assets-content">
                     {loading && (
                         <div className="loading-state">
@@ -174,20 +174,20 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                             <p>Loading available tokens...</p>
                         </div>
                     )}
-                    
+
                     {error && (
                         <div className="error-state">
                             <p>{error}</p>
                             <button onClick={() => window.location.reload()}>Retry</button>
                         </div>
                     )}
-                    
+
                     {!loading && !error && (
                         <>
                             <div className="selection-summary">
                                 <p>{selectedTokens.length} of {availableTokens.length} assets selected</p>
                             </div>
-                            
+
                             <div className="tokens-grid">
                                 {availableTokens.map((token) => (
                                     <div
@@ -197,10 +197,10 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                                     >
                                         <div className="token-card-header">
                                             <div className="token-icon" style={{ backgroundColor: token.Color, overflow: 'hidden' }}>
-                                                <AssetIcon 
-                                                    symbol={token.Symbol} 
-                                                    alt={token.Symbol} 
-                                                    fallback={token.Symbol.slice(0, 2)} 
+                                                <AssetIcon
+                                                    symbol={token.Symbol}
+                                                    alt={token.Symbol}
+                                                    fallback={token.Symbol.slice(0, 2)}
                                                     color={token.Color}
                                                 />
                                             </div>
@@ -223,11 +223,11 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                         </>
                     )}
                 </div>
-                
+
                 <div className="manage-assets-footer">
                     <button className="cancel-btn" onClick={onClose}>Cancel</button>
-                    <button 
-                        className="save-btn" 
+                    <button
+                        className="save-btn"
                         onClick={handleSave}
                         disabled={loading}
                     >

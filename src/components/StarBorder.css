@@ -1,26 +1,32 @@
 .star-border-container {
     display: inline-block;
     position: relative;
-    border-radius: 20px;
+    border-radius: var(--radius-2xl);
     overflow: hidden;
     background: transparent;
+    transition: all var(--duration-normal) var(--ease-out);
+}
+
+.star-border-container:hover {
+    transform: scale(1.02);
 }
 
 .border-gradient-bottom {
     position: absolute;
     width: 300%;
     height: 50%;
-    opacity: 0.7;
+    opacity: 0.8;
     bottom: -12px;
     right: -250%;
     border-radius: 50%;
     animation: star-movement-bottom linear infinite alternate;
     z-index: 0;
+    filter: blur(1px);
 }
 
 .border-gradient-top {
     position: absolute;
-    opacity: 0.7;
+    opacity: 0.8;
     width: 300%;
     height: 50%;
     top: -12px;
@@ -28,12 +34,18 @@
     border-radius: 50%;
     animation: star-movement-top linear infinite alternate;
     z-index: 0;
+    filter: blur(1px);
 }
 
 .inner-content {
     position: relative;
     text-align: center;
     z-index: 1;
+    background: var(--surface-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: inherit;
+    padding: inherit;
 }
 
 @keyframes star-movement-bottom {
@@ -44,7 +56,7 @@
 
     100% {
         transform: translate(-100%, 0%);
-        opacity: 0;
+        opacity: 0.3;
     }
 }
 
@@ -56,6 +68,6 @@
 
     100% {
         transform: translate(100%, 0%);
-        opacity: 0;
+        opacity: 0.3;
     }
 }

@@ -10,8 +10,9 @@
   background: none;
   border-radius: 0;
   box-shadow: none;
-  font-family: Inter, Segoe UI, Arial, Helvetica, sans-serif;
-  font-weight: 600;
+  font-family: var(--font-family-sans);
+  font-weight: var(--font-bold);
+  color: var(--neutral-50);
 }
 
 .counter-digit {
@@ -32,7 +33,8 @@
   align-items: center;
   justify-content: center;
   font-family: inherit;
-  font-weight: 600;
+  font-weight: inherit;
+  color: inherit;
 }
 
 .gradient-container {
@@ -47,5 +49,17 @@
 .bottom-gradient {
   position: absolute;
   bottom: 0;
-  width: 100%;
+  left: 0;
+  right: 0;
+  height: 20%;
+  background: linear-gradient(to top, var(--surface-primary), transparent);
+}
+
+.top-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20%;
+  background: linear-gradient(to bottom, var(--surface-primary), transparent);
 }

@@ -268,7 +268,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         </span>
                     </div>
                 )}
-                
+
                 {/* Curve Type Display */}
                 {selectedWallet?.curve && (
                     <div style={{
@@ -293,7 +293,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         <span>Curve: {selectedWallet.curve.toUpperCase()}</span>
                     </div>
                 )}
-                
+
                 {/* Total Balance */}
                 <div className="balance-card balance-card-anim" style={{ position: 'relative' }}>
                     {/* Settings Gear Icon */}

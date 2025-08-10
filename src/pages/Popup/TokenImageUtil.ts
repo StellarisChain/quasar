@@ -5,7 +5,7 @@
  */
 export function getTokenImagePath(ticker: string): Promise<string | null> {
   const fileName = `${ticker.toLowerCase()}.png`;
-  
+
   // Try different possible paths based on the environment
   const possiblePaths = [
     fileName, // Direct filename for built extension
@@ -26,25 +26,25 @@ export function getTokenImagePath(ticker: string): Promise<string | null> {
 
   return new Promise((resolve) => {
     let currentIndex = 0;
-    
+
     function tryNextPath() {
       if (currentIndex >= possiblePaths.length) {
         resolve(null);
         return;
       }
-      
+
       const imgPath = possiblePaths[currentIndex];
       const img = new window.Image();
-      
+
       img.onload = () => resolve(imgPath);
       img.onerror = () => {
         currentIndex++;
         tryNextPath();
       };
-      
+
       img.src = imgPath;
     }
-    
+
     tryNextPath();
   });
 }
