@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BackIcon, KeyIcon, WalletIcon, ArrowUpRightIcon } from '../../components/Icons';
+import React, { useState, useRef } from 'react';
+import { BackIcon, KeyIcon, WalletIcon } from '../../components/Icons';
 import { Wallet, JsonWallet } from '../Popup/DataTypes';
+import { detectCurveFromWalletData } from '../../lib/curve_detection_utils';
 import './Popup.css';
 
 export interface ImportWalletProps {
@@ -11,14 +12,17 @@ export interface ImportWalletProps {
 
 export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fromFile }) => {
     const [walletData, setWalletData] = useState<Wallet | null>(null);
-    const [showFileDialog, setShowFileDialog] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [curveDetection, setCurveDetection] = useState<{ curve: string, confidence: number, method: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file) return;
+        if (!file) {
+            // Don't close dialog if no file was selected (user cancelled)
+            return;
+        }
 
         if (!file.name.endsWith('.json')) {
             setError('Please select a valid .json file');
@@ -37,38 +41,36 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
 
             // Only select the first entry
             const selectedWallet = walletData.wallet_data.entry_data.entries[0];
+
+            // Automatically detect the curve from wallet data
+            const curveDetectionResult = detectCurveFromWalletData({
+                private_key: selectedWallet.private_key,
+                public_key: selectedWallet.public_key,
+                address: selectedWallet.address
+            });
+
+            // Store curve detection info for display
+            setCurveDetection(curveDetectionResult);
+
             const wallet: Wallet = {
                 id: selectedWallet.id || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 name: "Imported Wallet", // Default name
                 address: selectedWallet.address,
                 public_key: selectedWallet.public_key,
                 private_key: selectedWallet.private_key,
-                mnemonic: selectedWallet.mnemonic
+                mnemonic: selectedWallet.mnemonic,
+                curve: curveDetectionResult.curve
             };
             if (!wallet) {
                 throw new Error('Invalid wallet data');
             }
 
             setWalletData(wallet);
-            setShowFileDialog(false);
         } catch (err) {
             setError('Failed to parse wallet file. Please check the file format.');
             console.error('Error parsing wallet file:', err);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleLoadFromFile = () => {
-        setShowFileDialog(true);
-        setError(null);
-    };
-
-    const handleDialogClose = () => {
-        setShowFileDialog(false);
-        setError(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
         }
     };
 
@@ -80,6 +82,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
 
     const handleClearWallet = () => {
         setWalletData(null);
+        setCurveDetection(null);
         setError(null);
     };
 
@@ -145,6 +148,49 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                         Wallet Details
                     </h3>
 
+                    {/* Error Display */}
+                    {error && (
+                        <div style={{
+                            background: '#7f1d1d',
+                            border: '1px solid #dc2626',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            color: '#fca5a5',
+                            fontSize: '14px',
+                            marginBottom: '16px'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
+                    {/* Loading Indicator */}
+                    {loading && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '20px',
+                            background: '#111827',
+                            border: '1px solid #374151',
+                            borderRadius: '8px',
+                            marginBottom: '16px'
+                        }}>
+                            <div style={{
+                                display: 'inline-block',
+                                width: '20px',
+                                height: '20px',
+                                border: '2px solid #374151',
+                                borderTop: '2px solid #8b5cf6',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite',
+                                marginRight: '12px'
+                            }}></div>
+                            <span style={{ color: '#9ca3af', fontSize: '14px' }}>
+                                Loading wallet...
+                            </span>
+                        </div>
+                    )}
+
                     {!walletData ? (
                         <div style={{ textAlign: 'center', padding: '32px 0' }}>
                             <div style={{
@@ -163,8 +209,14 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                             <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 16px' }}>
                                 No wallet loaded
                             </p>
-                            <button
-                                onClick={handleLoadFromFile}
+                            <label
+                                htmlFor="wallet-file-input"
+                                onClick={() => {
+                                    if (fileInputRef.current) {
+                                        fileInputRef.current.value = '';
+                                    }
+                                    setError(null);
+                                }}
                                 style={{
                                     background: '#8b5cf6',
                                     border: 'none',
@@ -182,7 +234,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                 }}
                             >
                                 Load from File
-                            </button>
+                            </label>
                         </div>
                     ) : (
                         <div>
@@ -243,6 +295,45 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                 </div>
                             </div>
 
+                            {curveDetection && (
+                                <div style={{ marginBottom: '16px' }}>
+                                    <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
+                                        Detected Curve
+                                    </label>
+                                    <div style={{
+                                        background: '#111827',
+                                        border: '1px solid #374151',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        <div style={{
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: curveDetection.confidence > 0.8 ? '#10b981' :
+                                                curveDetection.confidence > 0.6 ? '#f59e0b' : '#ef4444'
+                                        }}></div>
+                                        <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>
+                                            {curveDetection.curve}
+                                        </span>
+                                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>
+                                            ({Math.round(curveDetection.confidence * 100)}% confidence)
+                                        </span>
+                                    </div>
+                                    <p style={{
+                                        fontSize: '11px',
+                                        color: '#6b7280',
+                                        margin: '4px 0 0 0',
+                                        fontStyle: 'italic'
+                                    }}>
+                                        Detection method: {curveDetection.method.replace(/_/g, ' ')}
+                                    </p>
+                                </div>
+                            )}
+
                             {walletData.chains && walletData.chains.length > 0 && (
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
@@ -294,8 +385,14 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                 >
                                     Clear
                                 </button>
-                                <button
-                                    onClick={handleLoadFromFile}
+                                <label
+                                    htmlFor="wallet-file-input"
+                                    onClick={() => {
+                                        if (fileInputRef.current) {
+                                            fileInputRef.current.value = '';
+                                        }
+                                        setError(null);
+                                    }}
                                     style={{
                                         background: '#6b7280',
                                         border: 'none',
@@ -306,116 +403,28 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                         fontWeight: '500',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s',
-                                        flex: '1'
+                                        flex: '1',
+                                        textAlign: 'center'
                                     }}
                                 >
                                     Load Different File
-                                </button>
+                                </label>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* File Selection Dialog */}
-                {showFileDialog && (
-                    <div style={{
-                        position: 'fixed',
-                        top: '0',
-                        left: '0',
-                        right: '0',
-                        bottom: '0',
-                        background: 'rgba(0, 0, 0, 0.7)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '20px'
-                    }}>
-                        <div style={{
-                            background: '#1f2937',
-                            borderRadius: '12px',
-                            padding: '24px',
-                            minWidth: '300px',
-                            maxWidth: '90vw',
-                            border: '1px solid #374151'
-                        }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'white', margin: '0 0 16px' }}>
-                                Select Wallet File
-                            </h3>
-                            <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 20px' }}>
-                                Choose a .json wallet file to import
-                            </p>
+                {/* Hidden file input for native file dialog */}
+                <input
+                    id="wallet-file-input"
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                />
 
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".json"
-                                onChange={handleFileSelect}
-                                style={{
-                                    width: '100%',
-                                    padding: '12px',
-                                    background: '#111827',
-                                    border: '1px solid #374151',
-                                    borderRadius: '8px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    marginBottom: '16px'
-                                }}
-                            />
-
-                            {error && (
-                                <div style={{
-                                    background: '#7f1d1d',
-                                    border: '1px solid #dc2626',
-                                    borderRadius: '8px',
-                                    padding: '12px',
-                                    color: '#fca5a5',
-                                    fontSize: '14px',
-                                    marginBottom: '16px'
-                                }}>
-                                    {error}
-                                </div>
-                            )}
-
-                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                                <button
-                                    onClick={handleDialogClose}
-                                    disabled={loading}
-                                    style={{
-                                        background: '#374151',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        padding: '12px 16px',
-                                        color: '#9ca3af',
-                                        fontSize: '14px',
-                                        fontWeight: '500',
-                                        cursor: loading ? 'not-allowed' : 'pointer',
-                                        opacity: loading ? 0.6 : 1
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-
-                            {loading && (
-                                <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                                    <div style={{
-                                        display: 'inline-block',
-                                        width: '20px',
-                                        height: '20px',
-                                        border: '2px solid #374151',
-                                        borderTop: '2px solid #8b5cf6',
-                                        borderRadius: '50%',
-                                        animation: 'spin 1s linear infinite'
-                                    }}></div>
-                                    <p style={{ color: '#9ca3af', fontSize: '14px', margin: '8px 0 0' }}>
-                                        Loading wallet...
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
+                {/* Continue Button */}
 
                 {/* Continue Button */}
                 <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '16px', marginBottom: '0', flexShrink: 0, padding: '0 24px 24px 24px', background: 'transparent' }}>
