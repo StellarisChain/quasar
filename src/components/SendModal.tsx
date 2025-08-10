@@ -6,7 +6,7 @@ import { Wallet, ChainData } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { createTransaction } from '../lib/wallet_client';
 import { Transaction } from '../lib/transaction/transaction';
-import { loadTokensXmlAsJson } from '../lib/token_loader';
+import { loadTokensXmlAsJson, filterTokensByCurve } from '../lib/token_loader';
 import { CurveType } from '../lib/wallet_generation_utils';
 import './WalletSettings.css';
 
@@ -28,9 +28,38 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [transactionHash, setTransactionHash] = useState('');
     const [transactionFee, setTransactionFee] = useState<Decimal>();
+    const [availableAssets, setAvailableAssets] = useState<ChainData[]>([]);
 
     const amountInputRef = useRef<HTMLInputElement>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
+
+    // Filter assets by curve compatibility on component mount
+    useEffect(() => {
+        const filterAssetsByCurve = async () => {
+            if (!wallet.chains || wallet.chains.length === 0) {
+                setAvailableAssets([]);
+                return;
+            }
+
+            try {
+                const allTokens = await loadTokensXmlAsJson('tokens.xml');
+                const walletCurve = wallet.curve || 'secp256k1';
+                const compatibleTokenSymbols = filterTokensByCurve(allTokens, walletCurve).map(token => token.Symbol);
+                
+                // Filter wallet chains to only include compatible ones
+                const compatibleAssets = wallet.chains.filter(chain => 
+                    compatibleTokenSymbols.includes(chain.symbol)
+                );
+                
+                setAvailableAssets(compatibleAssets);
+            } catch (error) {
+                console.warn('Could not filter assets by curve, showing all:', error);
+                setAvailableAssets(wallet.chains || []);
+            }
+        };
+
+        filterAssetsByCurve();
+    }, [wallet]);
 
     // Focus inputs when step changes
     useEffect(() => {
@@ -153,82 +182,173 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
     // Helper component to handle async image loading for each asset
     const AssetIcon: React.FC<{ symbol: string; alt: string; fallback: string; }> = ({ symbol, alt, fallback }) => {
         const [imgSrc, setImgSrc] = useState<string | null>(null);
+        const [isLoading, setIsLoading] = useState(true);
+        const [hasError, setHasError] = useState(false);
 
         useEffect(() => {
             let isMounted = true;
+            setIsLoading(true);
+            setHasError(false);
+            
             getTokenImagePath(symbol).then(path => {
-                if (isMounted) setImgSrc(path);
+                if (isMounted) {
+                    setImgSrc(path);
+                    setIsLoading(false);
+                    if (!path) {
+                        setHasError(true);
+                    }
+                }
+            }).catch(() => {
+                if (isMounted) {
+                    setHasError(true);
+                    setIsLoading(false);
+                }
             });
+            
             return () => { isMounted = false; };
         }, [symbol]);
 
-        return imgSrc ? (
-            <img src={imgSrc} alt={alt} style={{ width: '100%', height: '100%' }} />
+        if (isLoading) {
+            return (
+                <div style={{ 
+                    fontSize: '10px', 
+                    color: '#9ca3af',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%',
+                    height: '100%'
+                }}>
+                    •••
+                </div>
+            );
+        }
+
+        return imgSrc && !hasError ? (
+            <img 
+                src={imgSrc} 
+                alt={alt} 
+                style={{ 
+                    width: '100%', 
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%'
+                }}
+                onError={() => setHasError(true)}
+            />
         ) : (
-            fallback
+            <span style={{ 
+                fontSize: '10px', 
+                fontWeight: 'bold',
+                color: 'white',
+                textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+            }}>
+                {fallback}
+            </span>
         );
     };
 
     const renderSelectAsset = () => (
         <div>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', marginBottom: '16px' }}>
-                Select Asset to Send
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {wallet.chains?.map((chain, index) => (
-                    <div
-                        key={index}
-                        onClick={() => setSelectedAsset(chain)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            background: selectedAsset === chain ? '#2a2a2a' : '#1a1a1a',
-                            border: `1px solid ${selectedAsset === chain ? '#8b5cf6' : '#3a3a3a'}`,
-                            borderRadius: '12px',
-                            padding: '16px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: chain.color || '#6b7280',
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>
+                    Select Asset to Send
+                </h3>
+                {wallet.curve && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '11px',
+                        color: '#9ca3af',
+                        background: '#2a2a2a',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #3a3a3a'
+                    }}>
+                        <span style={{
+                            width: '4px',
+                            height: '4px',
+                            borderRadius: '50%',
+                            background: wallet.curve === 'secp256k1' ? '#10b981' : '#f59e0b'
+                        }} />
+                        <span>{wallet.curve.toUpperCase()}</span>
+                    </div>
+                )}
+            </div>
+            
+            {availableAssets.length === 0 ? (
+                <div style={{
+                    textAlign: 'center',
+                    padding: '40px 20px',
+                    background: '#1a1a1a',
+                    border: '1px solid #3a3a3a',
+                    borderRadius: '12px',
+                    color: '#9ca3af'
+                }}>
+                    <p style={{ margin: '0 0 8px', fontSize: '14px' }}>No compatible assets found</p>
+                    <p style={{ margin: 0, fontSize: '12px' }}>
+                        This wallet uses {wallet.curve?.toUpperCase() || 'UNKNOWN'} curve, but no assets support this curve type.
+                    </p>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {availableAssets.map((chain, index) => (
+                        <div
+                            key={index}
+                            onClick={() => setSelectedAsset(chain)}
+                            style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#fff',
-                                fontSize: '12px',
-                                fontWeight: '600'
-                            }}>
-                                <AssetIcon symbol={chain.symbol} alt={chain.symbol} fallback={chain.symbol.charAt(0)} />
+                                justifyContent: 'space-between',
+                                background: selectedAsset === chain ? '#2a2a2a' : '#1a1a1a',
+                                border: `1px solid ${selectedAsset === chain ? '#8b5cf6' : '#3a3a3a'}`,
+                                borderRadius: '12px',
+                                padding: '16px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    background: chain.color || '#6b7280',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#fff',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    overflow: 'hidden'
+                                }}>
+                                    <AssetIcon symbol={chain.symbol} alt={chain.symbol} fallback={chain.symbol.substring(0, 2).toUpperCase()} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff' }}>
+                                        {chain.name}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                                        {chain.balance} {chain.symbol}
+                                    </div>
+                                </div>
                             </div>
-                            <div>
+                            <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff' }}>
-                                    {chain.name}
+                                    ${chain.fiatValue.toFixed(2)}
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-                                    {chain.balance} {chain.symbol}
+                                <div style={{
+                                    fontSize: '12px',
+                                    color: chain.change24h >= 0 ? '#10b981' : '#ef4444'
+                                }}>
+                                    {chain.change24h >= 0 ? '+' : ''}{chain.change24h.toFixed(2)}%
                                 </div>
                             </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#fff' }}>
-                                ${chain.fiatValue.toFixed(2)}
-                            </div>
-                            <div style={{
-                                fontSize: '12px',
-                                color: chain.change24h >= 0 ? '#10b981' : '#ef4444'
-                            }}>
-                                {chain.change24h >= 0 ? '+' : ''}{chain.change24h.toFixed(2)}%
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 
@@ -259,12 +379,13 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                     justifyContent: 'center',
                     color: '#fff',
                     fontSize: '10px',
-                    fontWeight: '600'
+                    fontWeight: '600',
+                    overflow: 'hidden'
                 }}>
                     <AssetIcon
                         symbol={selectedAsset?.symbol || ''}
                         alt={selectedAsset?.symbol || ''}
-                        fallback={(selectedAsset?.symbol && selectedAsset.symbol.charAt(0)) || ''}
+                        fallback={(selectedAsset?.symbol && selectedAsset.symbol.substring(0, 2).toUpperCase()) || ''}
                     />
                 </div>
                 <div>
@@ -695,12 +816,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                         <button
                             onClick={handleNext}
                             disabled={
-                                (step === 'select-asset' && !selectedAsset) ||
+                                (step === 'select-asset' && (!selectedAsset || availableAssets.length === 0)) ||
                                 (step === 'confirm' && isProcessing)
                             }
                             style={{
                                 flex: 1,
-                                background: (step === 'select-asset' && !selectedAsset) ||
+                                background: (step === 'select-asset' && (!selectedAsset || availableAssets.length === 0)) ||
                                     (step === 'confirm' && isProcessing) ? '#374151' : '#8b5cf6',
                                 border: 'none',
                                 borderRadius: '8px',

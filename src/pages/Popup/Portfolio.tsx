@@ -137,6 +137,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 Color: '',
                                 TokenSupport: false,
                                 Node: 'ur fucked',
+                                Curve: 'secp256k1', // Default curve
                                 // Add any other required properties with default values
                             };
                             const subTokens: SubToken[] = tokenData.SubTokens || [];
@@ -267,6 +268,32 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         </span>
                     </div>
                 )}
+                
+                {/* Curve Type Display */}
+                {selectedWallet?.curve && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        margin: '12px 0',
+                        padding: '8px 12px',
+                        background: '#2a2a2a',
+                        border: '1px solid #3a3a3a',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        color: '#9ca3af'
+                    }}>
+                        <span style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            background: selectedWallet.curve === 'secp256k1' ? '#10b981' : '#f59e0b'
+                        }} />
+                        <span>Curve: {selectedWallet.curve.toUpperCase()}</span>
+                    </div>
+                )}
+                
                 {/* Total Balance */}
                 <div className="balance-card balance-card-anim" style={{ position: 'relative' }}>
                     {/* Settings Gear Icon */}
