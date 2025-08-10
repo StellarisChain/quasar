@@ -13,23 +13,26 @@ import './WalletSettings.css';
 
 interface SendModalProps {
     wallet: Wallet;
+    allWallets: Wallet[];
     onClose: () => void;
 }
 
 type SendStep = 'select-asset' | 'enter-details' | 'confirm' | 'success';
 
-export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
+export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClose }) => {
     const [step, setStep] = useState<SendStep>('select-asset');
     const [selectedAsset, setSelectedAsset] = useState<ChainData | null>(null);
     const [recipientAddress, setRecipientAddress] = useState('');
     const [amount, setAmount] = useState('');
     const [memo, setMemo] = useState('');
-    const [showAssetDropdown, setShowAssetDropdown] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isProcessing, setIsProcessing] = useState(false);
     const [transactionHash, setTransactionHash] = useState('');
     const [transactionFee, setTransactionFee] = useState<Decimal>();
     const [availableAssets, setAvailableAssets] = useState<ChainData[]>([]);
+    const [compatibleWallets, setCompatibleWallets] = useState<Wallet[]>([]);
+    const [selectedRecipientWallet, setSelectedRecipientWallet] = useState<Wallet | null>(null);
+    const [showWalletDropdown, setShowWalletDropdown] = useState(false);
 
     const amountInputRef = useRef<HTMLInputElement>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +71,16 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         filterAssetsByCurve();
     }, [wallet, walletLocked]); // Also re-run when wallet lock status changes
 
+    // Filter compatible wallets by curve
+    useEffect(() => {
+        const currentCurve = wallet.curve || 'secp256k1';
+        const filtered = allWallets.filter(w => 
+            w.id !== wallet.id && // Exclude current wallet
+            (w.curve || 'secp256k1') === currentCurve // Same curve
+        );
+        setCompatibleWallets(filtered);
+    }, [allWallets, wallet]);
+
     // Focus inputs when step changes
     useEffect(() => {
         if (step === 'enter-details') {
@@ -79,6 +92,23 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         }
     }, [step]);
 
+    // Close wallet dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showWalletDropdown) {
+                setShowWalletDropdown(false);
+            }
+        };
+
+        if (showWalletDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showWalletDropdown]);
+
     // Don't render if wallet is locked
     if (walletLocked) {
         return null;
@@ -89,6 +119,16 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         if (address.length < 20) return 'Invalid address format';
         if (address === wallet.address) return 'Cannot send to your own address';
         return '';
+    };
+
+    const handleWalletSelect = (selectedWallet: Wallet) => {
+        setSelectedRecipientWallet(selectedWallet);
+        setRecipientAddress(selectedWallet.address);
+        setShowWalletDropdown(false);
+        // Clear any existing address error
+        if (errors.address) {
+            setErrors({ ...errors, address: '' });
+        }
     };
 
     const validateAmount = (amount: string) => {
@@ -431,41 +471,151 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
 
             {/* Recipient Address */}
             <div style={{ marginBottom: '20px' }}>
-                <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#9ca3af',
-                    marginBottom: '8px'
-                }}>
-                    Recipient Address
-                </label>
-                <input
-                    ref={addressInputRef}
-                    type="text"
-                    value={recipientAddress}
-                    onChange={(e) => {
-                        setRecipientAddress(e.target.value);
-                        if (errors.address) {
-                            setErrors({ ...errors, address: '' });
-                        }
-                    }}
-                    placeholder="Enter recipient address"
-                    style={{
-                        width: '100%',
-                        background: '#1a1a1a',
-                        border: `1px solid ${errors.address ? '#ef4444' : '#3a3a3a'}`,
-                        borderRadius: '8px',
-                        padding: '12px',
-                        color: '#fff',
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={{
                         fontSize: '14px',
-                        fontFamily: 'monospace',
-                        outline: 'none',
-                        transition: 'border-color 0.2s'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
-                    onBlur={(e) => e.target.style.borderColor = errors.address ? '#ef4444' : '#3a3a3a'}
-                />
+                        fontWeight: '500',
+                        color: '#9ca3af',
+                    }}>
+                        Recipient Address
+                    </label>
+                    {compatibleWallets.length > 0 && (
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                onClick={() => setShowWalletDropdown(!showWalletDropdown)}
+                                style={{
+                                    background: '#8b5cf6',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    padding: '4px 8px',
+                                    color: 'white',
+                                    fontSize: '12px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
+                            >
+                                My Wallets
+                                <ChevronDownIcon />
+                            </button>
+                            
+                            {showWalletDropdown && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    right: '0',
+                                    marginTop: '4px',
+                                    background: '#2a2a2a',
+                                    border: '1px solid #3a3a3a',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                                    zIndex: 1000,
+                                    minWidth: '200px',
+                                    maxHeight: '200px',
+                                    overflow: 'auto'
+                                }}>
+                                    {compatibleWallets.map((compatibleWallet) => (
+                                        <div
+                                            key={compatibleWallet.id}
+                                            onClick={() => handleWalletSelect(compatibleWallet)}
+                                            style={{
+                                                padding: '12px',
+                                                cursor: 'pointer',
+                                                borderBottom: '1px solid #3a3a3a',
+                                                transition: 'background 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                            <div style={{
+                                                fontSize: '14px',
+                                                fontWeight: '500',
+                                                color: '#fff',
+                                                marginBottom: '2px'
+                                            }}>
+                                                {compatibleWallet.name || `Wallet ${compatibleWallet.id}`}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '12px',
+                                                color: '#9ca3af',
+                                                fontFamily: 'monospace'
+                                            }}>
+                                                {compatibleWallet.address.slice(0, 10)}...{compatibleWallet.address.slice(-8)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+                
+                <div style={{ position: 'relative' }}>
+                    <input
+                        ref={addressInputRef}
+                        type="text"
+                        value={recipientAddress}
+                        onChange={(e) => {
+                            setRecipientAddress(e.target.value);
+                            setSelectedRecipientWallet(null); // Clear selected wallet when manually typing
+                            if (errors.address) {
+                                setErrors({ ...errors, address: '' });
+                            }
+                        }}
+                        placeholder="Enter recipient address or select from your wallets"
+                        style={{
+                            width: '100%',
+                            background: '#1a1a1a',
+                            border: `1px solid ${errors.address ? '#ef4444' : '#3a3a3a'}`,
+                            borderRadius: '8px',
+                            padding: '12px',
+                            paddingRight: selectedRecipientWallet ? '40px' : '12px',
+                            color: '#fff',
+                            fontSize: '14px',
+                            fontFamily: 'monospace',
+                            outline: 'none',
+                            transition: 'border-color 0.2s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
+                        onBlur={(e) => e.target.style.borderColor = errors.address ? '#ef4444' : '#3a3a3a'}
+                    />
+                    
+                    {selectedRecipientWallet && (
+                        <div style={{
+                            position: 'absolute',
+                            right: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: '#10b981',
+                            fontSize: '12px'
+                        }}>
+                            <span>✓</span>
+                        </div>
+                    )}
+                </div>
+                
+                {selectedRecipientWallet && (
+                    <div style={{
+                        marginTop: '6px',
+                        padding: '8px',
+                        background: '#1a2e2a',
+                        border: '1px solid #10b981',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        color: '#10b981'
+                    }}>
+                        Sending to: {selectedRecipientWallet.name || `Wallet ${selectedRecipientWallet.id}`}
+                    </div>
+                )}
+                
                 {errors.address && (
                     <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
                         {errors.address}
