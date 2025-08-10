@@ -15,7 +15,7 @@ export interface ExportOptions {
  */
 export function walletToJsonWallet(wallet: Wallet, options: ExportOptions = {}): JsonWallet {
     const { includePrivateKey = true, includeMnemonic = true } = options;
-    
+
     const entry = {
         id: wallet.id.toString(),
         address: wallet.address,
@@ -40,7 +40,7 @@ export function walletToJsonWallet(wallet: Wallet, options: ExportOptions = {}):
  */
 export function walletsToJsonWallet(wallets: Wallet[], options: ExportOptions = {}): JsonWallet {
     const { includePrivateKey = true, includeMnemonic = true } = options;
-    
+
     const entries = wallets.map(wallet => ({
         id: wallet.id.toString(),
         address: wallet.address,
@@ -65,16 +65,16 @@ export function walletsToJsonWallet(wallets: Wallet[], options: ExportOptions = 
  */
 export function generateExportFilename(wallet: Wallet | null, isBulk: boolean = false): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    
+
     if (isBulk) {
         return `quasar-wallets-bulk-export-${timestamp}.json`;
     }
-    
+
     if (wallet?.name) {
         const safeName = wallet.name.replace(/[^a-zA-Z0-9-_]/g, '_').toLowerCase();
         return `quasar-wallet-${safeName}-${timestamp}.json`;
     }
-    
+
     return `quasar-wallet-export-${timestamp}.json`;
 }
 
@@ -85,14 +85,14 @@ export function downloadWalletJson(data: JsonWallet, filename: string): void {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     // Clean up the URL object
     URL.revokeObjectURL(url);
 }
@@ -120,15 +120,15 @@ export function exportWalletsBulk(wallets: Wallet[], options: ExportOptions = {}
  */
 export function validateExportOptions(options: ExportOptions): { isValid: boolean; warnings: string[] } {
     const warnings: string[] = [];
-    
+
     if (!options.includePrivateKey) {
         warnings.push('Private keys will not be included in the export. You will not be able to import and use these wallets.');
     }
-    
+
     if (!options.includeMnemonic) {
         warnings.push('Mnemonic phrases will not be included in the export.');
     }
-    
+
     return {
         isValid: true, // Currently always valid, but can be extended
         warnings

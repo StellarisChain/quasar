@@ -94,12 +94,12 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
         try {
             setExporting(true);
             const validation = validateExportOptions(exportOptions);
-            
+
             if (validation.warnings.length > 0) {
                 // Show warnings in console for now
                 console.warn('Export warnings:', validation.warnings);
             }
-            
+
             exportWallet(wallet, exportOptions);
             setShowExportModal(false);
         } catch (error) {
@@ -640,7 +640,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
                                 <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#fff' }}>
                                     Export Options
                                 </h4>
-                                
+
                                 <div style={{ marginBottom: '12px' }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                                         <input

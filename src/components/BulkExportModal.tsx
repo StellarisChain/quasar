@@ -49,11 +49,11 @@ export const BulkExportModal: React.FC<BulkExportModalProps> = ({ wallets, onClo
 
             const walletsToExport = wallets.filter(w => selectedWallets.has(w.id));
             const validation = validateExportOptions(exportOptions);
-            
+
             if (validation.warnings.length > 0) {
                 console.warn('Export warnings:', validation.warnings);
             }
-            
+
             exportWalletsBulk(walletsToExport, exportOptions);
             onClose();
         } catch (error) {

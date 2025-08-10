@@ -1,56 +1,61 @@
 /* Wallet Address Reveal Animation */
 .wallet-address-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 8px;
-    position: relative;
-    cursor: pointer;
-    user-select: none;
-    transition: box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow 0.2s;
 }
 
 .wallet-address-span {
-    background: rgba(255,255,255,0.08);
-    border-radius: 8px;
-    padding: 4px 10px;
-    color: #fff;
-    font-family: monospace;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border: 1px solid transparent;
-    transition: border 0.2s, box-shadow 0.2s;
-    position: relative;
-    overflow: hidden;
-    max-width: 120px;
-    white-space: nowrap;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  transition: border 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+  max-width: 120px;
+  white-space: nowrap;
 }
+
 .wallet-address-span.copied {
-    border: 1px solid #4caf50;
+  border: 1px solid #4caf50;
 }
+
 .wallet-address-container:hover .wallet-address-span {
-    max-width: 420px;
-    box-shadow: 0 2px 16px 0 rgba(0,0,0,0.18);
-    border: 1px solid #4caf50;
+  max-width: 420px;
+  box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.18);
+  border: 1px solid #4caf50;
 }
+
 .wallet-address-text {
-    position: relative;
-    display: inline-block;
-    transition: color 0.2s;
+  position: relative;
+  display: inline-block;
+  transition: color 0.2s;
 }
+
 .wallet-address-full {
-    opacity: 0;
-    margin-left: 8px;
-    transition: opacity 0.3s, margin-left 0.3s;
-    color: #fff;
-    font-weight: 500;
-    font-size: 14px;
+  opacity: 0;
+  margin-left: 8px;
+  transition: opacity 0.3s, margin-left 0.3s;
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
 }
+
 .wallet-address-container:hover .wallet-address-full {
-    opacity: 1;
-    margin-left: 8px;
+  opacity: 1;
+  margin-left: 8px;
 }
 
 /* Interactive scaling for action buttons */
@@ -155,7 +160,6 @@ body {
 .brand-icon {
   width: 24px;
   height: 24px;
-  background: #8b5cf6;
   border-radius: 50%;
   display: flex;
   align-items: center;
