@@ -607,3 +607,42 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Wallet Security Animations */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes lockPulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.wallet-lock-indicator {
+  animation: lockPulse 2s ease-in-out infinite;
+}
+
+.modal-slide-in {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
