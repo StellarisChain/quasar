@@ -1,18 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Counter from '../../components/Counter';
-import StarBorder from '../../components/StarBorder';
-import Noise from '../../components/Noise';
-import { ChevronDownIcon, WalletIcon, ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon, CopyIcon, SettingsIcon, DownloadIcon } from '../../components/Icons';
-import { MiniChart } from '../../components/MiniChart';
-import { Dropdown } from '../../components/Dropdown';
+import { ArrowUpRightIcon, ArrowDownRightIcon, ArrowsRightLeftIcon, PlusIcon, CreditCardIcon, CopyIcon, SettingsIcon, DownloadIcon, LockClosedIcon } from '../../components/Icons';
 import { ChainCard } from '../../components/ChainCard';
-import { Token, ChainData, Wallet } from './DataTypes';
-import { WalletSelector } from '../../components/WalletSelector';
-import { getStoredWallets, saveWallets } from './WalletUtils';
+import { ChainData, Wallet } from './DataTypes';
+import { saveWallets, isWalletLocked, walletSession } from './WalletUtils';
 import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
 import { BulkExportModal } from '../../components/BulkExportModal';
 import { SendModal } from '../../components/SendModal';
+import { WalletUnlockModal } from '../../components/WalletUnlockModal';
 import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
 import './Popup.css';
@@ -51,6 +47,12 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
 
     // Hover state for address container
     const [isAddressHovered, setIsAddressHovered] = useState(false);
+
+    // Unlock modal state
+    const [showUnlockModal, setShowUnlockModal] = useState(false);
+
+    // Check if wallet is locked
+    const walletIsLocked = selectedWallet ? isWalletLocked(selectedWallet) : false;
 
     // Copy address handler
     const handleCopyAddress = () => {
@@ -161,12 +163,20 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             // Cosmetic
                             chain.color = tokenData.Color || '';
 
-                            // Load Balance
-                            const [balance] = await getBalanceInfo(
-                                selectedWallet?.address || '',
-                                tokenData.Node || ''
-                            );
-                            chain.balance = (balance !== null && balance !== undefined) ? balance.toString() : '0.00'; // Ensure balance is a string
+                            // Load Balance - only if wallet is unlocked or not encrypted
+                            let balance = '0.00';
+                            if (!wallet.isEncrypted || !isWalletLocked(wallet)) {
+                                try {
+                                    const [balanceResult] = await getBalanceInfo(
+                                        wallet.address || '',
+                                        tokenData.Node || ''
+                                    );
+                                    balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
+                                } catch (error) {
+                                    console.warn('Failed to fetch balance for locked/encrypted wallet:', error);
+                                }
+                            }
+                            chain.balance = balance;
 
                             // Calculate fiatValue for chain
                             const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
@@ -224,6 +234,26 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wallets, selectedWallet]);
 
+    // Auto-lock timer - extend session when user interacts
+    useEffect(() => {
+        const handleUserActivity = () => {
+            if (selectedWallet && !isWalletLocked(selectedWallet)) {
+                walletSession.extendSession(selectedWallet.id.toString());
+            }
+        };
+
+        // Add event listeners for user activity
+        document.addEventListener('click', handleUserActivity);
+        document.addEventListener('keypress', handleUserActivity);
+        document.addEventListener('scroll', handleUserActivity);
+
+        return () => {
+            document.removeEventListener('click', handleUserActivity);
+            document.removeEventListener('keypress', handleUserActivity);
+            document.removeEventListener('scroll', handleUserActivity);
+        };
+    }, [selectedWallet]);
+
     // Calculate total portfolio value
     const totalValue = selectedWallet && selectedWallet.chains
         ? selectedWallet.chains.reduce((sum, chain) => sum + chain.fiatValue, 0)
@@ -253,7 +283,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 <span className="wallet-address-full">{selectedWallet.address}</span>
                             </span>
                         </span>
-                        
+
                         {/* Curve indicator dot - always visible */}
                         {selectedWallet?.curve && (
                             <span style={{
@@ -267,7 +297,23 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 transition: 'opacity 0.2s ease'
                             }} />
                         )}
-                        
+
+                        {/* Lock indicator */}
+                        {walletIsLocked && (
+                            <span
+                                className="wallet-lock-indicator"
+                                style={{
+                                    color: '#fbbf24',
+                                    marginLeft: '8px',
+                                    marginRight: '4px',
+                                    fontSize: '14px'
+                                }}
+                                title="Wallet is locked"
+                            >
+                                <LockClosedIcon />
+                            </span>
+                        )}
+
                         {/* Expanded curve text on hover */}
                         {selectedWallet?.curve && (
                             <span style={{
@@ -283,7 +329,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 {selectedWallet.curve.toUpperCase()}
                             </span>
                         )}
-                        
+
                         <span className="wallet-copy-icon" style={{ opacity: 0.7, fontSize: 16, marginLeft: selectedWallet?.curve && !isAddressHovered ? 0 : 8, display: 'flex', alignItems: 'center', transition: 'margin-left 0.2s ease' }}>
                             {copied ? '✓' : <CopyIcon />}
                         </span>
@@ -363,7 +409,16 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
 
                 {/* Action Buttons */}
                 <div className="action-buttons">
-                    <button className="action-btn action-btn-anim" onClick={() => setShowSendModal(true)}>
+                    <button
+                        className="action-btn action-btn-anim"
+                        onClick={() => {
+                            if (walletIsLocked) {
+                                setShowUnlockModal(true);
+                            } else {
+                                setShowSendModal(true);
+                            }
+                        }}
+                    >
                         <ArrowsRightLeftIcon />
                         <span>Send</span>
                     </button>
@@ -474,7 +529,17 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 <WalletSettingsModal
                     wallet={selectedWallet}
                     onClose={() => setShowWalletSettings(false)}
-                    onSave={() => { }}
+                    onSave={(updatedWallet) => {
+                        // Update the wallets array with the modified wallet
+                        const updatedWallets = wallets.map(w =>
+                            w.id === updatedWallet.id ? updatedWallet : w
+                        );
+
+                        // Save to storage and update state
+                        saveWallets(updatedWallets);
+                        setWallets(updatedWallets);
+                        setSelectedWallet(updatedWallet);
+                    }}
                 />
             )}
 
@@ -483,6 +548,24 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 <BulkExportModal
                     wallets={wallets}
                     onClose={() => setShowBulkExport(false)}
+                />
+            )}
+
+            {/* Wallet Unlock Modal */}
+            {showUnlockModal && selectedWallet && (
+                <WalletUnlockModal
+                    wallet={selectedWallet}
+                    onUnlock={() => {
+                        setShowUnlockModal(false);
+                        // Small delay to ensure wallet state is updated before showing send modal
+                        setTimeout(() => {
+                            if (!isWalletLocked(selectedWallet)) {
+                                setShowSendModal(true);
+                            }
+                        }, 100);
+                    }}
+                    onClose={() => setShowUnlockModal(false)}
+                    autoShow={false}
                 />
             )}
         </>

@@ -8,6 +8,7 @@ import { createTransaction } from '../lib/wallet_client';
 import { Transaction } from '../lib/transaction/transaction';
 import { loadTokensXmlAsJson, filterTokensByCurve } from '../lib/token_loader';
 import { CurveType } from '../lib/wallet_generation_utils';
+import { getWalletCredentials, isWalletLocked } from '../pages/Popup/WalletUtils';
 import './WalletSettings.css';
 
 interface SendModalProps {
@@ -33,6 +34,17 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
     const amountInputRef = useRef<HTMLInputElement>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
 
+    // Check if wallet is locked
+    const walletLocked = isWalletLocked(wallet);
+
+    // If wallet is locked, close the modal
+    useEffect(() => {
+        if (walletLocked) {
+            onClose();
+            return;
+        }
+    }, [walletLocked, onClose]);
+
     // Filter assets by curve compatibility on component mount
     useEffect(() => {
         const filterAssetsByCurve = async () => {
@@ -45,12 +57,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                 const allTokens = await loadTokensXmlAsJson('tokens.xml');
                 const walletCurve = wallet.curve || 'secp256k1';
                 const compatibleTokenSymbols = filterTokensByCurve(allTokens, walletCurve).map(token => token.Symbol);
-                
+
                 // Filter wallet chains to only include compatible ones
-                const compatibleAssets = wallet.chains.filter(chain => 
+                const compatibleAssets = wallet.chains.filter(chain =>
                     compatibleTokenSymbols.includes(chain.symbol)
                 );
-                
+
                 setAvailableAssets(compatibleAssets);
             } catch (error) {
                 console.warn('Could not filter assets by curve, showing all:', error);
@@ -71,6 +83,11 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
             }, 100);
         }
     }, [step]);
+
+    // Don't render if wallet is locked
+    if (walletLocked) {
+        return null;
+    }
 
     const validateAddress = (address: string) => {
         if (!address) return 'Address is required';
@@ -115,23 +132,42 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
 
     const handleSend = async () => {
         setIsProcessing(true);
-        // Simulate transaction processing
-        const tokenData = await loadTokensXmlAsJson("tokens.xml");
-        const result: Transaction | null = await createTransaction(
-            [wallet.private_key ?? ''],
-            wallet.address,
-            recipientAddress,
-            amount,
-            memo ? new TextEncoder().encode(memo) : null,
-            null,
-            tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined,
-            (wallet.curve ?? 'secp256k1') as CurveType
-        );
-        //await new Promise(resolve => setTimeout(resolve, 2000));
-        setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));
-        setTransactionFee(result?.fees ?? new Decimal(0));
-        setIsProcessing(false);
-        setStep('success');
+
+        try {
+            // Check if wallet is locked before attempting to get credentials
+            if (isWalletLocked(wallet)) {
+                throw new Error('Wallet is locked. Please unlock your wallet and try again.');
+            }
+
+            // Get wallet credentials (handles both encrypted and unencrypted wallets)
+            const credentials = getWalletCredentials(wallet);
+            if (!credentials?.privateKey) {
+                throw new Error('Unable to access wallet private key. Please unlock your wallet and try again.');
+            }
+
+            // Simulate transaction processing
+            const tokenData = await loadTokensXmlAsJson("tokens.xml");
+            const result: Transaction | null = await createTransaction(
+                [credentials.privateKey],
+                wallet.address,
+                recipientAddress,
+                amount,
+                memo ? new TextEncoder().encode(memo) : null,
+                null,
+                tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined,
+                (wallet.curve ?? 'secp256k1') as CurveType
+            );
+            //await new Promise(resolve => setTimeout(resolve, 2000));
+            setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));
+            setTransactionFee(result?.fees ?? new Decimal(0));
+            setIsProcessing(false);
+            setStep('success');
+        } catch (error) {
+            setIsProcessing(false);
+            setErrors({
+                general: error instanceof Error ? error.message : 'Failed to send transaction'
+            });
+        }
     };
 
     const handleBack = () => {
@@ -189,7 +225,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
             let isMounted = true;
             setIsLoading(true);
             setHasError(false);
-            
+
             getTokenImagePath(symbol).then(path => {
                 if (isMounted) {
                     setImgSrc(path);
@@ -204,14 +240,14 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                     setIsLoading(false);
                 }
             });
-            
+
             return () => { isMounted = false; };
         }, [symbol]);
 
         if (isLoading) {
             return (
-                <div style={{ 
-                    fontSize: '10px', 
+                <div style={{
+                    fontSize: '10px',
                     color: '#9ca3af',
                     display: 'flex',
                     alignItems: 'center',
@@ -225,11 +261,11 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
         }
 
         return imgSrc && !hasError ? (
-            <img 
-                src={imgSrc} 
-                alt={alt} 
-                style={{ 
-                    width: '100%', 
+            <img
+                src={imgSrc}
+                alt={alt}
+                style={{
+                    width: '100%',
                     height: '100%',
                     objectFit: 'cover',
                     borderRadius: '50%'
@@ -237,8 +273,8 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                 onError={() => setHasError(true)}
             />
         ) : (
-            <span style={{ 
-                fontSize: '10px', 
+            <span style={{
+                fontSize: '10px',
                 fontWeight: 'bold',
                 color: 'white',
                 textShadow: '0 1px 2px rgba(0,0,0,0.5)'
@@ -276,7 +312,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                     </div>
                 )}
             </div>
-            
+
             {availableAssets.length === 0 ? (
                 <div style={{
                     textAlign: 'center',
@@ -757,6 +793,25 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, onClose }) => {
                     {step === 'confirm' && renderConfirm()}
                     {step === 'success' && renderSuccess()}
                 </div>
+
+                {/* General Error Display */}
+                {errors.general && (
+                    <div style={{
+                        margin: '0 24px 16px',
+                        padding: '12px',
+                        background: '#1f2937',
+                        border: '1px solid #ef4444',
+                        borderRadius: '8px',
+                        color: '#fca5a5',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span style={{ fontSize: '16px' }}>⚠️</span>
+                        {errors.general}
+                    </div>
+                )}
 
                 {/* Footer */}
                 <div style={{

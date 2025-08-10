@@ -28,6 +28,13 @@ export interface Wallet {
   mnemonic?: string;
   curve?: string; // Added curve support
   chains?: ChainData[];
+  // Password security fields
+  isEncrypted?: boolean;
+  passwordHash?: string;
+  salt?: string;
+  encryptedPrivateKey?: string;
+  encryptedMnemonic?: string;
+  iv?: string; // Initialization vector for encryption
 }
 
 export interface JsonWallet {
