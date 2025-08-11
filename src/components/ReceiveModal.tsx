@@ -37,7 +37,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
             const parser = new DOMParser();
             const doc = parser.parseFromString(qrElement, 'text/html');
             const img = doc.querySelector('img');
-            
+
             if (img) {
                 img.style.width = '100%';
                 img.style.height = 'auto';
@@ -54,12 +54,12 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
         if (wallet.address) {
             navigator.clipboard.writeText(wallet.address).then(() => {
                 setCopied(true);
-                
+
                 // Clear any existing timeout
                 if (copyTimeout.current) {
                     clearTimeout(copyTimeout.current);
                 }
-                
+
                 // Reset copied state after 2 seconds
                 copyTimeout.current = setTimeout(() => {
                     setCopied(false);
@@ -115,7 +115,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
                                         {formatAddress(wallet.address)}
                                     </span>
                                 </div>
-                                <button 
+                                <button
                                     className={`copy-btn ${copied ? 'copied' : ''}`}
                                     onClick={handleCopyAddress}
                                     title="Copy address"

@@ -31,7 +31,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
             // Not JSON, treat as plain text (probably just an address)
             onScan(text);
         }
-        
+
         if (codeReader.current) {
             codeReader.current.reset();
         }
@@ -54,7 +54,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
             setError('');
 
             const videoInputDevices = await codeReader.current.listVideoInputDevices();
-            
+
             if (videoInputDevices.length === 0) {
                 throw new Error('No camera devices found');
             }
@@ -85,17 +85,17 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
         const initializeScanner = async () => {
             try {
                 setError('');
-                
+
                 // Check for camera permission
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 setHasPermission(true);
-                
+
                 // Stop the permission check stream
                 stream.getTracks().forEach(track => track.stop());
-                
+
                 // Initialize the code reader
                 codeReader.current = new BrowserMultiFormatReader();
-                
+
                 startScanning();
             } catch (err) {
                 console.error('Camera permission denied or not available:', err);
@@ -123,17 +123,17 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
                 const initializeScanner = async () => {
                     try {
                         setError('');
-                        
+
                         // Check for camera permission
                         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                         setHasPermission(true);
-                        
+
                         // Stop the permission check stream
                         stream.getTracks().forEach(track => track.stop());
-                        
+
                         // Initialize the code reader
                         codeReader.current = new BrowserMultiFormatReader();
-                        
+
                         startScanning();
                     } catch (err) {
                         console.error('Camera permission denied or not available:', err);

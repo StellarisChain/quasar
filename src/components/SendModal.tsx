@@ -145,10 +145,10 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
             // It's a ReceiveQR object
             setRecipientAddress(data.address);
         }
-        
+
         setSelectedRecipientWallet(null);
         setShowQRScanner(false);
-        
+
         // Clear any existing address error
         if (errors.address) {
             setErrors({ ...errors, address: '' });
@@ -933,204 +933,204 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     return (
         <>
             <div className="modal-overlay" style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            backdropFilter: 'blur(4px)'
-        }}>
-            <div className="modal-content" style={{
-                background: '#2a2a2a',
-                border: '1px solid #3a3a3a',
-                borderRadius: '16px',
-                width: '90%',
-                maxWidth: '400px',
-                maxHeight: '80vh',
-                overflow: 'auto',
-                position: 'relative'
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.7)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                backdropFilter: 'blur(4px)'
             }}>
-                {/* Header */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '20px 24px 16px',
-                    borderBottom: '1px solid #3a3a3a'
+                <div className="modal-content" style={{
+                    background: '#2a2a2a',
+                    border: '1px solid #3a3a3a',
+                    borderRadius: '16px',
+                    width: '90%',
+                    maxWidth: '400px',
+                    maxHeight: '80vh',
+                    overflow: 'auto',
+                    position: 'relative'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ArrowsRightLeftIcon />
-                        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#fff' }}>
-                            Send Crypto
-                        </h2>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'background 0.2s',
-                            color: '#9ca3af'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                    >
-                        <XIcon />
-                    </button>
-                </div>
-
-                {/* Content */}
-                <div style={{ padding: '24px' }}>
-                    {step !== 'success' && renderStepIndicator()}
-
-                    {step === 'select-asset' && renderSelectAsset()}
-                    {step === 'enter-details' && renderEnterDetails()}
-                    {step === 'confirm' && renderConfirm()}
-                    {step === 'success' && renderSuccess()}
-                </div>
-
-                {/* General Error Display */}
-                {errors.general && (
+                    {/* Header */}
                     <div style={{
-                        margin: '0 24px 16px',
-                        padding: '12px',
-                        background: '#1f2937',
-                        border: '1px solid #ef4444',
-                        borderRadius: '8px',
-                        color: '#fca5a5',
-                        fontSize: '14px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '8px'
+                        justifyContent: 'space-between',
+                        padding: '20px 24px 16px',
+                        borderBottom: '1px solid #3a3a3a'
                     }}>
-                        <span style={{ fontSize: '16px' }}>⚠️</span>
-                        {errors.general}
-                    </div>
-                )}
-
-                {/* Footer */}
-                <div style={{
-                    padding: '16px 24px',
-                    borderTop: '1px solid #3a3a3a',
-                    display: 'flex',
-                    gap: '8px'
-                }}>
-                    {step !== 'select-asset' && step !== 'success' && (
-                        <button
-                            onClick={handleBack}
-                            style={{
-                                flex: 1,
-                                background: 'none',
-                                border: '1px solid #3a3a3a',
-                                borderRadius: '8px',
-                                padding: '10px 16px',
-                                color: '#9ca3af',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#8b5cf6';
-                                e.currentTarget.style.color = '#fff';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = '#3a3a3a';
-                                e.currentTarget.style.color = '#9ca3af';
-                            }}
-                        >
-                            Back
-                        </button>
-                    )}
-
-                    {step === 'success' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <ArrowsRightLeftIcon />
+                            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#fff' }}>
+                                Send Crypto
+                            </h2>
+                        </div>
                         <button
                             onClick={onClose}
                             style={{
-                                flex: 1,
-                                background: '#8b5cf6',
+                                background: 'none',
                                 border: 'none',
-                                borderRadius: '8px',
-                                padding: '10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: '500',
                                 cursor: 'pointer',
-                                transition: 'background 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
-                        >
-                            Done
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleNext}
-                            disabled={
-                                (step === 'select-asset' && (!selectedAsset || availableAssets.length === 0)) ||
-                                (step === 'confirm' && isProcessing)
-                            }
-                            style={{
-                                flex: 1,
-                                background: (step === 'select-asset' && (!selectedAsset || availableAssets.length === 0)) ||
-                                    (step === 'confirm' && isProcessing) ? '#374151' : '#8b5cf6',
-                                border: 'none',
-                                borderRadius: '8px',
-                                padding: '10px 16px',
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                cursor: (step === 'select-asset' && !selectedAsset) ||
-                                    (step === 'confirm' && isProcessing) ? 'not-allowed' : 'pointer',
-                                transition: 'background 0.2s',
+                                padding: '4px',
+                                borderRadius: '6px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '8px'
+                                transition: 'background 0.2s',
+                                color: '#9ca3af'
                             }}
-                            onMouseEnter={(e) => {
-                                if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.background = '#7c3aed';
-                                }
-                            }}
-                            onMouseLeave={(e) => {
-                                if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.background = '#8b5cf6';
-                                }
-                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#3a3a3a'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                         >
-                            {isProcessing ? (
-                                <>
-                                    <div style={{
-                                        width: '16px',
-                                        height: '16px',
-                                        border: '2px solid #fff',
-                                        borderTop: '2px solid transparent',
-                                        borderRadius: '50%',
-                                        animation: 'spin 1s linear infinite'
-                                    }} />
-                                    Processing...
-                                </>
-                            ) : (
-                                <>
-                                    {step === 'select-asset' && 'Continue'}
-                                    {step === 'enter-details' && 'Review'}
-                                    {step === 'confirm' && 'Send'}
-                                    <ArrowRightIcon />
-                                </>
-                            )}
+                            <XIcon />
                         </button>
+                    </div>
+
+                    {/* Content */}
+                    <div style={{ padding: '24px' }}>
+                        {step !== 'success' && renderStepIndicator()}
+
+                        {step === 'select-asset' && renderSelectAsset()}
+                        {step === 'enter-details' && renderEnterDetails()}
+                        {step === 'confirm' && renderConfirm()}
+                        {step === 'success' && renderSuccess()}
+                    </div>
+
+                    {/* General Error Display */}
+                    {errors.general && (
+                        <div style={{
+                            margin: '0 24px 16px',
+                            padding: '12px',
+                            background: '#1f2937',
+                            border: '1px solid #ef4444',
+                            borderRadius: '8px',
+                            color: '#fca5a5',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            <span style={{ fontSize: '16px' }}>⚠️</span>
+                            {errors.general}
+                        </div>
                     )}
+
+                    {/* Footer */}
+                    <div style={{
+                        padding: '16px 24px',
+                        borderTop: '1px solid #3a3a3a',
+                        display: 'flex',
+                        gap: '8px'
+                    }}>
+                        {step !== 'select-asset' && step !== 'success' && (
+                            <button
+                                onClick={handleBack}
+                                style={{
+                                    flex: 1,
+                                    background: 'none',
+                                    border: '1px solid #3a3a3a',
+                                    borderRadius: '8px',
+                                    padding: '10px 16px',
+                                    color: '#9ca3af',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = '#8b5cf6';
+                                    e.currentTarget.style.color = '#fff';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = '#3a3a3a';
+                                    e.currentTarget.style.color = '#9ca3af';
+                                }}
+                            >
+                                Back
+                            </button>
+                        )}
+
+                        {step === 'success' ? (
+                            <button
+                                onClick={onClose}
+                                style={{
+                                    flex: 1,
+                                    background: '#8b5cf6',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '10px 16px',
+                                    color: '#fff',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
+                            >
+                                Done
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleNext}
+                                disabled={
+                                    (step === 'select-asset' && (!selectedAsset || availableAssets.length === 0)) ||
+                                    (step === 'confirm' && isProcessing)
+                                }
+                                style={{
+                                    flex: 1,
+                                    background: (step === 'select-asset' && (!selectedAsset || availableAssets.length === 0)) ||
+                                        (step === 'confirm' && isProcessing) ? '#374151' : '#8b5cf6',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '10px 16px',
+                                    color: '#fff',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    cursor: (step === 'select-asset' && !selectedAsset) ||
+                                        (step === 'confirm' && isProcessing) ? 'not-allowed' : 'pointer',
+                                    transition: 'background 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!e.currentTarget.disabled) {
+                                        e.currentTarget.style.background = '#7c3aed';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!e.currentTarget.disabled) {
+                                        e.currentTarget.style.background = '#8b5cf6';
+                                    }
+                                }}
+                            >
+                                {isProcessing ? (
+                                    <>
+                                        <div style={{
+                                            width: '16px',
+                                            height: '16px',
+                                            border: '2px solid #fff',
+                                            borderTop: '2px solid transparent',
+                                            borderRadius: '50%',
+                                            animation: 'spin 1s linear infinite'
+                                        }} />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        {step === 'select-asset' && 'Continue'}
+                                        {step === 'enter-details' && 'Review'}
+                                        {step === 'confirm' && 'Send'}
+                                        <ArrowRightIcon />
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
 
             {/* QR Scanner Modal */}
             {showQRScanner && (
