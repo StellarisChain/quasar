@@ -75,7 +75,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     // Filter compatible wallets by curve
     useEffect(() => {
         const currentCurve = wallet.curve || 'secp256k1';
-        const filtered = allWallets.filter(w => 
+        const filtered = allWallets.filter(w =>
             w.id !== wallet.id && // Exclude current wallet
             (w.curve || 'secp256k1') === currentCurve // Same curve
         );
