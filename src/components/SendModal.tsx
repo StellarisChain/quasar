@@ -74,7 +74,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     // Filter compatible wallets by curve
     useEffect(() => {
         const currentCurve = wallet.curve || 'secp256k1';
-        const filtered = allWallets.filter(w => 
+        const filtered = allWallets.filter(w =>
             w.id !== wallet.id && // Exclude current wallet
             (w.curve || 'secp256k1') === currentCurve // Same curve
         );
@@ -503,7 +503,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                 My Wallets
                                 <ChevronDownIcon />
                             </button>
-                            
+
                             {showWalletDropdown && (
                                 <div style={{
                                     position: 'absolute',
@@ -554,7 +554,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         </div>
                     )}
                 </div>
-                
+
                 <div style={{ position: 'relative' }}>
                     <input
                         ref={addressInputRef}
@@ -584,7 +584,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
                         onBlur={(e) => e.target.style.borderColor = errors.address ? '#ef4444' : '#3a3a3a'}
                     />
-                    
+
                     {selectedRecipientWallet && (
                         <div style={{
                             position: 'absolute',
@@ -601,7 +601,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         </div>
                     )}
                 </div>
-                
+
                 {selectedRecipientWallet && (
                     <div style={{
                         marginTop: '6px',
@@ -615,7 +615,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         Sending to: {selectedRecipientWallet.name || `Wallet ${selectedRecipientWallet.id}`}
                     </div>
                 )}
-                
+
                 {errors.address && (
                     <div style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
                         {errors.address}
