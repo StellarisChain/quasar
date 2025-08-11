@@ -36,6 +36,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
 
     const amountInputRef = useRef<HTMLInputElement>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
+    const walletDropdownRef = useRef<HTMLDivElement>(null);
 
     // Check if wallet is locked
     const walletLocked = isWalletLocked(wallet);
@@ -74,14 +75,16 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     // Filter compatible wallets by curve
     useEffect(() => {
         const currentCurve = wallet.curve || 'secp256k1';
-        const filtered = allWallets.filter(w =>
+        const filtered = allWallets.filter(w => 
             w.id !== wallet.id && // Exclude current wallet
             (w.curve || 'secp256k1') === currentCurve // Same curve
         );
+        console.log('Current wallet curve:', currentCurve);
+        console.log('All wallets:', allWallets.length);
+        console.log('Compatible wallets:', filtered.length);
+        console.log('Compatible wallets details:', filtered.map(w => ({ id: w.id, name: w.name, curve: w.curve })));
         setCompatibleWallets(filtered);
-    }, [allWallets, wallet]);
-
-    // Focus inputs when step changes
+    }, [allWallets, wallet]);    // Focus inputs when step changes
     useEffect(() => {
         if (step === 'enter-details') {
             setTimeout(() => {
@@ -95,7 +98,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     // Close wallet dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (showWalletDropdown) {
+            if (showWalletDropdown && walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
                 setShowWalletDropdown(false);
             }
         };
@@ -122,6 +125,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     };
 
     const handleWalletSelect = (selectedWallet: Wallet) => {
+        console.log('Wallet selected:', selectedWallet.name, selectedWallet.address);
         setSelectedRecipientWallet(selectedWallet);
         setRecipientAddress(selectedWallet.address);
         setShowWalletDropdown(false);
@@ -480,9 +484,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         Recipient Address
                     </label>
                     {compatibleWallets.length > 0 && (
-                        <div style={{ position: 'relative' }}>
+                        <div style={{ position: 'relative' }} ref={walletDropdownRef}>
                             <button
-                                onClick={() => setShowWalletDropdown(!showWalletDropdown)}
+                                onClick={() => {
+                                    console.log('Dropdown button clicked, current state:', showWalletDropdown);
+                                    setShowWalletDropdown(!showWalletDropdown);
+                                }}
                                 style={{
                                     background: '#8b5cf6',
                                     border: 'none',
@@ -522,7 +529,11 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                     {compatibleWallets.map((compatibleWallet) => (
                                         <div
                                             key={compatibleWallet.id}
-                                            onClick={() => handleWalletSelect(compatibleWallet)}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleWalletSelect(compatibleWallet);
+                                            }}
                                             style={{
                                                 padding: '12px',
                                                 cursor: 'pointer',
