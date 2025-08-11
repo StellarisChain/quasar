@@ -448,7 +448,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         <ArrowsRightLeftIcon />
                         <span>Send</span>
                     </button>
-                    <button 
+                    <button
                         className="action-btn action-btn-anim"
                         onClick={() => setShowReceiveModal(true)}
                     >
