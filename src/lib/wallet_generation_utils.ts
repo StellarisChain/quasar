@@ -179,7 +179,7 @@ export function stringToBytes(str: string): Uint8Array {
     }
 }
 
-export function stringToPoint(str: string): Uint8Array {
+export function stringToPoint(str: string, curve: CurveType = 'secp256k1'): Uint8Array {
     let bytes: Uint8Array;
     try {
         bytes = stringToBytes(str);
@@ -187,8 +187,19 @@ export function stringToPoint(str: string): Uint8Array {
         console.error('[stringToPoint] Failed to decode string to bytes', { str, error: e });
         throw new Error('Failed to decode string to bytes for EC point: ' + (e instanceof Error ? e.message : e));
     }
+
+    // Check if this is a Stellaris compressed address format (33 bytes with prefix 42 or 43)
+    if (bytes.length === 33 && (bytes[0] === 42 || bytes[0] === 43)) {
+        // For Stellaris addresses, return the address bytes directly
+        // This is what the transaction system expects as the "public key"
+        return bytes;
+    }
+
+    // Otherwise, try standard EC point format
     try {
-        return bytesToPoint(bytes);
+        const point = bytesToPoint(bytes, curve);
+        // Convert point to compressed public key format
+        return point.toRawBytes(true); // compressed format
     } catch (e) {
         console.error('[stringToPoint] Failed to parse EC point from string', { str, bytes: Array.from(bytes), error: e });
         throw new Error('Failed to parse EC point from string: ' + (e instanceof Error ? e.message : e));

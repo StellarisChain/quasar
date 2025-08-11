@@ -4,7 +4,7 @@
  */
 
 // Import the necessary utilities
-import { generate, generateFromPrivateKey, isValidMnemonic } from './src/lib/wallet_generation_utils.js';
+import { generate, generateFromPrivateKey, isValidMnemonic } from '../src/lib/wallet_generation_utils.js';
 
 // Test data
 const testMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -38,8 +38,8 @@ try {
 console.log('\n3. Testing wallet generation from private key:');
 try {
     const walletFromPrivateKey = generateFromPrivateKey(
-        testPrivateKey, 
-        ['private_key', 'public_key', 'address'], 
+        testPrivateKey,
+        ['private_key', 'public_key', 'address'],
         'secp256k1'
     );
     console.log('✅ Private key import successful');
@@ -53,8 +53,8 @@ try {
 console.log('\n4. Testing different curves:');
 try {
     const p256Wallet = generateFromPrivateKey(
-        testPrivateKey, 
-        ['private_key', 'public_key', 'address'], 
+        testPrivateKey,
+        ['private_key', 'public_key', 'address'],
         'p256'
     );
     console.log('✅ P-256 curve import successful');
