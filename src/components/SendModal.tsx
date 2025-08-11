@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Decimal } from 'decimal.js'
 // TODO: Create ArrowRightIcon
-import { ArrowsRightLeftIcon, XIcon, ChevronDownIcon, ArrowUpRightIcon as ArrowRightIcon } from './Icons';
-import { Wallet, ChainData } from '../pages/Popup/DataTypes';
+import { ArrowsRightLeftIcon, XIcon, ChevronDownIcon, ArrowUpRightIcon as ArrowRightIcon, CameraIcon } from './Icons';
+import { Wallet, ChainData, ReceiveQR } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { createTransaction } from '../lib/wallet_client';
 import { Transaction } from '../lib/transaction/transaction';
 import { loadTokensXmlAsJson, filterTokensByCurve } from '../lib/token_loader';
 import { CurveType } from '../lib/wallet_generation_utils';
 import { getWalletCredentials, isWalletLocked } from '../pages/Popup/WalletUtils';
+import { QRScanner } from './QRScanner';
 import './WalletSettings.css';
 
 interface SendModalProps {
@@ -33,6 +34,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     const [compatibleWallets, setCompatibleWallets] = useState<Wallet[]>([]);
     const [selectedRecipientWallet, setSelectedRecipientWallet] = useState<Wallet | null>(null);
     const [showWalletDropdown, setShowWalletDropdown] = useState(false);
+    const [showQRScanner, setShowQRScanner] = useState(false);
 
     const amountInputRef = useRef<HTMLInputElement>(null);
     const addressInputRef = useRef<HTMLInputElement>(null);
@@ -129,6 +131,24 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
         setSelectedRecipientWallet(selectedWallet);
         setRecipientAddress(selectedWallet.address);
         setShowWalletDropdown(false);
+        // Clear any existing address error
+        if (errors.address) {
+            setErrors({ ...errors, address: '' });
+        }
+    };
+
+    const handleQRScan = (data: string | ReceiveQR) => {
+        if (typeof data === 'string') {
+            // It's a plain address string
+            setRecipientAddress(data);
+        } else {
+            // It's a ReceiveQR object
+            setRecipientAddress(data.address);
+        }
+        
+        setSelectedRecipientWallet(null);
+        setShowQRScanner(false);
+        
         // Clear any existing address error
         if (errors.address) {
             setErrors({ ...errors, address: '' });
@@ -566,51 +586,77 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                     )}
                 </div>
 
-                <div style={{ position: 'relative' }}>
-                    <input
-                        ref={addressInputRef}
-                        type="text"
-                        value={recipientAddress}
-                        onChange={(e) => {
-                            setRecipientAddress(e.target.value);
-                            setSelectedRecipientWallet(null); // Clear selected wallet when manually typing
-                            if (errors.address) {
-                                setErrors({ ...errors, address: '' });
-                            }
-                        }}
-                        placeholder="Enter recipient address or select from your wallets"
+                <div style={{ position: 'relative', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                        <input
+                            ref={addressInputRef}
+                            type="text"
+                            value={recipientAddress}
+                            onChange={(e) => {
+                                setRecipientAddress(e.target.value);
+                                setSelectedRecipientWallet(null); // Clear selected wallet when manually typing
+                                if (errors.address) {
+                                    setErrors({ ...errors, address: '' });
+                                }
+                            }}
+                            placeholder="Enter recipient address or select from your wallets"
+                            style={{
+                                width: '100%',
+                                background: '#1a1a1a',
+                                border: `1px solid ${errors.address ? '#ef4444' : '#3a3a3a'}`,
+                                borderRadius: '8px',
+                                padding: '12px',
+                                paddingRight: selectedRecipientWallet ? '40px' : '12px',
+                                color: '#fff',
+                                fontSize: '14px',
+                                fontFamily: 'monospace',
+                                outline: 'none',
+                                transition: 'border-color 0.2s'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
+                            onBlur={(e) => e.target.style.borderColor = errors.address ? '#ef4444' : '#3a3a3a'}
+                        />
+
+                        {selectedRecipientWallet && (
+                            <div style={{
+                                position: 'absolute',
+                                right: '12px',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                color: '#10b981',
+                                fontSize: '12px'
+                            }}>
+                                <span>✓</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowQRScanner(true)}
                         style={{
-                            width: '100%',
-                            background: '#1a1a1a',
-                            border: `1px solid ${errors.address ? '#ef4444' : '#3a3a3a'}`,
+                            background: '#7c3aed',
+                            border: 'none',
                             borderRadius: '8px',
                             padding: '12px',
-                            paddingRight: selectedRecipientWallet ? '40px' : '12px',
                             color: '#fff',
-                            fontSize: '14px',
-                            fontFamily: 'monospace',
-                            outline: 'none',
-                            transition: 'border-color 0.2s'
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
-                        onBlur={(e) => e.target.style.borderColor = errors.address ? '#ef4444' : '#3a3a3a'}
-                    />
-
-                    {selectedRecipientWallet && (
-                        <div style={{
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
-                            color: '#10b981',
-                            fontSize: '12px'
-                        }}>
-                            <span>✓</span>
-                        </div>
-                    )}
+                            justifyContent: 'center',
+                            transition: 'background 0.2s',
+                            minWidth: '44px',
+                            height: '44px'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#8b5cf6'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#7c3aed'}
+                        title="Scan QR Code"
+                    >
+                        <CameraIcon />
+                    </button>
                 </div>
 
                 {selectedRecipientWallet && (
@@ -885,7 +931,8 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     );
 
     return (
-        <div className="modal-overlay" style={{
+        <>
+            <div className="modal-overlay" style={{
             position: 'fixed',
             inset: 0,
             background: 'rgba(0, 0, 0, 0.7)',
@@ -1084,5 +1131,15 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 </div>
             </div>
         </div>
+
+            {/* QR Scanner Modal */}
+            {showQRScanner && (
+                <QRScanner
+                    isOpen={showQRScanner}
+                    onScan={handleQRScan}
+                    onClose={() => setShowQRScanner(false)}
+                />
+            )}
+        </>
     );
 };
