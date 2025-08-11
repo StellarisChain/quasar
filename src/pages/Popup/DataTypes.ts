@@ -52,3 +52,9 @@ export interface JsonWallet {
     };
   };
 }
+
+export interface ReceiveQR {
+  address: string;
+  label?: string;
+  curve: string;
+}
