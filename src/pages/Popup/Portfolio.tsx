@@ -8,6 +8,7 @@ import { ManageAssets } from '../../components/ManageAssets';
 import { WalletSettingsModal } from '../../components/WalletSettings';
 import { BulkExportModal } from '../../components/BulkExportModal';
 import { SendModal } from '../../components/SendModal';
+import { ReceiveModal } from '../../components/ReceiveModal';
 import { WalletUnlockModal } from '../../components/WalletUnlockModal';
 import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
@@ -38,6 +39,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
 
     // Send modal state
     const [showSendModal, setShowSendModal] = useState(false);
+
+    // Receive modal state
+    const [showReceiveModal, setShowReceiveModal] = useState(false);
 
     // Wallet settings modal state
     const [showWalletSettings, setShowWalletSettings] = useState(false);
@@ -444,7 +448,10 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         <ArrowsRightLeftIcon />
                         <span>Send</span>
                     </button>
-                    <button className="action-btn action-btn-anim">
+                    <button 
+                        className="action-btn action-btn-anim"
+                        onClick={() => setShowReceiveModal(true)}
+                    >
                         <PlusIcon />
                         <span>Receive</span>
                     </button>
@@ -576,6 +583,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 <BulkExportModal
                     wallets={wallets}
                     onClose={() => setShowBulkExport(false)}
+                />
+            )}
+
+            {/* Receive Modal */}
+            {showReceiveModal && selectedWallet && (
+                <ReceiveModal
+                    wallet={selectedWallet}
+                    onClose={() => setShowReceiveModal(false)}
                 />
             )}
 
