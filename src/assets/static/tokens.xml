@@ -29,6 +29,14 @@
         <Curve>secp256k1</Curve>
     </Token>
     <Token>
+        <Name>Test Stellaris</Name>
+        <Symbol>tSTE</Symbol>
+        <Color>#9945FF</Color>
+        <Node>http://localhost:3006</Node>
+        <TokenSupport>false</TokenSupport>
+        <Curve>secp256k1</Curve>
+    </Token>
+    <Token>
         <Name>Classic Stellaris</Name>
         <Symbol>cSTE</Symbol>
         <Color>#161616</Color>

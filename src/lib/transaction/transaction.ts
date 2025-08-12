@@ -1,5 +1,5 @@
 import { Decimal } from 'decimal.js';
-import { pointToString, bytesToString, sha256, SMALLEST, curves } from '../wallet_generation_utils';
+import { pointToString, bytesToString, sha256, SMALLEST, curves, CurveType } from '../wallet_generation_utils';
 import { TransactionInput } from './transaction_input';
 import { TransactionOutput } from './transaction_outputs';
 import { CoinbaseTransaction } from './coinbase_transaction';
@@ -86,6 +86,9 @@ export class Transaction {
                 hex += signed;
             }
         }
+        // Add signature terminator (null signature with r=0)
+        hex += '0000000000000000000000000000000000000000000000000000000000000000';  // r = 0 (32 bytes)
+        hex += '0000000000000000000000000000000000000000000000000000000000000000';  // s = 0 (32 bytes)
         this._hex = hex;
         return hex;
     }
@@ -236,16 +239,19 @@ export class Transaction {
         for (let i = 0; i < inputs_count; i++) {
             const tx_hex = read(32).toString('hex');
             const tx_index = readInt(1);
-            inputs.push(new TransactionInput(tx_hex, tx_index));
+            // Determine curve based on version and output format
+            const curve: CurveType = version === 1 ? 'secp256k1' : 'p256';
+            inputs.push(new TransactionInput(tx_hex, tx_index, undefined, undefined, undefined, undefined, curve));
         }
         const outputs_count = readInt(1);
         const outputs: TransactionOutput[] = [];
+        const curve: CurveType = version === 1 ? 'secp256k1' : 'p256';
         for (let i = 0; i < outputs_count; i++) {
             const pubkey = read(version === 1 ? 64 : 33);
             const amount_length = readInt(1);
             const amount = new Decimal(buf.readUIntLE(offset, amount_length)).div(SMALLEST);
             offset += amount_length;
-            outputs.push(new TransactionOutput(bytesToString(pubkey), amount));
+            outputs.push(new TransactionOutput(bytesToString(pubkey), amount, curve));
         }
         const specifier = readInt(1);
         if (specifier === 36) {
@@ -260,7 +266,7 @@ export class Transaction {
                 if (specifier !== 0) throw new Error('Invalid specifier');
             }
             const signatures: { r: string; s: string }[] = [];
-            while (true) {
+            while (offset < buf.length - 1) {
                 const rBuf = read(32);
                 const sBuf = read(32);
                 // If r is all zeros, break (end of signatures)
@@ -279,9 +285,12 @@ export class Transaction {
                     if (!(public_key in index)) index[public_key] = [];
                     index[public_key].push(tx_input);
                 }
-                Object.keys(index).forEach((key, i) => {
-                    for (const tx_input of index[key]) {
-                        tx_input.signed = signatures[i];
+                signatures.forEach((signature, i) => {
+                    const key = Object.keys(index)[i];
+                    if (key) {
+                        for (const tx_input of index[key]) {
+                            tx_input.signed = signature;
+                        }
                     }
                 });
             }

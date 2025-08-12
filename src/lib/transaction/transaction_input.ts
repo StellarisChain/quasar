@@ -101,11 +101,11 @@ export class TransactionInput {
 
     toBytes(): Uint8Array {
         const hashBytes = Buffer.from(this.txHash, 'hex');
-        const indexBytes = Buffer.alloc(4);
+        const indexBytes = Buffer.alloc(1);
         if (ENDIAN === 'le') {
-            indexBytes.writeUInt32LE(this.index, 0);
+            indexBytes.writeUInt8(this.index, 0);
         } else {
-            indexBytes.writeUInt32BE(this.index, 0);
+            indexBytes.writeUInt8(this.index, 0);
         }
         return Buffer.concat([hashBytes, indexBytes]);
     }

@@ -268,21 +268,25 @@ export async function createTransaction(
 
     // Push transaction to node
     try {
+        console.debug('Sending transaction to node:', node);
         const response = await fetch(`${node}/push_tx`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tx_hex: tx.hex() }),
         });
+        console.debug('Node response status:', response.status, response.statusText);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Error during request to node: ${errorText}`);
             return null;
         }
         const respJson = await response.json();
+        console.debug('Node response JSON:', respJson);
         if (!respJson.ok) {
             console.error(respJson.error);
             return null;
         }
+        console.debug('Transaction successfully sent, returning transaction object');
         return tx;
     } catch (e) {
         console.error(`Error during request to node: ${e}`);
