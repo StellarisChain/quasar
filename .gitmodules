@@ -1,3 +1,7 @@
 [submodule "stellaris-wallet"]
 	path = stellaris-wallet
 	url = https://github.com/StellarisChain/stellaris-wallet.git
+[submodule "stellaris"]
+	path = stellaris
+	url = https://github.com/StellarisChain/stellaris.git
+	branch = feat-secp256k1
