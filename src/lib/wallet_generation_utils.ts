@@ -14,6 +14,7 @@ import * as bip39 from 'bip39';
 import bs58 from 'bs58';
 import { p256 } from '@noble/curves/p256';
 import { secp256k1 } from '@noble/curves/secp256k1';
+import { sha256 as nobleSha256 } from '@noble/hashes/sha256';
 import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
@@ -54,8 +55,10 @@ export async function sha256(message: string | Uint8Array): Promise<string> {
     } else {
         msgBytes = message;
     }
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBytes);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // Use noble-hashes for consistent SHA256 across environments
+    const hashBytes = nobleSha256(msgBytes);
+    return Array.from(hashBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function byteLength(i: number): number {

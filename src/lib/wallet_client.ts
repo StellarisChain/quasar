@@ -117,6 +117,8 @@ export async function getAddressInfo(
             }
             const curveInstance = curves[curve];
             txInput.publicKey = curveInstance.getPublicKey(privateKey);
+            txInput.privateKey = privateKey; // Set the private key directly
+            console.debug('TransactionInput - privateKey length:', privateKey.length, 'publicKey:', Buffer.from(txInput.publicKey).toString('hex'));
             txInputs.push(txInput);
         }
 
@@ -263,7 +265,7 @@ export async function createTransaction(
     const tx = new Transaction(transactionInputs, outputs, message ?? undefined);
 
     // Sign and send the transaction
-    tx.sign(privateKeys);
+    await tx.sign(privateKeys);
     console.debug('Transaction hex:', tx.hex());
 
     // Push transaction to node

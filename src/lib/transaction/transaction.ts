@@ -56,6 +56,7 @@ export class Transaction {
 
         if (!full && (version <= 2 || !this.message)) {
             this._hex = hex;
+            console.debug('Transaction hex (partial for signing):', hex);
             return hex;
         }
 
@@ -71,6 +72,7 @@ export class Transaction {
             hex += Buffer.from(this.message).toString('hex');
             if (!full) {
                 this._hex = hex;
+                console.debug('Transaction hex (partial with message for signing):', hex);
                 return hex;
             }
         } else {
@@ -86,10 +88,11 @@ export class Transaction {
                 hex += signed;
             }
         }
-        // Add signature terminator (null signature with r=0)
+        // Add signature terminator (null signature with r=0) - might be required by node
         hex += '0000000000000000000000000000000000000000000000000000000000000000';  // r = 0 (32 bytes)
         hex += '0000000000000000000000000000000000000000000000000000000000000000';  // s = 0 (32 bytes)
         this._hex = hex;
+        console.debug('Transaction hex (full with signatures):', hex);
         return hex;
     }
 
@@ -177,8 +180,10 @@ export class Transaction {
         return true;
     }
 
-    sign(privateKeys: any[] = []): this {
+    async sign(privateKeys: string[] = []): Promise<this> {
+        console.debug('Signing transaction with', privateKeys.length, 'private keys');
         for (const privateKey of privateKeys) {
+            console.debug('Processing private key:', privateKey.substring(0, 8) + '...');
             for (const input of this.inputs) {
                 if (input.privateKey == null && (input.publicKey || input.transaction)) {
                     // Use the curve specific to this input to derive the public key
@@ -186,16 +191,36 @@ export class Transaction {
                     const pubKeyBytes = curveInstance.getPublicKey(privateKey, false); // uncompressed
                     const pubKeyHex = Buffer.from(pubKeyBytes).toString('hex');
 
-                    const inputPublicKey = input.publicKey || (input.transaction && input.transaction.outputs[input.index].publicKey);
-                    if (inputPublicKey && pubKeyHex === inputPublicKey) {
+                    let inputPublicKeyHex: string | undefined;
+                    if (input.publicKey) {
+                        inputPublicKeyHex = Buffer.from(input.publicKey).toString('hex');
+                    } else if (input.transaction && input.transaction.outputs[input.index].publicKey) {
+                        const txPubKey = input.transaction.outputs[input.index].publicKey;
+                        inputPublicKeyHex = typeof txPubKey === 'string' ? txPubKey : Buffer.from(txPubKey).toString('hex');
+                    }
+
+                    console.debug('Comparing public keys for input:');
+                    console.debug('  Derived from private key:', pubKeyHex);
+                    console.debug('  Input public key:        ', inputPublicKeyHex);
+                    console.debug('  Input curve:             ', input.curve);
+
+                    if (inputPublicKeyHex && pubKeyHex === inputPublicKeyHex) {
+                        console.debug('Public key match found, setting private key for input');
                         input.privateKey = privateKey;
+                    } else {
+                        console.debug('Public key mismatch for this input');
                     }
                 }
             }
         }
+        // Sign each input asynchronously
         for (const input of this.inputs) {
             if (input.privateKey != null) {
-                input.sign(this.hex(false));
+                console.debug('Signing input with private key');
+                await input.sign(this.hex(false));
+                console.debug('Input signature:', input.getSignature());
+            } else {
+                console.debug('Input has no private key, not signing');
             }
         }
         return this;
@@ -266,10 +291,11 @@ export class Transaction {
                 if (specifier !== 0) throw new Error('Invalid specifier');
             }
             const signatures: { r: string; s: string }[] = [];
-            while (offset < buf.length - 1) {
+            while (offset < buf.length) {
+                if (offset + 64 > buf.length) break; // Not enough bytes for a full signature
                 const rBuf = read(32);
                 const sBuf = read(32);
-                // If r is all zeros, break (end of signatures)
+                // If r is all zeros, break (end of signatures) - but only if this was expected
                 if (rBuf.every(b => b === 0)) break;
                 signatures.push({ r: rBuf.toString('hex'), s: sBuf.toString('hex') });
             }
