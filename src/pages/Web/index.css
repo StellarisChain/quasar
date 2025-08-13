@@ -1,0 +1,175 @@
+/* Web-specific styles for responsive wallet */
+
+/* Base styles */
+.web-wallet {
+    min-height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Mobile-specific styles */
+.mobile-device .web-wallet {
+    padding: 0;
+}
+
+.mobile-device .wallet-popup {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+}
+
+.mobile-device .popup-header {
+    padding: 20px 16px 16px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.mobile-device .popup-page {
+    padding: 16px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+.mobile-device .brand-name {
+    font-size: 20px !important;
+}
+
+.mobile-device .balance-card {
+    padding: 24px 20px !important;
+    margin-bottom: 20px !important;
+}
+
+.mobile-device .balance-amount {
+    font-size: 32px !important;
+}
+
+.mobile-device .action-buttons {
+    gap: 12px !important;
+}
+
+.mobile-device .action-button {
+    padding: 16px !important;
+    min-height: 48px !important;
+}
+
+/* Desktop-specific styles */
+.desktop-device .web-wallet {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.desktop-device .wallet-popup {
+    width: 400px !important;
+    max-width: 400px !important;
+    min-height: 600px !important;
+    max-height: 90vh !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    margin: 0 !important;
+    background: rgba(15, 15, 35, 0.95);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.desktop-device .popup-page {
+    max-height: calc(90vh - 80px);
+    overflow-y: auto;
+}
+
+/* Touch-friendly mobile interactions */
+.mobile-device button,
+.mobile-device .clickable {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Custom scrollbar for desktop */
+.desktop-device ::-webkit-scrollbar {
+    width: 6px;
+}
+
+.desktop-device ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.desktop-device ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.desktop-device ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive typography */
+.mobile-device {
+    font-size: 16px;
+}
+
+.desktop-device {
+    font-size: 14px;
+}
+
+/* Responsive spacing for form elements */
+.mobile-device .form-group {
+    margin-bottom: 20px;
+}
+
+.mobile-device .form-input {
+    padding: 16px 12px;
+    font-size: 16px; /* Prevents zoom on iOS */
+}
+
+.desktop-device .form-group {
+    margin-bottom: 16px;
+}
+
+.desktop-device .form-input {
+    padding: 12px 10px;
+    font-size: 14px;
+}
+
+/* Mobile-specific bottom padding for safe area */
+.mobile-device .popup-page {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+/* Ensure full height on mobile */
+.mobile-device html,
+.mobile-device body {
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* Mobile landscape adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+    .mobile-device .popup-header {
+        padding: 12px 16px;
+    }
+    
+    .mobile-device .balance-card {
+        padding: 16px 20px !important;
+    }
+    
+    .mobile-device .balance-amount {
+        font-size: 24px !important;
+    }
+}
+
+/* High DPI/Retina display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .web-wallet {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}

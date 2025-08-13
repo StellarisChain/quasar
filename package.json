@@ -1,6 +1,6 @@
 {
   "name": "quasar",
-  "version": "5.2.18",
+  "version": "5.4.11",
   "description": "Browser Wallet for Stellaris and Stellaris based chains",
   "license": "MIT",
   "repository": {
@@ -15,6 +15,7 @@
     "esbuild": "node esbuild.config.js",
     "esbuild:chrome": "node utils/esbuild-browser.js --browser chrome",
     "esbuild:firefox": "node utils/esbuild-browser.js --browser firefox",
+    "esbuild:web": "node utils/esbuild-web.js",
     "esbuild:all": "npm run esbuild:chrome && npm run esbuild:firefox",
     "package:chrome": "node utils/package-browser.js --browser chrome --tool webpack",
     "package:firefox": "node utils/package-browser.js --browser firefox --tool webpack",
@@ -25,6 +26,7 @@
     "dist:all": "npm run dist:chrome && npm run dist:firefox",
     "test:workflow": "scripts/test-workflow.sh",
     "start": "node utils/webserver.js",
+    "start:web": "npm run esbuild:web && node utils/webserver-simple.js --target web",
     "tests": "node tests/cli.js",
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'",
     "version:patch": "npm version patch",
@@ -36,6 +38,7 @@
     "@heroicons/react": "^2.0.18",
     "@material-tailwind/react": "^2.0.0",
     "@noble/curves": "^1.9.4",
+    "@noble/hashes": "^1.8.0",
     "@scure/bip32": "^1.7.0",
     "@zxing/library": "^0.21.3",
     "apexcharts": "^3.41.0",

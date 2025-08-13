@@ -1,6 +1,6 @@
 // Inprogress: Switching to @noble/curves/p256
 import { Decimal } from 'decimal.js';
-import { stringToPoint, pointToString, SMALLEST, ENDIAN, intToBytes, curves, CurveType } from '../wallet_generation_utils';
+import { stringToPoint, pointToString, SMALLEST, ENDIAN, intToBytes, bytesToInt, curves, CurveType, sha256 } from '../wallet_generation_utils';
 
 export class TransactionInput {
     txHash: string;
@@ -79,18 +79,58 @@ export class TransactionInput {
         return (await this.getRelatedOutputInfo()).address;
     }
 
-    sign(txHex: string, privateKey?: string) {
+    async sign(txHex: string, privateKey?: string) {
         const priv = privateKey ?? this.privateKey;
         if (priv === undefined) {
             throw new Error('Private key is required for signing');
         }
-        const msg = Buffer.from(txHex, 'hex');
+        console.debug('Signing with txHex:', txHex);
+        console.debug('Private key length:', priv.length, 'Public key:', this.publicKey ? Buffer.from(this.publicKey).toString('hex') : 'none');
+
         const curveInstance = curves[this.curve];
-        const signature = curveInstance.sign(msg, priv);
+
+        // Try signing the SHA256 hash of the transaction (common in blockchain systems)
+        const hashHex = await sha256(txHex);
+        const hashUint8 = new Uint8Array(Buffer.from(hashHex, 'hex'));
+        console.debug('Signing SHA256 hash:', hashHex);
+
+        const signature = curveInstance.sign(hashUint8, priv);
+
+        console.debug('Noble-curves signature r:', signature.r.toString(16), 's:', signature.s.toString(16));
+
+        // Apply low-s normalization to match Python fastecdsa behavior
+        const n = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141');
+        let r = signature.r;
+        let s = signature.s;
+
+        // If s > n/2, use n - s instead (low-s normalization)
+        if (s > n / BigInt(2)) {
+            s = n - s;
+            console.debug('Applied low-s normalization, new s:', s.toString(16));
+        }
+
+        // Store signature in little-endian format (32 bytes each) to match Python implementation  
         this.signed = {
-            r: Buffer.from(intToBytes(signature.r, 32)).toString('hex'),
-            s: Buffer.from(intToBytes(signature.s, 32)).toString('hex')
+            r: Buffer.from(intToBytes(r, 32)).toString('hex'),
+            s: Buffer.from(intToBytes(s, 32)).toString('hex')
         };
+
+        console.debug('Generated signature r:', this.signed.r, 's:', this.signed.s);
+
+        if (this.publicKey) {
+            console.debug('Public key bytes:', Buffer.from(this.publicKey).toString('hex'));
+
+            try {
+                const pubKeyUint8 = new Uint8Array(this.publicKey);
+
+                // Test signature verification with the normalized signature
+                const normalizedSig = { r, s };
+                const verifyResult = curveInstance.verify(normalizedSig, hashUint8, pubKeyUint8);
+                console.debug('Signature verification test:', verifyResult);
+            } catch (err) {
+                console.debug('Signature verification error:', err);
+            }
+        }
     }
 
     async getPublicKey(): Promise<Uint8Array | any | undefined> {
@@ -101,11 +141,11 @@ export class TransactionInput {
 
     toBytes(): Uint8Array {
         const hashBytes = Buffer.from(this.txHash, 'hex');
-        const indexBytes = Buffer.alloc(4);
+        const indexBytes = Buffer.alloc(1);
         if (ENDIAN === 'le') {
-            indexBytes.writeUInt32LE(this.index, 0);
+            indexBytes.writeUInt8(this.index, 0);
         } else {
-            indexBytes.writeUInt32BE(this.index, 0);
+            indexBytes.writeUInt8(this.index, 0);
         }
         return Buffer.concat([hashBytes, indexBytes]);
     }
@@ -126,18 +166,29 @@ export class TransactionInput {
             return false;
         }
         if (!this.signed) return false;
-        const msg = Buffer.from(inputTx, 'hex');
-        // noble-curves expects signature as { r, s } or a 64-byte Uint8Array
-        const r = BigInt('0x' + this.signed.r);
-        const s = BigInt('0x' + this.signed.s);
-        // Convert r and s to 32-byte big-endian Uint8Arrays and concatenate
-        const rBytes = Buffer.from(r.toString(16).padStart(64, '0'), 'hex');
-        const sBytes = Buffer.from(s.toString(16).padStart(64, '0'), 'hex');
-        const signature = Buffer.concat([rBytes, sBytes]);
+
         try {
             const curveInstance = curves[this.curve];
-            return curveInstance.verify(msg, signature, publicKey);
-        } catch {
+
+            // Hash the transaction the same way we do during signing
+            const hashHex = await sha256(inputTx);
+            const msg = new Uint8Array(Buffer.from(hashHex, 'hex'));
+            const pubKey = new Uint8Array(publicKey);
+
+            // The signature was stored in little-endian format (matching Python implementation)
+            // Convert from little-endian hex strings to BigInt
+            const rBytes = Buffer.from(this.signed.r, 'hex');
+            const sBytes = Buffer.from(this.signed.s, 'hex');
+
+            // Convert little-endian bytes to BigInt
+            const r = bytesToInt(rBytes);
+            const s = bytesToInt(sBytes);
+
+            const signature = { r, s };
+
+            return curveInstance.verify(signature, msg, pubKey);
+        } catch (e) {
+            console.error('Signature verification error:', e);
             return false;
         }
     }

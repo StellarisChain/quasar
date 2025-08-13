@@ -117,6 +117,8 @@ export async function getAddressInfo(
             }
             const curveInstance = curves[curve];
             txInput.publicKey = curveInstance.getPublicKey(privateKey);
+            txInput.privateKey = privateKey; // Set the private key directly
+            console.debug('TransactionInput - privateKey length:', privateKey.length, 'publicKey:', Buffer.from(txInput.publicKey).toString('hex'));
             txInputs.push(txInput);
         }
 
@@ -263,26 +265,30 @@ export async function createTransaction(
     const tx = new Transaction(transactionInputs, outputs, message ?? undefined);
 
     // Sign and send the transaction
-    tx.sign(privateKeys);
+    await tx.sign(privateKeys);
     console.debug('Transaction hex:', tx.hex());
 
     // Push transaction to node
     try {
+        console.debug('Sending transaction to node:', node);
         const response = await fetch(`${node}/push_tx`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tx_hex: tx.hex() }),
         });
+        console.debug('Node response status:', response.status, response.statusText);
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`Error during request to node: ${errorText}`);
             return null;
         }
         const respJson = await response.json();
+        console.debug('Node response JSON:', respJson);
         if (!respJson.ok) {
             console.error(respJson.error);
             return null;
         }
+        console.debug('Transaction successfully sent, returning transaction object');
         return tx;
     } catch (e) {
         console.error(`Error during request to node: ${e}`);

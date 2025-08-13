@@ -537,7 +537,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                 setError('Please enter a mnemonic phrase');
                 return false;
             }
-            
+
             if (!isValidMnemonic(cleanMnemonic)) {
                 setError('Invalid mnemonic phrase. Please check your words and try again.');
                 return false;
@@ -548,7 +548,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                 setError('Please enter a private key');
                 return false;
             }
-            
+
             if (!/^[a-fA-F0-9]{64}$/.test(cleanPrivateKey)) {
                 setError('Invalid private key format. Must be 64 hexadecimal characters.');
                 return false;
@@ -566,7 +566,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
 
         try {
             let wallet: Wallet;
-            
+
             if (importType === 'mnemonic') {
                 const cleanMnemonic = mnemonicInput.trim();
                 const generatedWallet = generate({
@@ -589,8 +589,8 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
             } else {
                 const cleanPrivateKey = privateKeyInput.trim().replace(/^0x/, '');
                 const generatedData = generateFromPrivateKey(
-                    cleanPrivateKey, 
-                    ['private_key', 'public_key', 'address'], 
+                    cleanPrivateKey,
+                    ['private_key', 'public_key', 'address'],
                     selectedCurve
                 );
 

@@ -7,7 +7,7 @@ import { saveWallets } from '../pages/Popup/WalletUtils';
 import './WalletSelector.css';
 
 // Config
-export let demoMode = true; // Set to false in production
+export let demoMode = false; // Set to false in production
 
 // Wallet Selector Component
 export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCreateWallet, setWallets }: {

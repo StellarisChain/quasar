@@ -14,6 +14,7 @@ import * as bip39 from 'bip39';
 import bs58 from 'bs58';
 import { p256 } from '@noble/curves/p256';
 import { secp256k1 } from '@noble/curves/secp256k1';
+import { sha256 as nobleSha256 } from '@noble/hashes/sha256';
 import { HDKey } from "@scure/bip32"
 
 export type Endian = 'le' | 'be';
@@ -54,8 +55,10 @@ export async function sha256(message: string | Uint8Array): Promise<string> {
     } else {
         msgBytes = message;
     }
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBytes);
-    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // Use noble-hashes for consistent SHA256 across environments
+    const hashBytes = nobleSha256(msgBytes);
+    return Array.from(hashBytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export function byteLength(i: number): number {
@@ -179,7 +182,7 @@ export function stringToBytes(str: string): Uint8Array {
     }
 }
 
-export function stringToPoint(str: string): Uint8Array {
+export function stringToPoint(str: string, curve: CurveType = 'secp256k1'): Uint8Array {
     let bytes: Uint8Array;
     try {
         bytes = stringToBytes(str);
@@ -187,8 +190,19 @@ export function stringToPoint(str: string): Uint8Array {
         console.error('[stringToPoint] Failed to decode string to bytes', { str, error: e });
         throw new Error('Failed to decode string to bytes for EC point: ' + (e instanceof Error ? e.message : e));
     }
+
+    // Check if this is a Stellaris compressed address format (33 bytes with prefix 42 or 43)
+    if (bytes.length === 33 && (bytes[0] === 42 || bytes[0] === 43)) {
+        // For Stellaris addresses, return the address bytes directly
+        // This is what the transaction system expects as the "public key"
+        return bytes;
+    }
+
+    // Otherwise, try standard EC point format
     try {
-        return bytesToPoint(bytes);
+        const point = bytesToPoint(bytes, curve);
+        // Convert point to compressed public key format
+        return point.toRawBytes(true); // compressed format
     } catch (e) {
         console.error('[stringToPoint] Failed to parse EC point from string', { str, bytes: Array.from(bytes), error: e });
         throw new Error('Failed to parse EC point from string: ' + (e instanceof Error ? e.message : e));
