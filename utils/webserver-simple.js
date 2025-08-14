@@ -57,9 +57,9 @@ function serveFile(filePath, res) {
             res.end('File not found');
             return;
         }
-        
+
         const mimeType = getMimeType(filePath);
-        res.writeHead(200, { 
+        res.writeHead(200, {
             'Content-Type': mimeType,
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
@@ -71,7 +71,7 @@ function serveFile(filePath, res) {
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url);
     let pathname = parsedUrl.pathname;
-    
+
     // Handle root path
     if (pathname === '/') {
         if (target === 'web') {
@@ -90,10 +90,10 @@ const server = http.createServer((req, res) => {
             return;
         }
     }
-    
+
     // Construct file path
     const filePath = path.join(buildDir, pathname);
-    
+
     // Check if file exists
     fs.stat(filePath, (err, stats) => {
         if (err || !stats.isFile()) {
@@ -112,7 +112,7 @@ const server = http.createServer((req, res) => {
             }
             return;
         }
-        
+
         serveFile(filePath, res);
     });
 });

@@ -52,7 +52,7 @@ function injectScriptToHtml(srcHtml, destHtml, scriptName, cssName) {
             html = `${cssTag}\n` + html;
         }
     }
-    
+
     // Insert script before </body> or at end if not found
     const scriptTag = `<script type="module" src="./${scriptName}"></script>`;
     if (/<\/body>/i.test(html)) {

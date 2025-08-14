@@ -16,7 +16,7 @@
     "esbuild:chrome": "node utils/esbuild-browser.js --browser chrome",
     "esbuild:firefox": "node utils/esbuild-browser.js --browser firefox",
     "esbuild:web": "node utils/esbuild-web.js",
-    "esbuild:all": "npm run esbuild:chrome && npm run esbuild:firefox",
+    "esbuild:all": "npm run esbuild:chrome && npm run esbuild:firefox && npm run esbuild:web",
     "package:chrome": "node utils/package-browser.js --browser chrome --tool webpack",
     "package:firefox": "node utils/package-browser.js --browser firefox --tool webpack",
     "package:chrome:esbuild": "node utils/package-browser.js --browser chrome --tool esbuild",

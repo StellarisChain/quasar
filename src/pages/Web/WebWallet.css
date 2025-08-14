@@ -28,7 +28,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
+    background-image:
         linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size: 50px 50px;
@@ -41,15 +41,20 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: 
+    background:
         radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 40% 80%, rgba(120, 255, 198, 0.1) 0%, transparent 50%);
 }
 
 @keyframes gridMove {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(50px, 50px); }
+    0% {
+        transform: translate(0, 0);
+    }
+
+    100% {
+        transform: translate(50px, 50px);
+    }
 }
 
 /* Development device indicator */
@@ -101,7 +106,7 @@
 /* High contrast mode support */
 @media (prefers-contrast: high) {
     .background-grid {
-        background-image: 
+        background-image:
             linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
     }
@@ -112,7 +117,7 @@
     .background-grid {
         animation: none;
     }
-    
+
     .web-wallet,
     .wallet-popup {
         transition: none;
@@ -125,7 +130,7 @@
         background: white;
         color: black;
     }
-    
+
     .desktop-background,
     .device-indicator {
         display: none;
