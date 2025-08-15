@@ -28,6 +28,7 @@ function setupMessageRelay() {
         
         try {
             let response;
+            let sendMessage = true;
             
             switch (type) {
                 case 'QUASAR_CHECK_CONNECTION':
@@ -95,15 +96,21 @@ function setupMessageRelay() {
                     break;
 
                 default:
-                    throw new Error(`Unknown message type: ${type}`);
+                    if (type.endsWith('_RESPONSE')) {
+                        sendMessage = false; // Don't send response for request types
+                    } else {
+                        throw new Error(`Unknown message type: ${type}`);
+                    }
             }
 
-            // Send response back to injected script
-            window.postMessage({
-                type: `${type}_RESPONSE`,
-                payload: response,
-                requestId
-            }, '*');
+            if (sendMessage) {
+                // Send response back to injected script
+                window.postMessage({
+                    type: `${type}_RESPONSE`,
+                    payload: response,
+                    requestId
+                }, '*');
+            }
 
         } catch (error) {
             console.error('Content script error:', error);

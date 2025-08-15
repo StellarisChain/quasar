@@ -55,6 +55,7 @@ export const browserAPI = {
     runtime: {
         sendMessage: browser.runtime.sendMessage,
         onMessage: browser.runtime.onMessage,
+        onInstalled: browser.runtime.onInstalled,
         getURL: browser.runtime.getURL,
         id: browser.runtime.id,
         lastError: browser.runtime.lastError,
@@ -94,6 +95,19 @@ export const browserAPI = {
         request: browser.permissions.request,
         contains: browser.permissions.contains,
         remove: browser.permissions.remove,
+    },
+
+    // Windows API
+    windows: {
+        create: browser.windows.create,
+        update: browser.windows.update,
+        remove: browser.windows.remove,
+        get: browser.windows.get,
+        getAll: browser.windows.getAll,
+        getCurrent: browser.windows.getCurrent,
+        onCreated: browser.windows.onCreated,
+        onRemoved: browser.windows.onRemoved,
+        onFocusChanged: browser.windows.onFocusChanged,
     }
 };
 

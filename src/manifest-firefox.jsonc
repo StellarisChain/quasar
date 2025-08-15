@@ -14,12 +14,17 @@
         "tabs",
         "storage",
         "notifications",
+        "windows",
         "<all_urls>"
     ],
     "content_scripts": [
         {
-            "matches": ["<all_urls>"],
-            "js": ["content.bundle.js"],
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.bundle.js"
+            ],
             "run_at": "document_start",
             "all_frames": false
         }
