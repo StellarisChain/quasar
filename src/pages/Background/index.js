@@ -51,7 +51,7 @@ async function openWalletPopup(requestData) {
 async function getWalletData() {
     try {
         const data = await browserAPI.storage.local.get(['wallets', 'selectedWallet']);
-        
+
         // For testing purposes, return mock data if no wallets found
         if (!data.wallets || data.wallets.length === 0) {
             return {
@@ -83,14 +83,14 @@ async function getWalletData() {
 
         // Convert stored wallet data to API format
         const selectedWallet = data.wallets.find(w => w.id === data.selectedWallet) || data.wallets[0];
-        
+
         return {
             accounts: [{
                 address: selectedWallet.address,
                 publicKey: selectedWallet.public_key,
                 curve: selectedWallet.curve || 'secp256k1'
             }],
-            assets: selectedWallet.chains?.flatMap(chain => 
+            assets: selectedWallet.chains?.flatMap(chain =>
                 [
                     {
                         symbol: chain.symbol,
@@ -118,7 +118,7 @@ async function getWalletData() {
 // Handle wallet connection request
 async function handleConnectWallet(origin, hostname) {
     console.log(`Connection request from: ${hostname}`);
-    
+
     // Check if already connected
     if (connectedSites.has(origin)) {
         const walletData = await getWalletData();
@@ -285,8 +285,8 @@ if (browserAPI.runtime.onMessage) {
             case 'CHECK_CONNECTION':
                 getWalletData().then(walletData => {
                     const isConnected = connectedSites.has(message.origin);
-                    sendResponse({ 
-                        success: true, 
+                    sendResponse({
+                        success: true,
                         connected: isConnected,
                         accounts: isConnected ? walletData.accounts : []
                     });

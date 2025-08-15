@@ -23,12 +23,12 @@ function copyAssets(src, dest) {
 function injectScriptToHtml(srcHtml, destHtml, scriptName, cssName) {
     if (!fs.existsSync(srcHtml)) return;
     let html = fs.readFileSync(srcHtml, 'utf8');
-    
+
     // Add version comment at the top of the HTML file
     const versionComment = `<!-- Version: ${packageJson.version} -->\n`;
     html = versionComment + html;
-    
-        // Insert CSS link before </head> or at start if not found
+
+    // Insert CSS link before </head> or at start if not found
     let cssTag = '';
     if (cssName) {
         cssTag = `<link rel="stylesheet" href="./${cssName}">`;

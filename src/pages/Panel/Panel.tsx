@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { browserAPI } from '../../lib/browser-compat';
 import './Panel.css';
 
 interface TestResult {
@@ -12,9 +13,20 @@ const Panel: React.FC = () => {
     const [results, setResults] = useState<TestResult[]>([]);
     const [isWalletAvailable, setIsWalletAvailable] = useState(false);
     const [loading, setLoading] = useState<string | null>(null);
+    const [extensionContextValid, setExtensionContextValid] = useState(true);
 
     useEffect(() => {
         checkWalletAvailability();
+
+        // Check extension context validity periodically
+        const interval = setInterval(() => {
+            if (!browserAPI.tabs || !browserAPI.scripting) {
+                setExtensionContextValid(false);
+                clearInterval(interval);
+            }
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const addResult = (result: Omit<TestResult, 'timestamp'>) => {
@@ -26,18 +38,22 @@ const Panel: React.FC = () => {
 
     const checkWalletAvailability = async () => {
         try {
-            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            // Check if extension context is still valid
+            if (!browserAPI.scripting.avaliable) {
+                console.warn('Extension context invalidated, skipping wallet check');
+                setIsWalletAvailable(false);
+                return;
+            }
+
+            const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true });
             if (tabs[0]) {
-                const result = await chrome.tabs.executeScript(tabs[0].id!, {
-                    code: `
-                        if (typeof window !== 'undefined' && window.quasar) {
-                            'available';
-                        } else {
-                            'not-available';
-                        }
-                    `
+                const result = await browserAPI.scripting.executeScript({
+                    target: { tabId: tabs[0].id! },
+                    func: () => {
+                        return typeof window !== 'undefined' && window.quasar ? 'available' : 'not-available';
+                    }
                 });
-                setIsWalletAvailable(result[0] === 'available');
+                setIsWalletAvailable(result[0]?.result === 'available');
             }
         } catch (error) {
             console.error('Failed to check wallet availability:', error);
@@ -47,24 +63,52 @@ const Panel: React.FC = () => {
 
     const executeInPage = async (code: string) => {
         try {
-            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            // Check if extension context is still valid
+            if (!browserAPI.scripting.avaliable) {
+                throw new Error('Extension context invalidated');
+            }
+
+            const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true });
             if (!tabs[0]) {
                 throw new Error('No active tab found');
             }
 
-            const result = await chrome.tabs.executeScript(tabs[0].id!, {
-                code: `
-                    (async () => {
+            const result = await browserAPI.scripting.executeScript({
+                target: { tabId: tabs[0].id! },
+                func: (code: string) => {
+                    return (async () => {
                         try {
-                            ${code}
+                            // Create a script element to execute the code in page context
+                            const script = document.createElement('script');
+                            script.textContent = `
+                                (async () => {
+                                    try {
+                                        const result = await (async () => { ${code} })();
+                                        window.__quasar_devtools_result = result;
+                                    } catch (error) {
+                                        window.__quasar_devtools_result = { error: error.message };
+                                    }
+                                })();
+                            `;
+                            document.head.appendChild(script);
+                            document.head.removeChild(script);
+
+                            // Wait a bit for execution
+                            await new Promise(resolve => setTimeout(resolve, 100));
+
+                            const result = (window as any).__quasar_devtools_result;
+                            delete (window as any).__quasar_devtools_result;
+
+                            return result;
                         } catch (error) {
-                            return { error: error.message };
+                            return { error: error instanceof Error ? error.message : String(error) };
                         }
                     })();
-                `
+                },
+                args: [code]
             });
 
-            return result[0];
+            return result[0]?.result;
         } catch (error) {
             throw new Error(`Failed to execute script: ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -224,18 +268,24 @@ const Panel: React.FC = () => {
     const injectTestScript = async () => {
         setLoading('inject');
         try {
-            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+            // Check if extension context is still valid
+            if (!browserAPI.scripting.avaliable) {
+                throw new Error('Extension context invalidated');
+            }
+
+            const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true });
             if (!tabs[0]) {
                 throw new Error('No active tab found');
             }
 
-            await chrome.tabs.executeScript(tabs[0].id!, {
-                code: `
+            await browserAPI.scripting.executeScript({
+                target: { tabId: tabs[0].id! },
+                func: () => {
                     // Create test interface in page
                     if (!document.getElementById('quasar-test-interface')) {
                         const testDiv = document.createElement('div');
                         testDiv.id = 'quasar-test-interface';
-                        testDiv.style.cssText = \`
+                        testDiv.style.cssText = `
                             position: fixed;
                             top: 20px;
                             right: 20px;
@@ -249,7 +299,7 @@ const Panel: React.FC = () => {
                             z-index: 10000;
                             max-width: 300px;
                             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-                        \`;
+                        `;
 
                         const title = document.createElement('h3');
                         title.textContent = 'Quasar Wallet Test';
@@ -261,7 +311,7 @@ const Panel: React.FC = () => {
                         status.style.cssText = 'margin-bottom: 12px; padding: 8px; border-radius: 4px;';
                         testDiv.appendChild(status);
 
-                        const buttonStyle = \`
+                        const buttonStyle = `
                             background: #374151; 
                             border: 1px solid #4b5563; 
                             color: white; 
@@ -271,20 +321,22 @@ const Panel: React.FC = () => {
                             cursor: pointer; 
                             font-size: 11px;
                             transition: background 0.2s;
-                        \`;
+                        `;
 
                         const buttons = [
-                            { text: 'Connect', action: () => window.quasar?.connect() },
-                            { text: 'Get Accounts', action: () => window.quasar?.getAccounts() },
-                            { text: 'Get Assets', action: () => window.quasar?.getAssets() },
-                            { text: 'Send TX', action: () => window.quasar?.sendTransaction({
-                                to: '0xTest...Address',
-                                amount: '0.1',
-                                asset: 'STE',
-                                memo: 'Test from page'
-                            }) },
-                            { text: 'Sign Message', action: () => window.quasar?.signMessage('Test message') },
-                            { text: 'Disconnect', action: () => window.quasar?.disconnect() },
+                            { text: 'Connect', action: () => (window as any).quasar?.connect() },
+                            { text: 'Get Accounts', action: () => (window as any).quasar?.getAccounts() },
+                            { text: 'Get Assets', action: () => (window as any).quasar?.getAssets() },
+                            {
+                                text: 'Send TX', action: () => (window as any).quasar?.sendTransaction({
+                                    to: '0xTest...Address',
+                                    amount: '0.1',
+                                    asset: 'STE',
+                                    memo: 'Test from page'
+                                })
+                            },
+                            { text: 'Sign Message', action: () => (window as any).quasar?.signMessage('Test message') },
+                            { text: 'Disconnect', action: () => (window as any).quasar?.disconnect() },
                             { text: 'Close', action: () => testDiv.remove() }
                         ];
 
@@ -297,25 +349,25 @@ const Panel: React.FC = () => {
                             button.onclick = async () => {
                                 try {
                                     const result = await btn.action();
-                                    console.log(\`\${btn.text} result:\`, result);
-                                    updateStatus(\`\${btn.text}: Success\`, '#10b981');
-                                } catch (error) {
-                                    console.error(\`\${btn.text} error:\`, error);
-                                    updateStatus(\`\${btn.text}: \${error.message}\`, '#ef4444');
+                                    console.log(`${btn.text} result:`, result);
+                                    updateStatus(`${btn.text}: Success`, '#10b981');
+                                } catch (error: any) {
+                                    console.error(`${btn.text} error:`, error);
+                                    updateStatus(`${btn.text}: ${error.message}`, '#ef4444');
                                 }
                             };
                             testDiv.appendChild(button);
                         });
 
-                        function updateStatus(message, color) {
+                        const updateStatus = (message: string, color: string) => {
                             status.textContent = message;
                             status.style.background = color + '20';
                             status.style.border = '1px solid ' + color;
                             status.style.color = color;
-                        }
+                        };
 
                         // Check initial wallet status
-                        if (window.quasar) {
+                        if ((window as any).quasar) {
                             updateStatus('Wallet Available', '#10b981');
                         } else {
                             updateStatus('Wallet Not Available', '#ef4444');
@@ -323,7 +375,7 @@ const Panel: React.FC = () => {
 
                         document.body.appendChild(testDiv);
                     }
-                `
+                }
             });
 
             addResult({ success: true, data: { message: 'Test interface injected into page' } });
@@ -347,52 +399,64 @@ const Panel: React.FC = () => {
                     <span>Wallet {isWalletAvailable ? 'Available' : 'Not Available'}</span>
                     <button onClick={checkWalletAvailability} className="refresh-btn">↻</button>
                 </div>
+                {!extensionContextValid && (
+                    <div className="error-banner" style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        marginTop: '8px',
+                        fontSize: '12px'
+                    }}>
+                        Extension context invalidated. Please reload the devtools.
+                    </div>
+                )}
             </div>
 
             <div className="test-section">
                 <h2>Wallet API Tests</h2>
                 <div className="button-grid">
-                    <button 
+                    <button
                         onClick={testConnectWallet}
                         disabled={loading === 'connect'}
                         className="test-btn connect-btn"
                     >
                         {loading === 'connect' ? '...' : 'Connect Wallet'}
                     </button>
-                    
-                    <button 
+
+                    <button
                         onClick={testGetAccounts}
                         disabled={loading === 'accounts'}
                         className="test-btn"
                     >
                         {loading === 'accounts' ? '...' : 'Get Accounts'}
                     </button>
-                    
-                    <button 
+
+                    <button
                         onClick={testGetAssets}
                         disabled={loading === 'assets'}
                         className="test-btn"
                     >
                         {loading === 'assets' ? '...' : 'Get Assets'}
                     </button>
-                    
-                    <button 
+
+                    <button
                         onClick={testSendTransaction}
                         disabled={loading === 'transaction'}
                         className="test-btn transaction-btn"
                     >
                         {loading === 'transaction' ? '...' : 'Send Transaction'}
                     </button>
-                    
-                    <button 
+
+                    <button
                         onClick={testSignMessage}
                         disabled={loading === 'sign'}
                         className="test-btn"
                     >
                         {loading === 'sign' ? '...' : 'Sign Message'}
                     </button>
-                    
-                    <button 
+
+                    <button
                         onClick={testDisconnect}
                         disabled={loading === 'disconnect'}
                         className="test-btn disconnect-btn"
@@ -403,7 +467,7 @@ const Panel: React.FC = () => {
 
                 <div className="utility-section">
                     <h3>Utilities</h3>
-                    <button 
+                    <button
                         onClick={injectTestScript}
                         disabled={loading === 'inject'}
                         className="test-btn utility-btn"
