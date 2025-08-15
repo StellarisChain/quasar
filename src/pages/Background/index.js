@@ -264,10 +264,13 @@ if (browserAPI.runtime.onMessage) {
         // Handle different message types
         switch (message.type) {
             case 'GET_BROWSER_INFO':
+                // Get version from manifest or use fallback
+                const manifest = chrome?.runtime?.getManifest?.() || {};
+                const version = manifest.version || '0.0.0-dev';
                 sendResponse({
                     browser: getBrowserType(),
-                    version: '5.4.11',
-                    manifestVersion: chrome?.runtime?.getManifest?.()?.manifest_version || 'unknown'
+                    version: version,
+                    manifestVersion: manifest.manifest_version || 'unknown'
                 });
                 break;
 

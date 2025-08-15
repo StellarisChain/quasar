@@ -91,6 +91,7 @@ esbuild.build({
     },
     define: {
         'process.env.NODE_ENV': `"${process.env.NODE_ENV || 'development'}"`,
+        'EXTENSION_VERSION': `"${packageJson.version}"`,
     },
     plugins: [sassPlugin(), progress()],
 }).then(() => {
