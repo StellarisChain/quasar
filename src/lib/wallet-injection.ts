@@ -41,8 +41,8 @@ export interface WalletEvents {
 class QuasarWallet {
     private isConnected = false;
     private accounts: WalletAccount[] = [];
-    private currentChain: string | null = null;
     private eventListeners: Partial<WalletEvents> = {};
+    private _extensionVersion: string | null = null;
 
     constructor() {
         // Listen for messages from content script
@@ -67,7 +67,6 @@ class QuasarWallet {
                 break;
 
             case 'QUASAR_CHAIN_CHANGED':
-                this.currentChain = payload.chainId;
                 this.eventListeners.chainChanged?.(payload.chainId);
                 break;
 
@@ -77,10 +76,13 @@ class QuasarWallet {
                 this.eventListeners.connect?.();
                 break;
 
+            case 'GET_BROWSER_INFO':
+                this._extensionVersion = payload.version;
+                break;
+
             case 'QUASAR_DISCONNECTED':
                 this.isConnected = false;
                 this.accounts = [];
-                this.currentChain = null;
                 this.eventListeners.disconnect?.();
                 break;
         }
@@ -147,7 +149,6 @@ class QuasarWallet {
         await this.sendMessage('QUASAR_DISCONNECT');
         this.isConnected = false;
         this.accounts = [];
-        this.currentChain = null;
     }
 
     async getAccounts(): Promise<WalletAccount[]> {
@@ -184,15 +185,6 @@ class QuasarWallet {
         return result.signature;
     }
 
-    async switchChain(chainId: string): Promise<void> {
-        await this.sendMessage('QUASAR_SWITCH_CHAIN', { chainId });
-        this.currentChain = chainId;
-    }
-
-    async addChain(chainConfig: any): Promise<void> {
-        await this.sendMessage('QUASAR_ADD_CHAIN', chainConfig);
-    }
-
     // Event listeners
     on<K extends keyof WalletEvents>(event: K, callback: WalletEvents[K]): void {
         this.eventListeners[event] = callback;
@@ -211,8 +203,16 @@ class QuasarWallet {
         return this.accounts[0]?.address || null;
     }
 
-    get chainId(): string | null {
-        return this.currentChain;
+    get accountsList(): WalletAccount[] {
+        return this.accounts;
+    }
+
+    get isAvailable(): boolean {
+        return !!window.quasar;
+    }
+
+    get extensionVersion(): string | null {
+        return this._extensionVersion;
     }
 }
 

@@ -238,7 +238,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                 <div className="request-content">
                     <div className="request-site">
                         <div className="site-icon">
-                            <img 
+                            <img
                                 src={`https://www.google.com/s2/favicons?domain=${requestData.hostname}&sz=32`}
                                 alt="Site favicon"
                                 onError={(e) => {
@@ -266,8 +266,8 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                         <div className="wallet-selection">
                             <div className="detail-row">
                                 <span className="label">Wallet:</span>
-                                <select 
-                                    value={selectedWalletForRequest?.id || ''} 
+                                <select
+                                    value={selectedWalletForRequest?.id || ''}
                                     onChange={(e) => {
                                         const wallet = wallets.find(w => w.id === e.target.value);
                                         setSelectedWalletForRequest(wallet);
@@ -291,14 +291,14 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                             <h4>Select Wallets to Connect:</h4>
                             <div className="wallet-list">
                                 {wallets.map(wallet => (
-                                    <div 
-                                        key={wallet.id} 
+                                    <div
+                                        key={wallet.id}
                                         className={`wallet-item ${selectedWalletForRequest?.id === wallet.id ? 'selected' : ''}`}
                                         onClick={() => setSelectedWalletForRequest(wallet)}
                                     >
                                         <div className="wallet-checkbox">
-                                            <input 
-                                                type="radio" 
+                                            <input
+                                                type="radio"
                                                 name="connect-wallet"
                                                 checked={selectedWalletForRequest?.id === wallet.id}
                                                 onChange={() => setSelectedWalletForRequest(wallet)}

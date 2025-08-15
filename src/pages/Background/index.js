@@ -50,36 +50,7 @@ async function openWalletPopup(requestData) {
 // Get wallet data from storage or popup
 async function getWalletData() {
     try {
-        const data = await browserAPI.storage.local.get(['wallets', 'selectedWallet']);
-
-        // For testing purposes, return mock data if no wallets found
-        if (!data.wallets || data.wallets.length === 0) {
-            return {
-                accounts: [
-                    {
-                        address: '0xA1b2...C3d4',
-                        publicKey: '0xA1b2...C3d4_PUBLIC',
-                        curve: 'secp256k1'
-                    }
-                ],
-                assets: [
-                    {
-                        symbol: 'STE',
-                        name: 'Stellaris',
-                        balance: '158.67',
-                        chain: 'Stellaris',
-                        curve: 'secp256k1'
-                    },
-                    {
-                        symbol: 'HAL',
-                        name: 'Halogen',
-                        balance: '2759.65',
-                        chain: 'Halogen',
-                        curve: 'secp256k1'
-                    }
-                ]
-            };
-        }
+        const data = null;
 
         // Convert stored wallet data to API format
         const selectedWallet = data.wallets.find(w => w.id === data.selectedWallet) || data.wallets[0];
