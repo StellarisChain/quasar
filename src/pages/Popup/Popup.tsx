@@ -13,6 +13,7 @@ import { getStoredWallets, saveWallets, defaultWallets } from './WalletUtils';
 import { CreateWallet } from './CreateWallet';
 import { NewWallet } from './NewWallet';
 import { ImportWallet, ImportWalletProps } from './ImportWallet';
+import { RequestDialog } from './RequestDialog';
 import './Popup.css';
 
 const Popup = () => {
@@ -22,12 +23,49 @@ const Popup = () => {
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(getStoredWallets()[0]);
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [importWalletFile, setImportWalletFile] = useState<boolean>(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
+
+  // Check for request ID in URL params on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const reqId = urlParams.get('request');
+    
+    if (reqId) {
+      setRequestId(reqId);
+      setShowRequestDialog(true);
+    }
+  }, []);
 
   React.useEffect(() => {
     if (wallets) {
       saveWallets(wallets);
     }
   }, [wallets]);
+
+  const handleRequestApprove = (result: any) => {
+    setShowRequestDialog(false);
+    // Close the popup window after approval
+    window.close();
+  };
+
+  const handleRequestReject = (reason?: string) => {
+    setShowRequestDialog(false);
+    // Close the popup window after rejection
+    window.close();
+  };
+
+  const handleRequestClose = () => {
+    setShowRequestDialog(false);
+    // If there's no wallet and this was a CONNECT request, don't close the popup
+    // Let the user create a wallet instead
+    if (!selectedWallet && requestId) {
+      // Just hide the dialog, don't close the popup
+      return;
+    }
+    // Otherwise close the popup window when closed without action
+    window.close();
+  };
 
   return (
     <div className="wallet-popup wallet-popup-anim" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -77,15 +115,36 @@ const Popup = () => {
           {page === 'new-wallet' && <NewWallet onBack={() => setPage('create-wallet')} onComplete={(wallet: Wallet) => {
             setWallets([...wallets, wallet]);
             setSelectedWallet(wallet);
-            setPage('main');
+            // If there's a pending request, show it again after wallet creation
+            if (requestId) {
+              setShowRequestDialog(true);
+            } else {
+              setPage('main');
+            }
           }} />}
           {page === "import-wallet" && <ImportWallet onBack={() => setPage('create-wallet')} fromFile={importWalletFile} onImport={(wallet: Wallet) => {
             setWallets([...wallets, wallet]);
             setSelectedWallet(wallet);
-            setPage('main');
+            // If there's a pending request, show it again after wallet import
+            if (requestId) {
+              setShowRequestDialog(true);
+            } else {
+              setPage('main');
+            }
           }} />}
         </div>
       </div>
+
+      {/* Request Dialog */}
+      {showRequestDialog && requestId && (
+        <RequestDialog
+          requestId={requestId}
+          selectedWallet={selectedWallet}
+          onApprove={handleRequestApprove}
+          onReject={handleRequestReject}
+          onClose={handleRequestClose}
+        />
+      )}
     </div>
   );
 };
