@@ -30,7 +30,7 @@ const Popup = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const reqId = urlParams.get('request');
-    
+
     if (reqId) {
       setRequestId(reqId);
       setShowRequestDialog(true);
@@ -140,6 +140,7 @@ const Popup = () => {
         <RequestDialog
           requestId={requestId}
           selectedWallet={selectedWallet}
+          wallets={wallets}
           onApprove={handleRequestApprove}
           onReject={handleRequestReject}
           onClose={handleRequestClose}
