@@ -133,12 +133,49 @@ function setupMessageRelay() {
     });
 }
 
+// Setup DevTools communication
+function setupDevToolsRelay() {
+    // Listen for DevTools execute requests
+    document.addEventListener('quasar-devtools-execute', async (event) => {
+        const { id, code } = event.detail;
+        
+        try {
+            // Forward to page context via postMessage
+            window.postMessage({
+                type: 'QUASAR_DEVTOOLS_EXECUTE',
+                payload: { id, code },
+                requestId: id
+            }, '*');
+        } catch (error) {
+            // Send error response
+            document.dispatchEvent(new CustomEvent('quasar-devtools-response', {
+                detail: { id, result: { error: error.message } }
+            }));
+        }
+    });
+
+    // Listen for responses from page context
+    window.addEventListener('message', (event) => {
+        if (event.source !== window || event.data.type !== 'QUASAR_DEVTOOLS_EXECUTE_RESPONSE') {
+            return;
+        }
+
+        const { payload, requestId } = event.data;
+        
+        // Forward response to DevTools
+        document.dispatchEvent(new CustomEvent('quasar-devtools-response', {
+            detail: { id: requestId, result: payload }
+        }));
+    });
+}
+
 // Initialize content script
 function initializeContentScript() {
     // Only inject on main frame
     if (window.self === window.top) {
         injectWalletLibrary();
         setupMessageRelay();
+        setupDevToolsRelay();
         console.log('Quasar Content Script - Ready!');
     }
 }

@@ -9,11 +9,54 @@ interface TestResult {
     timestamp: number;
 }
 
+interface TransactionParams {
+    to: string;
+    amount: string;
+    asset: string;
+    memo: string;
+}
+
+interface SignMessageParams {
+    message: string;
+    encoding?: 'utf8' | 'hex';
+}
+
+interface ConnectParams {
+    chainId?: string;
+    requestedChains?: string[];
+}
+
+interface DialogState {
+    type: 'transaction' | 'sign' | 'connect' | null;
+    isOpen: boolean;
+}
+
 const Panel: React.FC = () => {
     const [results, setResults] = useState<TestResult[]>([]);
     const [isWalletAvailable, setIsWalletAvailable] = useState(false);
     const [loading, setLoading] = useState<string | null>(null);
     const [extensionContextValid, setExtensionContextValid] = useState(true);
+    
+    // Dialog state
+    const [dialogState, setDialogState] = useState<DialogState>({ type: null, isOpen: false });
+    
+    // Form states for different dialogs
+    const [transactionForm, setTransactionForm] = useState<TransactionParams>({
+        to: '0x742d35cc6634c0532925a3b8d17c93fb',
+        amount: '1.0',
+        asset: 'STE',
+        memo: 'Test transaction from devtools'
+    });
+    
+    const [signMessageForm, setSignMessageForm] = useState<SignMessageParams>({
+        message: 'Hello from Quasar DevTools!',
+        encoding: 'utf8'
+    });
+    
+    const [connectForm, setConnectForm] = useState<ConnectParams>({
+        chainId: undefined,
+        requestedChains: []
+    });
 
     useEffect(() => {
         checkWalletAvailability();
@@ -26,8 +69,41 @@ const Panel: React.FC = () => {
             }
         }, 5000);
 
-        return () => clearInterval(interval);
-    }, []);
+        // Keyboard shortcuts
+        const handleKeydown = (e: KeyboardEvent) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'k':
+                        e.preventDefault();
+                        clearResults();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        checkWalletAvailability();
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        if (!loading) openConnectDialog();
+                        break;
+                    case 't':
+                        e.preventDefault();
+                        if (!loading) openTransactionDialog();
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        if (!loading) openSignDialog();
+                        break;
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeydown);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('keydown', handleKeydown);
+        };
+    }, [loading]);
 
     const addResult = (result: Omit<TestResult, 'timestamp'>) => {
         setResults(prev => [{
@@ -39,7 +115,7 @@ const Panel: React.FC = () => {
     const checkWalletAvailability = async () => {
         try {
             // Check if extension context is still valid
-            if (!browserAPI.scripting.avaliable) {
+            if (!browserAPI.scripting.available) {
                 console.warn('Extension context invalidated, skipping wallet check');
                 setIsWalletAvailable(false);
                 return;
@@ -64,7 +140,7 @@ const Panel: React.FC = () => {
     const executeInPage = async (code: string) => {
         try {
             // Check if extension context is still valid
-            if (!browserAPI.scripting.avaliable) {
+            if (!browserAPI.scripting.available) {
                 throw new Error('Extension context invalidated');
             }
 
@@ -78,28 +154,32 @@ const Panel: React.FC = () => {
                 func: (code: string) => {
                     return (async () => {
                         try {
-                            // Create a script element to execute the code in page context
-                            const script = document.createElement('script');
-                            script.textContent = `
-                                (async () => {
-                                    try {
-                                        const result = await (async () => { ${code} })();
-                                        window.__quasar_devtools_result = result;
-                                    } catch (error) {
-                                        window.__quasar_devtools_result = { error: error.message };
+                            // Use a custom event to communicate with the page context
+                            // This bypasses CSP restrictions
+                            return new Promise((resolve) => {
+                                const eventId = 'quasar-devtools-' + Math.random().toString(36).substr(2, 9);
+                                
+                                // Listen for the response
+                                const handleResponse = (event: CustomEvent) => {
+                                    if (event.detail.id === eventId) {
+                                        document.removeEventListener('quasar-devtools-response', handleResponse as EventListener);
+                                        resolve(event.detail.result);
                                     }
-                                })();
-                            `;
-                            document.head.appendChild(script);
-                            document.head.removeChild(script);
-
-                            // Wait a bit for execution
-                            await new Promise(resolve => setTimeout(resolve, 100));
-
-                            const result = (window as any).__quasar_devtools_result;
-                            delete (window as any).__quasar_devtools_result;
-
-                            return result;
+                                };
+                                
+                                document.addEventListener('quasar-devtools-response', handleResponse as EventListener);
+                                
+                                // Send the code to page context
+                                document.dispatchEvent(new CustomEvent('quasar-devtools-execute', {
+                                    detail: { id: eventId, code }
+                                }));
+                                
+                                // Timeout after 10 seconds
+                                setTimeout(() => {
+                                    document.removeEventListener('quasar-devtools-response', handleResponse as EventListener);
+                                    resolve({ error: 'Timeout waiting for response' });
+                                }, 10000);
+                            });
                         } catch (error) {
                             return { error: error instanceof Error ? error.message : String(error) };
                         }
@@ -114,17 +194,26 @@ const Panel: React.FC = () => {
         }
     };
 
-    const testConnectWallet = async () => {
+    const testConnectWallet = async (params?: ConnectParams) => {
         setLoading('connect');
         try {
-            const result = await executeInPage(`
+            const connectParams = params || connectForm;
+            let connectCode = `
                 if (!window.quasar) {
                     return { error: 'Quasar wallet not available' };
                 }
                 
-                const accounts = await window.quasar.connect();
+                const accounts = await window.quasar.connect(`;
+            
+            if (connectParams.chainId || connectParams.requestedChains?.length) {
+                connectCode += JSON.stringify(connectParams);
+            }
+            
+            connectCode += `);
                 return { success: true, accounts };
-            `);
+            `;
+
+            const result = await executeInPage(connectCode);
 
             if (result.error) {
                 addResult({ success: false, error: result.error });
@@ -136,6 +225,7 @@ const Panel: React.FC = () => {
             addResult({ success: false, error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(null);
+            setDialogState({ type: null, isOpen: false });
         }
     };
 
@@ -187,20 +277,16 @@ const Panel: React.FC = () => {
         }
     };
 
-    const testSendTransaction = async () => {
+    const testSendTransaction = async (params?: TransactionParams) => {
         setLoading('transaction');
         try {
+            const txParams = params || transactionForm;
             const result = await executeInPage(`
                 if (!window.quasar) {
                     return { error: 'Quasar wallet not available' };
                 }
                 
-                const tx = await window.quasar.sendTransaction({
-                    to: '0xRecipient...Address',
-                    amount: '1.0',
-                    asset: 'STE',
-                    memo: 'Test transaction from devtools'
-                });
+                const tx = await window.quasar.sendTransaction(${JSON.stringify(txParams)});
                 return { success: true, transaction: tx };
             `);
 
@@ -213,18 +299,20 @@ const Panel: React.FC = () => {
             addResult({ success: false, error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(null);
+            setDialogState({ type: null, isOpen: false });
         }
     };
 
-    const testSignMessage = async () => {
+    const testSignMessage = async (params?: SignMessageParams) => {
         setLoading('sign');
         try {
+            const signParams = params || signMessageForm;
             const result = await executeInPage(`
                 if (!window.quasar) {
                     return { error: 'Quasar wallet not available' };
                 }
                 
-                const signature = await window.quasar.signMessage('Hello from Quasar DevTools!');
+                const signature = await window.quasar.signMessage('${signParams.message}');
                 return { success: true, signature };
             `);
 
@@ -237,6 +325,7 @@ const Panel: React.FC = () => {
             addResult({ success: false, error: error instanceof Error ? error.message : String(error) });
         } finally {
             setLoading(null);
+            setDialogState({ type: null, isOpen: false });
         }
     };
 
@@ -269,7 +358,7 @@ const Panel: React.FC = () => {
         setLoading('inject');
         try {
             // Check if extension context is still valid
-            if (!browserAPI.scripting.avaliable) {
+            if (!browserAPI.scripting.available) {
                 throw new Error('Extension context invalidated');
             }
 
@@ -390,6 +479,360 @@ const Panel: React.FC = () => {
         setResults([]);
     };
 
+    const exportResults = () => {
+        const exportData = {
+            timestamp: new Date().toISOString(),
+            results: results.map(r => ({
+                ...r,
+                timestamp: new Date(r.timestamp).toISOString()
+            }))
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quasar-devtools-results-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const copyResult = (result: TestResult) => {
+        const resultText = result.success 
+            ? JSON.stringify(result.data, null, 2)
+            : result.error;
+        
+        navigator.clipboard.writeText(resultText || '').then(() => {
+            // Could add a toast notification here
+            console.log('Result copied to clipboard');
+        });
+    };
+
+    // Dialog handlers
+    const openConnectDialog = () => setDialogState({ type: 'connect', isOpen: true });
+    const openTransactionDialog = () => setDialogState({ type: 'transaction', isOpen: true });
+    const openSignDialog = () => setDialogState({ type: 'sign', isOpen: true });
+    const closeDialog = () => setDialogState({ type: null, isOpen: false });
+
+    // Dialog submit handlers
+    const handleConnectSubmit = () => {
+        testConnectWallet(connectForm);
+    };
+
+    const handleTransactionSubmit = () => {
+        // Basic validation
+        if (!transactionForm.to.trim()) {
+            addResult({ success: false, error: 'Recipient address is required' });
+            return;
+        }
+        if (!transactionForm.amount.trim()) {
+            addResult({ success: false, error: 'Amount is required' });
+            return;
+        }
+        if (isNaN(Number(transactionForm.amount))) {
+            addResult({ success: false, error: 'Amount must be a valid number' });
+            return;
+        }
+        if (Number(transactionForm.amount) <= 0) {
+            addResult({ success: false, error: 'Amount must be greater than 0' });
+            return;
+        }
+        
+        testSendTransaction(transactionForm);
+    };
+
+    const handleSignSubmit = () => {
+        if (!signMessageForm.message.trim()) {
+            addResult({ success: false, error: 'Message is required' });
+            return;
+        }
+        
+        testSignMessage(signMessageForm);
+    };
+
+    // Preset handlers
+    const applyTransactionPreset = (preset: 'small' | 'large' | 'token') => {
+        const presets = {
+            small: {
+                to: '0x742d35cc6634c0532925a3b8d17c93fb',
+                amount: '0.001',
+                asset: 'STE',
+                memo: 'Small test transaction'
+            },
+            large: {
+                to: '0x742d35cc6634c0532925a3b8d17c93fb',
+                amount: '100.0',
+                asset: 'STE',
+                memo: 'Large test transaction'
+            },
+            token: {
+                to: '0x742d35cc6634c0532925a3b8d17c93fb',
+                amount: '10.0',
+                asset: 'USDT',
+                memo: 'Token transfer test'
+            }
+        };
+        setTransactionForm(presets[preset]);
+    };
+
+    const applySignPreset = (preset: 'simple' | 'long' | 'json') => {
+        const presets = {
+            simple: {
+                message: 'Hello Quasar!',
+                encoding: 'utf8' as const
+            },
+            long: {
+                message: 'This is a longer message to test signature handling with more complex text content that includes special characters: !@#$%^&*()_+-=[]{}|;:,.<>?',
+                encoding: 'utf8' as const
+            },
+            json: {
+                message: JSON.stringify({
+                    action: 'authenticate',
+                    timestamp: Date.now(),
+                    nonce: Math.random().toString(36)
+                }, null, 2),
+                encoding: 'utf8' as const
+            }
+        };
+        setSignMessageForm(presets[preset]);
+    };
+
+    // Modal component
+    const Modal: React.FC<{ children: React.ReactNode; title: string; onClose: () => void }> = ({ children, title, onClose }) => (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>{title}</h3>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                </div>
+                <div className="modal-body">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+
+    // Connect Dialog
+    const ConnectDialog: React.FC = () => (
+        <Modal title="Connect Wallet" onClose={closeDialog}>
+            <div className="dialog-form">
+                <div className="preset-section">
+                    <label>Quick Presets:</label>
+                    <div className="preset-buttons">
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => setConnectForm({ chainId: undefined, requestedChains: [] })}
+                        >
+                            Default
+                        </button>
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => setConnectForm({ chainId: 'stellaris', requestedChains: ['stellaris'] })}
+                        >
+                            Stellaris
+                        </button>
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => setConnectForm({ chainId: 'ethereum', requestedChains: ['ethereum', 'polygon'] })}
+                        >
+                            Multi-chain
+                        </button>
+                    </div>
+                </div>
+                <div className="form-group">
+                    <label>Chain ID (optional)</label>
+                    <input
+                        type="text"
+                        value={connectForm.chainId || ''}
+                        onChange={(e) => setConnectForm({ ...connectForm, chainId: e.target.value || undefined })}
+                        placeholder="e.g., ethereum, stellaris"
+                    />
+                    <small style={{ color: '#666', fontSize: '11px' }}>
+                        Preferred chain to connect to
+                    </small>
+                </div>
+                <div className="form-group">
+                    <label>Requested Chains (optional, comma-separated)</label>
+                    <input
+                        type="text"
+                        value={connectForm.requestedChains?.join(', ') || ''}
+                        onChange={(e) => setConnectForm({ 
+                            ...connectForm, 
+                            requestedChains: e.target.value ? e.target.value.split(',').map(s => s.trim()) : []
+                        })}
+                        placeholder="e.g., ethereum, stellaris, bitcoin"
+                    />
+                    <small style={{ color: '#666', fontSize: '11px' }}>
+                        List of chains your app supports
+                    </small>
+                </div>
+                <div className="dialog-actions">
+                    <button className="btn-secondary" onClick={closeDialog}>Cancel</button>
+                    <button 
+                        className="btn-primary" 
+                        onClick={handleConnectSubmit}
+                        disabled={loading === 'connect'}
+                    >
+                        {loading === 'connect' ? 'Connecting...' : 'Connect'}
+                    </button>
+                </div>
+            </div>
+        </Modal>
+    );
+
+    // Transaction Dialog
+    const TransactionDialog: React.FC = () => (
+        <Modal title="Send Transaction" onClose={closeDialog}>
+            <div className="dialog-form">
+                <div className="preset-section">
+                    <label>Quick Presets:</label>
+                    <div className="preset-buttons">
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => applyTransactionPreset('small')}
+                        >
+                            Small TX
+                        </button>
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => applyTransactionPreset('large')}
+                        >
+                            Large TX
+                        </button>
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => applyTransactionPreset('token')}
+                        >
+                            Token TX
+                        </button>
+                    </div>
+                </div>
+                <div className="form-group">
+                    <label>To Address *</label>
+                    <input
+                        type="text"
+                        value={transactionForm.to}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, to: e.target.value })}
+                        placeholder="0x742d35cc6634c0532925a3b8d17c93fb"
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Amount *</label>
+                    <input
+                        type="text"
+                        value={transactionForm.amount}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, amount: e.target.value })}
+                        placeholder="1.0"
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Asset *</label>
+                    <select
+                        value={transactionForm.asset}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, asset: e.target.value })}
+                    >
+                        <option value="STE">STE</option>
+                        <option value="ETH">ETH</option>
+                        <option value="BTC">BTC</option>
+                        <option value="USDT">USDT</option>
+                        <option value="USDC">USDC</option>
+                    </select>
+                </div>
+                <div className="form-group">
+                    <label>Memo</label>
+                    <textarea
+                        value={transactionForm.memo}
+                        onChange={(e) => setTransactionForm({ ...transactionForm, memo: e.target.value })}
+                        placeholder="Transaction memo (optional)"
+                        rows={3}
+                    />
+                </div>
+                <div className="dialog-actions">
+                    <button className="btn-secondary" onClick={closeDialog}>Cancel</button>
+                    <button 
+                        className="btn-primary" 
+                        onClick={handleTransactionSubmit}
+                        disabled={loading === 'transaction' || !transactionForm.to || !transactionForm.amount}
+                    >
+                        {loading === 'transaction' ? 'Sending...' : 'Send Transaction'}
+                    </button>
+                </div>
+            </div>
+        </Modal>
+    );
+
+    // Sign Message Dialog
+    const SignMessageDialog: React.FC = () => (
+        <Modal title="Sign Message" onClose={closeDialog}>
+            <div className="dialog-form">
+                <div className="preset-section">
+                    <label>Quick Presets:</label>
+                    <div className="preset-buttons">
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => applySignPreset('simple')}
+                        >
+                            Simple
+                        </button>
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => applySignPreset('long')}
+                        >
+                            Long Text
+                        </button>
+                        <button 
+                            type="button" 
+                            className="preset-btn" 
+                            onClick={() => applySignPreset('json')}
+                        >
+                            JSON Data
+                        </button>
+                    </div>
+                </div>
+                <div className="form-group">
+                    <label>Message *</label>
+                    <textarea
+                        value={signMessageForm.message}
+                        onChange={(e) => setSignMessageForm({ ...signMessageForm, message: e.target.value })}
+                        placeholder="Enter message to sign..."
+                        rows={4}
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Encoding</label>
+                    <select
+                        value={signMessageForm.encoding}
+                        onChange={(e) => setSignMessageForm({ ...signMessageForm, encoding: e.target.value as 'utf8' | 'hex' })}
+                    >
+                        <option value="utf8">UTF-8</option>
+                        <option value="hex">Hex</option>
+                    </select>
+                </div>
+                <div className="dialog-actions">
+                    <button className="btn-secondary" onClick={closeDialog}>Cancel</button>
+                    <button 
+                        className="btn-primary" 
+                        onClick={handleSignSubmit}
+                        disabled={loading === 'sign' || !signMessageForm.message}
+                    >
+                        {loading === 'sign' ? 'Signing...' : 'Sign Message'}
+                    </button>
+                </div>
+            </div>
+        </Modal>
+    );
+
     return (
         <div className="devtools-panel">
             <div className="header">
@@ -417,11 +860,11 @@ const Panel: React.FC = () => {
                 <h2>Wallet API Tests</h2>
                 <div className="button-grid">
                     <button
-                        onClick={testConnectWallet}
-                        disabled={loading === 'connect'}
+                        onClick={openConnectDialog}
+                        disabled={!!loading}
                         className="test-btn connect-btn"
                     >
-                        {loading === 'connect' ? '...' : 'Connect Wallet'}
+                        Connect Wallet
                     </button>
 
                     <button
@@ -441,19 +884,19 @@ const Panel: React.FC = () => {
                     </button>
 
                     <button
-                        onClick={testSendTransaction}
-                        disabled={loading === 'transaction'}
+                        onClick={openTransactionDialog}
+                        disabled={!!loading}
                         className="test-btn transaction-btn"
                     >
-                        {loading === 'transaction' ? '...' : 'Send Transaction'}
+                        Send Transaction
                     </button>
 
                     <button
-                        onClick={testSignMessage}
-                        disabled={loading === 'sign'}
+                        onClick={openSignDialog}
+                        disabled={!!loading}
                         className="test-btn"
                     >
-                        {loading === 'sign' ? '...' : 'Sign Message'}
+                        Sign Message
                     </button>
 
                     <button
@@ -467,20 +910,85 @@ const Panel: React.FC = () => {
 
                 <div className="utility-section">
                     <h3>Utilities</h3>
-                    <button
-                        onClick={injectTestScript}
-                        disabled={loading === 'inject'}
-                        className="test-btn utility-btn"
-                    >
-                        {loading === 'inject' ? '...' : 'Inject Test Interface'}
-                    </button>
+                    <div className="utility-buttons">
+                        <button
+                            onClick={injectTestScript}
+                            disabled={loading === 'inject'}
+                            className="test-btn utility-btn"
+                        >
+                            {loading === 'inject' ? '...' : 'Inject Test Interface'}
+                        </button>
+                        
+                        <button
+                            onClick={() => testConnectWallet()}
+                            disabled={!!loading}
+                            className="test-btn utility-btn"
+                            title="Quick connect without parameters"
+                        >
+                            Quick Connect
+                        </button>
+                        
+                        <button
+                            onClick={() => testSendTransaction({
+                                to: '0x742d35cc6634c0532925a3b8d17c93fb',
+                                amount: '0.1',
+                                asset: 'STE',
+                                memo: 'Quick test transaction'
+                            })}
+                            disabled={!!loading}
+                            className="test-btn utility-btn"
+                            title="Send a quick test transaction"
+                        >
+                            Quick Send
+                        </button>
+                        
+                        <button
+                            onClick={() => testSignMessage({
+                                message: 'Quick test signature',
+                                encoding: 'utf8'
+                            })}
+                            disabled={!!loading}
+                            className="test-btn utility-btn"
+                            title="Sign a quick test message"
+                        >
+                            Quick Sign
+                        </button>
+                    </div>
+                    
+                    <div className="help-section">
+                        <h4>Keyboard Shortcuts</h4>
+                        <div className="shortcuts">
+                            <div className="shortcut">
+                                <kbd>Ctrl/Cmd + C</kbd> <span>Connect Dialog</span>
+                            </div>
+                            <div className="shortcut">
+                                <kbd>Ctrl/Cmd + T</kbd> <span>Transaction Dialog</span>
+                            </div>
+                            <div className="shortcut">
+                                <kbd>Ctrl/Cmd + S</kbd> <span>Sign Dialog</span>
+                            </div>
+                            <div className="shortcut">
+                                <kbd>Ctrl/Cmd + R</kbd> <span>Refresh Wallet Status</span>
+                            </div>
+                            <div className="shortcut">
+                                <kbd>Ctrl/Cmd + K</kbd> <span>Clear Results</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div className="results-section">
                 <div className="results-header">
                     <h2>Test Results</h2>
-                    <button onClick={clearResults} className="clear-btn">Clear</button>
+                    <div className="results-actions">
+                        {results.length > 0 && (
+                            <button onClick={exportResults} className="export-btn" title="Export results as JSON">
+                                📥 Export
+                            </button>
+                        )}
+                        <button onClick={clearResults} className="clear-btn">Clear</button>
+                    </div>
                 </div>
                 <div className="results-list">
                     {results.length === 0 ? (
@@ -495,6 +1003,13 @@ const Panel: React.FC = () => {
                                     <span className="result-time">
                                         {new Date(result.timestamp).toLocaleTimeString()}
                                     </span>
+                                    <button 
+                                        className="copy-result-btn" 
+                                        onClick={() => copyResult(result)}
+                                        title="Copy result to clipboard"
+                                    >
+                                        📋
+                                    </button>
                                 </div>
                                 <div className="result-content">
                                     {result.success ? (
@@ -508,6 +1023,11 @@ const Panel: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Dialogs */}
+            {dialogState.isOpen && dialogState.type === 'connect' && <ConnectDialog />}
+            {dialogState.isOpen && dialogState.type === 'transaction' && <TransactionDialog />}
+            {dialogState.isOpen && dialogState.type === 'sign' && <SignMessageDialog />}
         </div>
     );
 };

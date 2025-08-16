@@ -76,7 +76,7 @@ export const browserAPI = {
 
     // Scripting API (Chrome MV3) or Tabs API (Firefox/Chrome MV2)
     scripting: {
-        avaliable: !!(browser as any).scripting,
+        available: !!(browser as any).scripting,
         executeScript: async (injection: any) => {
             if ((browser as any).scripting) {
                 // Chrome MV3

@@ -85,6 +85,41 @@ class QuasarWallet {
                 this.accounts = [];
                 this.eventListeners.disconnect?.();
                 break;
+
+            case 'QUASAR_DEVTOOLS_EXECUTE':
+                this.handleDevToolsExecution(event.data);
+                break;
+        }
+    }
+
+    private async handleDevToolsExecution(data: any) {
+        const { payload, requestId } = data;
+        const { code } = payload;
+
+        try {
+            // Create an async function from the code and execute it
+            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+            const func = new AsyncFunction(`
+                const window = arguments[0];
+                ${code}
+            `);
+            
+            const result = await func(window);
+            
+            // Send response back to content script
+            window.postMessage({
+                type: 'QUASAR_DEVTOOLS_EXECUTE_RESPONSE',
+                payload: result,
+                requestId
+            }, '*');
+            
+        } catch (error) {
+            // Send error response
+            window.postMessage({
+                type: 'QUASAR_DEVTOOLS_EXECUTE_RESPONSE',
+                payload: { error: error instanceof Error ? error.message : String(error) },
+                requestId
+            }, '*');
         }
     }
 
