@@ -72,7 +72,7 @@ const entryPoints = {
     content: 'src/pages/Content/index.js',
     devtools: 'src/pages/Devtools/index.js',
     panel: 'src/pages/Panel/index.jsx',
-    'wallet-injection': 'src/lib/wallet-injection.ts',
+    'wallet-injection': 'src/lib/browser/wallet-injection.ts',
 };
 
 // Browser-specific build configuration

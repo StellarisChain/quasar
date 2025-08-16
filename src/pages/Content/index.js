@@ -1,5 +1,5 @@
 import { printLine } from './modules/print';
-import { relayMap } from '../../lib/relay-config.js';
+import { relayMap } from '../../lib/browser/index.js';
 
 console.log('Quasar Content Script - Starting...');
 console.log('Must reload extension for modifications to take effect.');

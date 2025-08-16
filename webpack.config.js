@@ -58,7 +58,7 @@ var options = {
     contentScript: path.join(__dirname, 'src', 'pages', 'Content', 'index.js'),
     devtools: path.join(__dirname, 'src', 'pages', 'Devtools', 'index.js'),
     panel: path.join(__dirname, 'src', 'pages', 'Panel', 'index.jsx'),
-    'wallet-injection': path.join(__dirname, 'src', 'lib', 'wallet-injection.ts'),
+    'wallet-injection': path.join(__dirname, 'src', 'lib', 'browser', 'wallet-injection.ts'),
   },
   chromeExtensionBoilerplate: {
     notHotReload: ['background', 'contentScript', 'devtools', 'wallet-injection'],
