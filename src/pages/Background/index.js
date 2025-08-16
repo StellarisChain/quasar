@@ -138,6 +138,10 @@ async function handleConnectWallet(origin, hostname) {
                 resolve: (result) => {
                     cleanup();
                     resolve(result);
+                    // Cache the wallet data for future requests
+                    if (result.walletData) {
+                        connectedSitesData.set(origin, result.walletData);
+                    }
                 },
                 reject: (error) => {
                     cleanup();
