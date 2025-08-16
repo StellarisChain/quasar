@@ -32,6 +32,11 @@ export const relayMap = {
         type: 'SIGN_MESSAGE',
         includePayload: true,
         includeHostname: true
+    },
+    "QUASAR_GET_EXTENSION_INFO": {
+        type: 'GET_BROWSER_INFO',
+        includePayload: false,
+        includeHostname: false
     }
 } as const;
 

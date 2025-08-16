@@ -309,12 +309,17 @@ if (browserAPI.runtime.onMessage) {
         switch (message.type) {
             case 'GET_BROWSER_INFO':
                 // Get version from manifest or use fallback
-                const manifest = chrome?.runtime?.getManifest?.() || {};
+                const manifest = browserAPI.runtime.getManifest() || {};
                 const version = manifest.version || '0.0.0-dev';
+                const browserType = getBrowserType();
                 sendResponse({
-                    browser: getBrowserType(),
+                    browser: browserType,
                     version: version,
-                    manifestVersion: manifest.manifest_version || 'unknown'
+                    manifestVersion: manifest.manifest_version || 'unknown',
+                    extensionId: browserAPI.runtime.id,
+                    name: manifest.name || 'Quasar Wallet',
+                    platform: navigator?.platform || 'unknown',
+                    userAgent: navigator?.userAgent || 'unknown'
                 });
                 break;
 

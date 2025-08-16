@@ -6,7 +6,19 @@
     <title>Quasar Wallet API Test</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple        <div class="button-grid">
+            <button onclick="testCustomTransaction()">
+                Custom Transaction
+            </button>
+            
+            <button onclick="testBatchOperations()">
+                Batch Operations
+            </button>
+            
+            <button onclick="testGetBrowserInfo()">
+                Get Browser Info
+            </button>
+        </div>BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
@@ -249,6 +261,10 @@
                 Batch Operations
             </button>
             
+            <button onclick="testGetBrowserInfo()">
+                Get Browser Info
+            </button>
+            
             <button onclick="clearResults()">
                 Clear Results
             </button>
@@ -445,6 +461,43 @@
                 
             } catch (error) {
                 addResult('Batch', 'Batch operations failed', { error: error.message }, true);
+            }
+        }
+
+        async function testGetBrowserInfo() {
+            try {
+                addResult('Browser Info', 'Retrieving browser information...', {});
+                
+                const wallet = window.quasar;
+                if (!wallet) {
+                    throw new Error('Quasar wallet not available');
+                }
+                
+                // Get fresh browser info
+                const browserInfo = await wallet.getBrowserInfo();
+                addResult('Browser Info', 'Successfully retrieved browser info', browserInfo);
+                
+                // Test cached getters
+                const cachedInfo = wallet.browserInfo;
+                const quickInfo = wallet.quickBrowserInfo;
+                const extensionVersion = wallet.extensionVersion;
+                
+                addResult('Browser Info', 'Cached info retrieved', {
+                    cached: cachedInfo,
+                    quick: quickInfo,
+                    version: extensionVersion,
+                    isAvailable: wallet.isAvailable
+                });
+                
+                // Display message types for debugging
+                const messageTypes = wallet.availableMessageTypes;
+                addResult('Browser Info', 'Available message types', { 
+                    count: messageTypes.length,
+                    types: messageTypes 
+                });
+                
+            } catch (error) {
+                addResult('Browser Info', 'Failed to get browser info', { error: error.message }, true);
             }
         }
 

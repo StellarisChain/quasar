@@ -16,6 +16,16 @@ function isValidMessageType(type: string): type is string {
     return type in relayMap;
 }
 
+export interface BrowserInfo {
+    browser: string;
+    version: string;
+    manifestVersion: string | number;
+    extensionId: string;
+    name: string;
+    platform: string;
+    userAgent: string;
+}
+
 export interface WalletAccount {
     address: string;
     publicKey: string;
@@ -56,6 +66,7 @@ class QuasarWallet {
     private accounts: WalletAccount[] = [];
     private eventListeners: Partial<WalletEvents> = {};
     private _extensionVersion: string | null = null;
+    private _browserInfo: BrowserInfo | null = null;
 
     constructor() {
         // Listen for messages from content script
@@ -63,6 +74,19 @@ class QuasarWallet {
 
         // Initialize connection check
         this.checkConnection();
+        
+        // Automatically fetch browser info on initialization
+        this.initializeBrowserInfo();
+    }
+
+    private async initializeBrowserInfo() {
+        try {
+            const browserInfo = await this.getBrowserInfo();
+            this._extensionVersion = browserInfo.version;
+            this._browserInfo = browserInfo;
+        } catch (error) {
+            console.warn('Could not fetch browser info during initialization:', error);
+        }
     }
 
     private handleMessage(event: MessageEvent) {
@@ -89,7 +113,7 @@ class QuasarWallet {
                 this.eventListeners.connect?.();
                 break;
 
-            case 'GET_BROWSER_INFO':
+            case relayMap.QUASAR_GET_EXTENSION_INFO:
                 this._extensionVersion = payload.version;
                 break;
 
@@ -268,6 +292,57 @@ class QuasarWallet {
 
     get extensionVersion(): string | null {
         return this._extensionVersion;
+    }
+
+    // Cached browser info getter
+    get browserInfo(): BrowserInfo | null {
+        return this._browserInfo;
+    }
+
+    // Quick browser info getter that returns basic info
+    get quickBrowserInfo(): string {
+        if (this._browserInfo) {
+            return `${this._browserInfo.browser} v${this._browserInfo.version}`;
+        }
+        return 'Unknown browser';
+    }
+
+    async getBrowserInfo(): Promise<BrowserInfo> {
+        try {
+            const result = await this.sendMessage('QUASAR_GET_EXTENSION_INFO');
+            const browserInfo: BrowserInfo = {
+                browser: result.browser,
+                version: result.version,
+                manifestVersion: result.manifestVersion,
+                extensionId: result.extensionId,
+                name: result.name,
+                platform: result.platform,
+                userAgent: result.userAgent
+            };
+            
+            // Cache the result
+            this._browserInfo = browserInfo;
+            this._extensionVersion = browserInfo.version;
+            
+            return browserInfo;
+        } catch (error) {
+            console.error('Failed to get browser info:', error);
+            // Return fallback values if the call fails
+            const fallbackInfo: BrowserInfo = {
+                browser: 'unknown',
+                version: '0.0.0',
+                manifestVersion: 'unknown',
+                extensionId: 'unknown',
+                name: 'Quasar Wallet',
+                platform: 'unknown',
+                userAgent: 'unknown'
+            };
+            
+            // Cache fallback
+            this._browserInfo = fallbackInfo;
+            
+            return fallbackInfo;
+        }
     }
 
     // Development utilities
