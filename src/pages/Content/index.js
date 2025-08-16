@@ -1,4 +1,5 @@
 import { printLine } from './modules/print';
+import { relayMap } from '../../lib/relay-config.js';
 
 console.log('Quasar Content Script - Starting...');
 console.log('Must reload extension for modifications to take effect.');
@@ -9,7 +10,7 @@ printLine("Using the 'printLine' function from the Print Module");
 function injectWalletLibrary() {
     const script = document.createElement('script');
     script.src = chrome.runtime.getURL('wallet-injection.bundle.js');
-    script.onload = function() {
+    script.onload = function () {
         this.remove();
         console.log('Quasar wallet library injected successfully');
     };
@@ -25,83 +26,35 @@ function setupMessageRelay() {
         }
 
         const { type, payload, requestId } = event.data;
-        
+
         try {
             let response;
             let sendMessage = true;
-            
-            switch (type) {
-                case 'QUASAR_CHECK_CONNECTION':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'CHECK_CONNECTION',
-                        origin: window.location.origin
-                    });
-                    break;
 
-                case 'QUASAR_CONNECT':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'CONNECT_WALLET',
-                        origin: window.location.origin,
-                        hostname: window.location.hostname
-                    });
-                    break;
+            // Check if this is a response message type
+            if (type.endsWith('_RESPONSE')) {
+                sendMessage = false; // Don't send response for request types
+            } else if (relayMap[type]) {
+                // Use relayMap to handle known message types dynamically
+                const config = relayMap[type];
+                const message = {
+                    type: config.type,
+                    origin: window.location.origin
+                };
 
-                case 'QUASAR_DISCONNECT':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'DISCONNECT_WALLET',
-                        origin: window.location.origin
-                    });
-                    break;
+                // Add payload if required
+                if (config.includePayload && payload) {
+                    message.payload = payload;
+                }
 
-                case 'QUASAR_GET_ASSETS':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'GET_ASSETS',
-                        payload,
-                        origin: window.location.origin,
-                        hostname: window.location.hostname
-                    });
-                    break;
+                // Add hostname if required
+                if (config.includeHostname) {
+                    message.hostname = window.location.hostname;
+                }
 
-                case 'QUASAR_SEND_TRANSACTION':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'SEND_TRANSACTION',
-                        payload,
-                        origin: window.location.origin,
-                        hostname: window.location.hostname
-                    });
-                    break;
-
-                case 'QUASAR_SIGN_MESSAGE':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'SIGN_MESSAGE',
-                        payload,
-                        origin: window.location.origin,
-                        hostname: window.location.hostname
-                    });
-                    break;
-
-                case 'QUASAR_SWITCH_CHAIN':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'SWITCH_CHAIN',
-                        payload,
-                        origin: window.location.origin
-                    });
-                    break;
-
-                case 'QUASAR_ADD_CHAIN':
-                    response = await chrome.runtime.sendMessage({
-                        type: 'ADD_CHAIN',
-                        payload,
-                        origin: window.location.origin
-                    });
-                    break;
-
-                default:
-                    if (type.endsWith('_RESPONSE')) {
-                        sendMessage = false; // Don't send response for request types
-                    } else {
-                        throw new Error(`Unknown message type: ${type}`);
-                    }
+                response = await chrome.runtime.sendMessage(message);
+            } else {
+                throw new Error(`Unknown message type: ${type}`);
             }
 
             if (sendMessage) {
@@ -138,7 +91,7 @@ function setupDevToolsRelay() {
     // Listen for DevTools execute requests
     document.addEventListener('quasar-devtools-execute', async (event) => {
         const { id, code } = event.detail;
-        
+
         try {
             // Forward to page context via postMessage
             window.postMessage({
@@ -161,7 +114,7 @@ function setupDevToolsRelay() {
         }
 
         const { payload, requestId } = event.data;
-        
+
         // Forward response to DevTools
         document.dispatchEvent(new CustomEvent('quasar-devtools-response', {
             detail: { id: requestId, result: payload }

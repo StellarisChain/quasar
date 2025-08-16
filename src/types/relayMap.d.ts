@@ -1,0 +1,1 @@
+declare const relayMap: Record<string, Record<string, string | boolean>>;

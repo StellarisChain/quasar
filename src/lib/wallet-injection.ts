@@ -3,6 +3,19 @@
  * This library gets injected into webpages to provide wallet functionality
  */
 
+// Import relayMap from shared config
+import { relayMap } from './relay-config.js';
+
+// Helper function to get available message types
+function getAvailableMessageTypes(): string[] {
+    return Object.keys(relayMap);
+}
+
+// Helper function to validate message type
+function isValidMessageType(type: string): type is string {
+    return type in relayMap;
+}
+
 export interface WalletAccount {
     address: string;
     publicKey: string;
@@ -98,21 +111,21 @@ class QuasarWallet {
 
         try {
             // Create an async function from the code and execute it
-            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+            const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
             const func = new AsyncFunction(`
                 const window = arguments[0];
                 ${code}
             `);
-            
+
             const result = await func(window);
-            
+
             // Send response back to content script
             window.postMessage({
                 type: 'QUASAR_DEVTOOLS_EXECUTE_RESPONSE',
                 payload: result,
                 requestId
             }, '*');
-            
+
         } catch (error) {
             // Send error response
             window.postMessage({
@@ -129,7 +142,7 @@ class QuasarWallet {
 
             const handleResponse = (event: MessageEvent) => {
                 if (event.source !== window ||
-                    event.data.type !== `${type}_RESPONSE` ||
+                    event.data.type !== `${String(type)}_RESPONSE` ||
                     event.data.requestId !== requestId) {
                     return;
                 }
@@ -161,13 +174,13 @@ class QuasarWallet {
     }
 
     private checkConnection() {
-        this.sendMessage('QUASAR_CHECK_CONNECTION').catch(() => {
+        this.sendMessage("QUASAR_CHECK_CONNECTION").catch(() => {
             // Wallet not available
             this.isConnected = false;
         });
     }
 
-    // Public API methods
+    // Public API methods - now using relayMap for type safety
     async connect(): Promise<WalletAccount[]> {
         try {
             const result = await this.sendMessage('QUASAR_CONNECT');
@@ -255,6 +268,20 @@ class QuasarWallet {
 
     get extensionVersion(): string | null {
         return this._extensionVersion;
+    }
+
+    // Development utilities
+    get availableMessageTypes(): string[] {
+        return getAvailableMessageTypes();
+    }
+
+    isValidMessageType(type: string): boolean {
+        return isValidMessageType(type);
+    }
+
+    // Debug method to inspect relay map
+    get relayMapConfig() {
+        return relayMap;
     }
 }
 

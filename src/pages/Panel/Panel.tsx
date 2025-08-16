@@ -36,10 +36,10 @@ const Panel: React.FC = () => {
     const [isWalletAvailable, setIsWalletAvailable] = useState(false);
     const [loading, setLoading] = useState<string | null>(null);
     const [extensionContextValid, setExtensionContextValid] = useState(true);
-    
+
     // Dialog state
     const [dialogState, setDialogState] = useState<DialogState>({ type: null, isOpen: false });
-    
+
     // Form states for different dialogs
     const [transactionForm, setTransactionForm] = useState<TransactionParams>({
         to: '0x742d35cc6634c0532925a3b8d17c93fb',
@@ -47,12 +47,12 @@ const Panel: React.FC = () => {
         asset: 'STE',
         memo: 'Test transaction from devtools'
     });
-    
+
     const [signMessageForm, setSignMessageForm] = useState<SignMessageParams>({
         message: 'Hello from Quasar DevTools!',
         encoding: 'utf8'
     });
-    
+
     const [connectForm, setConnectForm] = useState<ConnectParams>({
         chainId: undefined,
         requestedChains: []
@@ -158,7 +158,7 @@ const Panel: React.FC = () => {
                             // This bypasses CSP restrictions
                             return new Promise((resolve) => {
                                 const eventId = 'quasar-devtools-' + Math.random().toString(36).substr(2, 9);
-                                
+
                                 // Listen for the response
                                 const handleResponse = (event: CustomEvent) => {
                                     if (event.detail.id === eventId) {
@@ -166,14 +166,14 @@ const Panel: React.FC = () => {
                                         resolve(event.detail.result);
                                     }
                                 };
-                                
+
                                 document.addEventListener('quasar-devtools-response', handleResponse as EventListener);
-                                
+
                                 // Send the code to page context
                                 document.dispatchEvent(new CustomEvent('quasar-devtools-execute', {
                                     detail: { id: eventId, code }
                                 }));
-                                
+
                                 // Timeout after 10 seconds
                                 setTimeout(() => {
                                     document.removeEventListener('quasar-devtools-response', handleResponse as EventListener);
@@ -204,11 +204,11 @@ const Panel: React.FC = () => {
                 }
                 
                 const accounts = await window.quasar.connect(`;
-            
+
             if (connectParams.chainId || connectParams.requestedChains?.length) {
                 connectCode += JSON.stringify(connectParams);
             }
-            
+
             connectCode += `);
                 return { success: true, accounts };
             `;
@@ -487,7 +487,7 @@ const Panel: React.FC = () => {
                 timestamp: new Date(r.timestamp).toISOString()
             }))
         };
-        
+
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -498,10 +498,10 @@ const Panel: React.FC = () => {
     };
 
     const copyResult = (result: TestResult) => {
-        const resultText = result.success 
+        const resultText = result.success
             ? JSON.stringify(result.data, null, 2)
             : result.error;
-        
+
         navigator.clipboard.writeText(resultText || '').then(() => {
             // Could add a toast notification here
             console.log('Result copied to clipboard');
@@ -537,7 +537,7 @@ const Panel: React.FC = () => {
             addResult({ success: false, error: 'Amount must be greater than 0' });
             return;
         }
-        
+
         testSendTransaction(transactionForm);
     };
 
@@ -546,7 +546,7 @@ const Panel: React.FC = () => {
             addResult({ success: false, error: 'Message is required' });
             return;
         }
-        
+
         testSignMessage(signMessageForm);
     };
 
@@ -619,23 +619,23 @@ const Panel: React.FC = () => {
                 <div className="preset-section">
                     <label>Quick Presets:</label>
                     <div className="preset-buttons">
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => setConnectForm({ chainId: undefined, requestedChains: [] })}
                         >
                             Default
                         </button>
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => setConnectForm({ chainId: 'stellaris', requestedChains: ['stellaris'] })}
                         >
                             Stellaris
                         </button>
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => setConnectForm({ chainId: 'ethereum', requestedChains: ['ethereum', 'polygon'] })}
                         >
                             Multi-chain
@@ -659,8 +659,8 @@ const Panel: React.FC = () => {
                     <input
                         type="text"
                         value={connectForm.requestedChains?.join(', ') || ''}
-                        onChange={(e) => setConnectForm({ 
-                            ...connectForm, 
+                        onChange={(e) => setConnectForm({
+                            ...connectForm,
                             requestedChains: e.target.value ? e.target.value.split(',').map(s => s.trim()) : []
                         })}
                         placeholder="e.g., ethereum, stellaris, bitcoin"
@@ -671,8 +671,8 @@ const Panel: React.FC = () => {
                 </div>
                 <div className="dialog-actions">
                     <button className="btn-secondary" onClick={closeDialog}>Cancel</button>
-                    <button 
-                        className="btn-primary" 
+                    <button
+                        className="btn-primary"
                         onClick={handleConnectSubmit}
                         disabled={loading === 'connect'}
                     >
@@ -690,23 +690,23 @@ const Panel: React.FC = () => {
                 <div className="preset-section">
                     <label>Quick Presets:</label>
                     <div className="preset-buttons">
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => applyTransactionPreset('small')}
                         >
                             Small TX
                         </button>
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => applyTransactionPreset('large')}
                         >
                             Large TX
                         </button>
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => applyTransactionPreset('token')}
                         >
                             Token TX
@@ -757,8 +757,8 @@ const Panel: React.FC = () => {
                 </div>
                 <div className="dialog-actions">
                     <button className="btn-secondary" onClick={closeDialog}>Cancel</button>
-                    <button 
-                        className="btn-primary" 
+                    <button
+                        className="btn-primary"
                         onClick={handleTransactionSubmit}
                         disabled={loading === 'transaction' || !transactionForm.to || !transactionForm.amount}
                     >
@@ -776,23 +776,23 @@ const Panel: React.FC = () => {
                 <div className="preset-section">
                     <label>Quick Presets:</label>
                     <div className="preset-buttons">
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => applySignPreset('simple')}
                         >
                             Simple
                         </button>
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => applySignPreset('long')}
                         >
                             Long Text
                         </button>
-                        <button 
-                            type="button" 
-                            className="preset-btn" 
+                        <button
+                            type="button"
+                            className="preset-btn"
                             onClick={() => applySignPreset('json')}
                         >
                             JSON Data
@@ -821,8 +821,8 @@ const Panel: React.FC = () => {
                 </div>
                 <div className="dialog-actions">
                     <button className="btn-secondary" onClick={closeDialog}>Cancel</button>
-                    <button 
-                        className="btn-primary" 
+                    <button
+                        className="btn-primary"
                         onClick={handleSignSubmit}
                         disabled={loading === 'sign' || !signMessageForm.message}
                     >
@@ -918,7 +918,7 @@ const Panel: React.FC = () => {
                         >
                             {loading === 'inject' ? '...' : 'Inject Test Interface'}
                         </button>
-                        
+
                         <button
                             onClick={() => testConnectWallet()}
                             disabled={!!loading}
@@ -927,7 +927,7 @@ const Panel: React.FC = () => {
                         >
                             Quick Connect
                         </button>
-                        
+
                         <button
                             onClick={() => testSendTransaction({
                                 to: '0x742d35cc6634c0532925a3b8d17c93fb',
@@ -941,7 +941,7 @@ const Panel: React.FC = () => {
                         >
                             Quick Send
                         </button>
-                        
+
                         <button
                             onClick={() => testSignMessage({
                                 message: 'Quick test signature',
@@ -954,7 +954,7 @@ const Panel: React.FC = () => {
                             Quick Sign
                         </button>
                     </div>
-                    
+
                     <div className="help-section">
                         <h4>Keyboard Shortcuts</h4>
                         <div className="shortcuts">
@@ -1003,8 +1003,8 @@ const Panel: React.FC = () => {
                                     <span className="result-time">
                                         {new Date(result.timestamp).toLocaleTimeString()}
                                     </span>
-                                    <button 
-                                        className="copy-result-btn" 
+                                    <button
+                                        className="copy-result-btn"
                                         onClick={() => copyResult(result)}
                                         title="Copy result to clipboard"
                                     >
