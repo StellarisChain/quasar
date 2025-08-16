@@ -57,7 +57,8 @@ function setupMessageRelay() {
                     response = await chrome.runtime.sendMessage({
                         type: 'GET_ASSETS',
                         payload,
-                        origin: window.location.origin
+                        origin: window.location.origin,
+                        hostname: window.location.hostname
                     });
                     break;
 

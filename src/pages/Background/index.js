@@ -5,17 +5,25 @@ console.log(`Browser detected: ${getBrowserType()}`);
 
 // Store connected sites and pending requests
 const connectedSites = new Set();
+const connectedSitesData = new Map(); // Cache wallet data for connected sites
 const pendingRequests = new Map();
 
 // Example of using the cross-browser API
 async function initializeExtension() {
     try {
+        // Get existing connected sites from storage
+        const existingData = await browserAPI.storage.local.get(['connectedSites']);
+        if (existingData.connectedSites && Array.isArray(existingData.connectedSites)) {
+            existingData.connectedSites.forEach(site => connectedSites.add(site));
+            console.log('Restored connected sites:', existingData.connectedSites);
+        }
+
         // Set up initial storage
         await browserAPI.storage.local.set({
             extensionInitialized: true,
             initTime: Date.now(),
             browser: getBrowserType(),
-            connectedSites: []
+            connectedSites: Array.from(connectedSites)
         });
 
         console.log('Extension initialized successfully');
@@ -48,38 +56,46 @@ async function openWalletPopup(requestData) {
 }
 
 // Get wallet data from storage or popup
-async function getWalletData() {
+// Note: Wallet data is retrieved from the popup when user accepts connection,
+// not from localStorage in the background script
+async function getWalletData(origin = null, hostname = null) {
     try {
-        const data = null;
+        // If origin is provided, check if site is authorized
+        if (origin && hostname && !connectedSites.has(origin)) {
+            console.log(`Requesting authorization for: ${hostname}`);
 
-        // Convert stored wallet data to API format
-        const selectedWallet = data.wallets.find(w => w.id === data.selectedWallet) || data.wallets[0];
+            // Show connection popup to user for authorization
+            // The popup will return the wallet data when accepted
+            const connectionResult = await handleConnectWallet(origin, hostname);
+            if (!connectionResult.success) {
+                throw new Error('Site not authorized to access wallet data');
+            }
 
-        return {
-            accounts: [{
-                address: selectedWallet.address,
-                publicKey: selectedWallet.public_key,
-                curve: selectedWallet.curve || 'secp256k1'
-            }],
-            assets: selectedWallet.chains?.flatMap(chain =>
-                [
-                    {
-                        symbol: chain.symbol,
-                        name: chain.name,
-                        balance: chain.balance,
-                        chain: chain.name,
-                        curve: selectedWallet.curve || 'secp256k1'
-                    },
-                    ...(chain.tokens || []).map(token => ({
-                        symbol: token.symbol,
-                        name: token.name,
-                        balance: token.balance,
-                        chain: chain.name,
-                        curve: selectedWallet.curve || 'secp256k1'
-                    }))
-                ]
-            ) || []
-        };
+            // Return the wallet data from the popup
+            return connectionResult.walletData;
+        }
+
+        // If site is already connected, return cached wallet data
+        if (origin && hostname && connectedSites.has(origin)) {
+            console.log(`Getting cached wallet data for already connected site: ${hostname}`);
+
+            const cachedData = connectedSitesData.get(origin);
+            if (cachedData) {
+                return cachedData;
+            }
+
+            // If no cached data, fall back to getting fresh data via popup
+            console.log(`No cached data found, getting fresh data for: ${hostname}`);
+            const connectionResult = await handleConnectWallet(origin, hostname);
+            if (!connectionResult.success) {
+                throw new Error('Failed to get wallet data for connected site');
+            }
+
+            return connectionResult.walletData;
+        }
+
+        // Should not reach here
+        throw new Error('No origin/hostname provided or invalid state');
     } catch (error) {
         console.error('Failed to get wallet data:', error);
         throw error;
@@ -92,8 +108,50 @@ async function handleConnectWallet(origin, hostname) {
 
     // Check if already connected
     if (connectedSites.has(origin)) {
-        const walletData = await getWalletData();
-        return { success: true, accounts: walletData.accounts };
+        // For already connected sites, we need to get wallet data from popup
+        // since we don't store it in background script
+        const { popupId, requestId } = await openWalletPopup({
+            type: 'GET_WALLET_DATA',
+            origin,
+            hostname,
+            title: 'Get Wallet Data',
+            message: `Getting wallet data for ${hostname}`
+        });
+
+        return new Promise((resolve, reject) => {
+            const cleanup = () => {
+                pendingRequests.delete(requestId);
+                browserAPI.windows.onRemoved.removeListener(windowClosedHandler);
+            };
+
+            const windowClosedHandler = (windowId) => {
+                if (windowId === popupId) {
+                    cleanup();
+                    reject(new Error('User closed popup'));
+                }
+            };
+
+            browserAPI.windows.onRemoved.addListener(windowClosedHandler);
+
+            pendingRequests.set(requestId, {
+                ...pendingRequests.get(requestId),
+                resolve: (result) => {
+                    cleanup();
+                    resolve(result);
+                },
+                reject: (error) => {
+                    cleanup();
+                    reject(error);
+                }
+            });
+
+            setTimeout(() => {
+                if (pendingRequests.has(requestId)) {
+                    cleanup();
+                    reject(new Error('Request timeout'));
+                }
+            }, 30000);
+        });
     }
 
     // Show connection popup to user
@@ -129,11 +187,22 @@ async function handleConnectWallet(origin, hostname) {
                     cleanup();
                     if (result.success) {
                         connectedSites.add(origin);
+                        // Cache the wallet data for future requests
+                        if (result.walletData) {
+                            connectedSitesData.set(origin, result.walletData);
+                        }
                         browserAPI.storage.local.set({
                             connectedSites: Array.from(connectedSites)
                         });
+                        // Expect wallet data to be included in the result
+                        resolve({
+                            success: true,
+                            accounts: result.walletData?.accounts || [],
+                            walletData: result.walletData
+                        });
+                    } else {
+                        resolve(result);
                     }
-                    resolve(result);
                 },
                 reject: (error) => {
                     cleanup();
@@ -254,17 +323,13 @@ if (browserAPI.runtime.onMessage) {
                 return true; // Will respond asynchronously
 
             case 'CHECK_CONNECTION':
-                getWalletData().then(walletData => {
-                    const isConnected = connectedSites.has(message.origin);
-                    sendResponse({
-                        success: true,
-                        connected: isConnected,
-                        accounts: isConnected ? walletData.accounts : []
-                    });
-                }).catch(error => {
-                    sendResponse({ success: false, error: error.message });
+                const isConnected = connectedSites.has(message.origin);
+                sendResponse({
+                    success: true,
+                    connected: isConnected,
+                    accounts: [] // Don't return accounts for just checking connection
                 });
-                return true;
+                break;
 
             case 'CONNECT_WALLET':
                 handleConnectWallet(message.origin, message.hostname).then(result => {
@@ -274,8 +339,23 @@ if (browserAPI.runtime.onMessage) {
                 });
                 return true;
 
+            case 'GET_ACCOUNTS':
+                if (!connectedSites.has(message.origin)) {
+                    sendResponse({ success: false, error: 'Site not connected' });
+                    break;
+                }
+                // Extract hostname from origin if not provided
+                const accountsHostname = message.hostname || new URL(message.origin).hostname;
+                getWalletData(message.origin, accountsHostname).then(walletData => {
+                    sendResponse({ success: true, accounts: walletData.accounts });
+                }).catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+                return true;
+
             case 'DISCONNECT_WALLET':
                 connectedSites.delete(message.origin);
+                connectedSitesData.delete(message.origin); // Clear cached data
                 browserAPI.storage.local.set({
                     connectedSites: Array.from(connectedSites)
                 });
@@ -287,7 +367,9 @@ if (browserAPI.runtime.onMessage) {
                     sendResponse({ success: false, error: 'Site not connected' });
                     break;
                 }
-                getWalletData().then(walletData => {
+                // Extract hostname from origin if not provided
+                const hostname = message.hostname || new URL(message.origin).hostname;
+                getWalletData(message.origin, hostname).then(walletData => {
                     sendResponse({ success: true, assets: walletData.assets });
                 }).catch(error => {
                     sendResponse({ success: false, error: error.message });
@@ -307,9 +389,15 @@ if (browserAPI.runtime.onMessage) {
                     sendResponse({ success: false, error: 'Site not connected' });
                     break;
                 }
-                // Handle message signing (implement as needed)
-                sendResponse({ success: true, signature: '0x...' });
-                break;
+                // Extract hostname from origin if not provided
+                const signHostname = message.hostname || new URL(message.origin).hostname;
+                getWalletData(message.origin, signHostname).then(walletData => {
+                    // Handle message signing (implement as needed)
+                    sendResponse({ success: true, signature: '0x...' });
+                }).catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+                return true;
 
             case 'GET_PENDING_REQUEST':
                 const requestData = pendingRequests.get(message.requestId);

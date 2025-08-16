@@ -4,7 +4,7 @@ import { walletOperations } from './WalletOperations';
 import './RequestDialog.css';
 
 export interface RequestData {
-    type: 'CONNECT' | 'TRANSACTION' | 'SIGN_MESSAGE';
+    type: 'CONNECT' | 'TRANSACTION' | 'SIGN_MESSAGE' | 'GET_WALLET_DATA';
     origin: string;
     hostname: string;
     title: string;
@@ -38,8 +38,8 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
     // Initialize selected wallet for request based on the type and available wallets
     useEffect(() => {
         if (requestData) {
-            if (requestData.type === 'CONNECT') {
-                // For CONNECT, we can use the default selected wallet or first available
+            if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
+                // For CONNECT and GET_WALLET_DATA, we can use the default selected wallet or first available
                 setSelectedWalletForRequest(selectedWallet || (wallets.length > 0 ? wallets[0] : null));
             } else {
                 // For TRANSACTION/SIGN_MESSAGE, use selected wallet or first available
@@ -75,19 +75,45 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
             let result;
             switch (requestData.type) {
                 case 'CONNECT':
-                    // For CONNECT requests, return all available wallets or selected ones
+                case 'GET_WALLET_DATA':
+                    // For CONNECT and GET_WALLET_DATA requests, return wallet data
                     if (!wallets || wallets.length === 0) {
                         throw new Error('No wallets available. Please create a wallet first.');
                     }
 
-                    // Use all wallets for CONNECT or just the selected one
-                    const accounts = walletOperations.getWalletAccounts(
-                        selectedWalletForRequest ? [selectedWalletForRequest] : wallets
-                    );
+                    // Use selected wallet or first available
+                    const walletToReturn = selectedWalletForRequest || wallets[0];
+
+                    // Get accounts data
+                    const accounts = walletOperations.getWalletAccounts([walletToReturn]);
+
+                    // Get assets data
+                    const assets = walletToReturn.chains?.flatMap((chain: any) =>
+                        [
+                            {
+                                symbol: chain.symbol,
+                                name: chain.name,
+                                balance: chain.balance,
+                                chain: chain.name,
+                                curve: walletToReturn.curve || 'secp256k1'
+                            },
+                            ...(chain.tokens || []).map((token: any) => ({
+                                symbol: token.symbol,
+                                name: token.name,
+                                balance: token.balance,
+                                chain: chain.name,
+                                curve: walletToReturn.curve || 'secp256k1'
+                            }))
+                        ]
+                    ) || [];
 
                     result = {
                         success: true,
-                        accounts: accounts
+                        accounts: accounts,
+                        walletData: {
+                            accounts: accounts,
+                            assets: assets
+                        }
                     };
                     break;
 
@@ -183,7 +209,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
     }
 
     // Special handling for CONNECT requests when no wallet is available
-    if (requestData.type === 'CONNECT' && !selectedWallet) {
+    if ((requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') && !selectedWallet) {
         return (
             <div className="request-dialog-overlay">
                 <div className="request-dialog">
@@ -288,7 +314,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     {/* CONNECT request shows all available wallets */}
                     {requestData.type === 'CONNECT' && wallets.length > 0 && (
                         <div className="connect-wallets">
-                            <h4>Select Wallets to Connect:</h4>
+                            <h4>Select Wallet to Connect:</h4>
                             <div className="wallet-list">
                                 {wallets.map(wallet => (
                                     <div
@@ -311,6 +337,18 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* GET_WALLET_DATA request shows current wallet info */}
+                    {requestData.type === 'GET_WALLET_DATA' && selectedWalletForRequest && (
+                        <div className="wallet-data-info">
+                            <h4>Wallet Information:</h4>
+                            <div className="wallet-info">
+                                <div className="wallet-name">{selectedWalletForRequest.name || `Wallet ${selectedWalletForRequest.id}`}</div>
+                                <div className="wallet-address">{selectedWalletForRequest.address}</div>
+                                <div className="wallet-curve">{selectedWalletForRequest.curve || 'secp256k1'}</div>
                             </div>
                         </div>
                     )}
