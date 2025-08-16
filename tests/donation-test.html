@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -297,8 +298,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .result {
@@ -331,6 +337,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="donation-card">
         <div class="logo" id="logo">
@@ -338,18 +345,18 @@
         </div>
         <h1>Donate</h1>
         <p class="subtitle">Support our project with Quasar</p>
-        
+
         <div class="status disconnected" id="status">
             Wallet not connected
         </div>
-        
+
         <div id="connected-section" style="display: none;">
             <div class="address-display" id="walletAddress"></div>
             <button class="donate-btn" id="donateBtn">
                 💎 Donate Now
             </button>
         </div>
-        
+
         <div id="disconnected-section">
             <button class="connect-btn" id="connectBtn">
                 🔗 Connect Wallet
@@ -361,42 +368,36 @@
     <div class="modal-overlay" id="donationModal">
         <div class="modal">
             <h2>Make a Donation</h2>
-            
+
             <div id="donationForm">
                 <div class="form-group">
                     <label>Donation Amount</label>
                     <div class="amount-display" id="amountDisplay">1.0 STE</div>
-                    <input 
-                        type="range" 
-                        class="amount-slider" 
-                        id="amountSlider"
-                        min="0.1" 
-                        max="100" 
-                        step="0.1" 
-                        value="1.0"
-                    >
+                    <input type="range" class="amount-slider" id="amountSlider" min="0.1" max="100" step="0.1"
+                        value="1.0">
                     <div class="range-labels">
                         <span>0.1 STE</span>
                         <span>100 STE</span>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Recipient Address</label>
-                    <div class="address-display" id="recipientAddress">DWMVFcRTZ8UMaWr2vsb7XkTmh7zaA57BQaDRGiAKB6qX6</div>
+                    <div class="address-display" id="recipientAddress">DWMVFcRTZ8UMaWr2vsb7XkTmh7zaA57BQaDRGiAKB6qX6
+                    </div>
                 </div>
-                
+
                 <div class="modal-buttons">
                     <button class="modal-btn secondary" id="cancelBtn">Cancel</button>
                     <button class="modal-btn primary" id="confirmBtn">Send Donation</button>
                 </div>
             </div>
-            
+
             <div class="loading" id="loadingSection">
                 <div class="spinner"></div>
                 <p>Processing transaction...</p>
             </div>
-            
+
             <div class="result" id="resultSection">
                 <div id="resultMessage"></div>
                 <div class="tx-hash" id="txHash" style="display: none;"></div>
@@ -410,10 +411,10 @@
     <script>
         // Pre-defined donation address - change this to your desired address
         const DONATION_ADDRESS = 'DWMVFcRTZ8UMaWr2vsb7XkTmh7zaA57BQaDRGiAKB6qX6';
-        
+
         let wallet = null;
         let isConnected = false;
-        
+
         // DOM elements
         const status = document.getElementById('status');
         const connectBtn = document.getElementById('connectBtn');
@@ -433,12 +434,12 @@
         const resultSection = document.getElementById('resultSection');
         const resultMessage = document.getElementById('resultMessage');
         const txHash = document.getElementById('txHash');
-        
+
         // Initialize
         function init() {
             // Set donation address
             recipientAddress.textContent = DONATION_ADDRESS;
-            
+
             // Check if Quasar is available
             if (typeof window.quasar !== 'undefined') {
                 wallet = window.quasar;
@@ -450,20 +451,20 @@
                     checkConnection();
                 });
             }
-            
+
             setupEventListeners();
         }
-        
+
         function setupEventListeners() {
             connectBtn.addEventListener('click', connectWallet);
             donateBtn.addEventListener('click', showDonationModal);
             cancelBtn.addEventListener('click', hideDonationModal);
             closeBtn.addEventListener('click', hideDonationModal);
             confirmBtn.addEventListener('click', processDonation);
-            
+
             // Amount slider
             amountSlider.addEventListener('input', updateAmountDisplay);
-            
+
             // Modal close on overlay click
             donationModal.addEventListener('click', (e) => {
                 if (e.target === donationModal) {
@@ -471,10 +472,10 @@
                 }
             });
         }
-        
+
         async function checkConnection() {
             if (!wallet) return;
-            
+
             try {
                 isConnected = wallet.connected;
                 if (isConnected) {
@@ -488,17 +489,17 @@
                 updateUI(false);
             }
         }
-        
+
         async function connectWallet() {
             if (!wallet) {
                 updateStatus('Quasar wallet not available', 'disconnected');
                 return;
             }
-            
+
             try {
                 updateStatus('Connecting...', 'connecting');
                 const accounts = await wallet.connect();
-                
+
                 if (accounts && accounts.length > 0) {
                     isConnected = true;
                     updateUI(true, accounts[0].address);
@@ -511,10 +512,10 @@
                 updateUI(false);
             }
         }
-        
+
         function updateUI(connected, address = null) {
             isConnected = connected;
-            
+
             if (connected && address) {
                 updateStatus('Connected', 'connected');
                 walletAddress.textContent = address;
@@ -526,26 +527,26 @@
                 disconnectedSection.style.display = 'block';
             }
         }
-        
+
         function updateStatus(message, type) {
             status.textContent = message;
             status.className = `status ${type}`;
         }
-        
+
         function showDonationModal() {
             if (!isConnected) {
                 updateStatus('Please connect your wallet first', 'disconnected');
                 return;
             }
-            
+
             resetModal();
             donationModal.classList.add('active');
         }
-        
+
         function hideDonationModal() {
             donationModal.classList.remove('active');
         }
-        
+
         function resetModal() {
             donationForm.style.display = 'block';
             loadingSection.classList.remove('active');
@@ -553,20 +554,20 @@
             amountSlider.value = '1.0';
             updateAmountDisplay();
         }
-        
+
         function updateAmountDisplay() {
             const amount = parseFloat(amountSlider.value);
             amountDisplay.textContent = `${amount.toFixed(1)} STE`;
         }
-        
+
         async function processDonation() {
             const amount = parseFloat(amountSlider.value);
-            
+
             try {
                 // Show loading
                 donationForm.style.display = 'none';
                 loadingSection.classList.add('active');
-                
+
                 // Prepare transaction
                 const transaction = {
                     to: DONATION_ADDRESS,
@@ -574,19 +575,19 @@
                     asset: 'STE',
                     memo: 'Donation via Quasar test page'
                 };
-                
+
                 // Send transaction
                 const result = await wallet.sendTransaction(transaction);
-                
+
                 // Hide loading
                 loadingSection.classList.remove('active');
-                
+
                 if (result.success) {
                     // Show success
                     resultSection.classList.add('active');
                     resultSection.className = 'result active success';
                     resultMessage.textContent = `Donation of ${amount} STE sent successfully!`;
-                    
+
                     if (result.txHash) {
                         txHash.style.display = 'block';
                         txHash.textContent = `Transaction Hash: ${result.txHash}`;
@@ -594,13 +595,13 @@
                 } else {
                     throw new Error(result.error || 'Transaction failed');
                 }
-                
+
             } catch (error) {
                 console.error('Donation error:', error);
-                
+
                 // Hide loading
                 loadingSection.classList.remove('active');
-                
+
                 // Show error
                 resultSection.classList.add('active');
                 resultSection.className = 'result active error';
@@ -608,26 +609,27 @@
                 txHash.style.display = 'none';
             }
         }
-        
+
         // Initialize when page loads
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
             init();
         }
-        
+
         // Try to load logo image if available
         const logoElement = document.getElementById('logo');
         const logoImg = document.createElement('img');
         logoImg.src = '../src/assets/img/logo-transparent.png';
-        logoImg.onerror = function() {
+        logoImg.onerror = function () {
             // Fallback to text logo if image fails to load
             logoElement.textContent = 'Q';
         };
-        logoImg.onload = function() {
+        logoImg.onload = function () {
             logoElement.innerHTML = '';
             logoElement.appendChild(logoImg);
         };
     </script>
 </body>
+
 </html>
