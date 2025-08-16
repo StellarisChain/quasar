@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Donation Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .donation-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            transition: transform 0.2s ease;
+        }
+
+        .donation-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logo img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .status.connected {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #68d391;
+        }
+
+        .status.disconnected {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+        }
+
+        .status.connecting {
+            background: #fef5e7;
+            color: #d69e2e;
+            border: 1px solid #f6e05e;
+        }
+
+        .donate-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            margin-bottom: 16px;
+        }
+
+        .donate-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a67d8, #6b46c1);
+            transform: translateY(-1px);
+        }
+
+        .donate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .connect-btn {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .connect-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .address-display {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #2d3748;
+            margin-bottom: 16px;
+            word-break: break-all;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .amount-slider {
+            width: 100%;
+            margin: 16px 0;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+        }
+
+        .amount-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .amount-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .amount-display {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+            margin: 16px 0;
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: linear-gradient(135deg, #5a67d8, #6b46c1);
+        }
+
+        .modal-btn.secondary {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-btn.secondary:hover {
+            background: #edf2f7;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .result.success {
+            color: #2f855a;
+        }
+
+        .result.error {
+            color: #c53030;
+        }
+
+        .tx-hash {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="donation-card">
+        <div class="logo" id="logo">
+            Q
+        </div>
+        <h1>Donate</h1>
+        <p class="subtitle">Support our project with Quasar</p>
+        
+        <div class="status disconnected" id="status">
+            Wallet not connected
+        </div>
+        
+        <div id="connected-section" style="display: none;">
+            <div class="address-display" id="walletAddress"></div>
+            <button class="donate-btn" id="donateBtn">
+                💎 Donate Now
+            </button>
+        </div>
+        
+        <div id="disconnected-section">
+            <button class="connect-btn" id="connectBtn">
+                🔗 Connect Wallet
+            </button>
+        </div>
+    </div>
+
+    <!-- Donation Modal -->
+    <div class="modal-overlay" id="donationModal">
+        <div class="modal">
+            <h2>Make a Donation</h2>
+            
+            <div id="donationForm">
+                <div class="form-group">
+                    <label>Donation Amount</label>
+                    <div class="amount-display" id="amountDisplay">1.0 STE</div>
+                    <input 
+                        type="range" 
+                        class="amount-slider" 
+                        id="amountSlider"
+                        min="0.1" 
+                        max="100" 
+                        step="0.1" 
+                        value="1.0"
+                    >
+                    <div class="range-labels">
+                        <span>0.1 STE</span>
+                        <span>100 STE</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Recipient Address</label>
+                    <div class="address-display" id="recipientAddress">DWMVFcRTZ8UMaWr2vsb7XkTmh7zaA57BQaDRGiAKB6qX6</div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="modal-btn secondary" id="cancelBtn">Cancel</button>
+                    <button class="modal-btn primary" id="confirmBtn">Send Donation</button>
+                </div>
+            </div>
+            
+            <div class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <p>Processing transaction...</p>
+            </div>
+            
+            <div class="result" id="resultSection">
+                <div id="resultMessage"></div>
+                <div class="tx-hash" id="txHash" style="display: none;"></div>
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button class="modal-btn primary" id="closeBtn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pre-defined donation address - change this to your desired address
+        const DONATION_ADDRESS = 'DWMVFcRTZ8UMaWr2vsb7XkTmh7zaA57BQaDRGiAKB6qX6';
+        
+        let wallet = null;
+        let isConnected = false;
+        
+        // DOM elements
+        const status = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const donateBtn = document.getElementById('donateBtn');
+        const connectedSection = document.getElementById('connected-section');
+        const disconnectedSection = document.getElementById('disconnected-section');
+        const walletAddress = document.getElementById('walletAddress');
+        const donationModal = document.getElementById('donationModal');
+        const amountSlider = document.getElementById('amountSlider');
+        const amountDisplay = document.getElementById('amountDisplay');
+        const recipientAddress = document.getElementById('recipientAddress');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const closeBtn = document.getElementById('closeBtn');
+        const donationForm = document.getElementById('donationForm');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultSection = document.getElementById('resultSection');
+        const resultMessage = document.getElementById('resultMessage');
+        const txHash = document.getElementById('txHash');
+        
+        // Initialize
+        function init() {
+            // Set donation address
+            recipientAddress.textContent = DONATION_ADDRESS;
+            
+            // Check if Quasar is available
+            if (typeof window.quasar !== 'undefined') {
+                wallet = window.quasar;
+                checkConnection();
+            } else {
+                // Wait for Quasar to be available
+                window.addEventListener('quasar:ready', (event) => {
+                    wallet = event.detail.wallet;
+                    checkConnection();
+                });
+            }
+            
+            setupEventListeners();
+        }
+        
+        function setupEventListeners() {
+            connectBtn.addEventListener('click', connectWallet);
+            donateBtn.addEventListener('click', showDonationModal);
+            cancelBtn.addEventListener('click', hideDonationModal);
+            closeBtn.addEventListener('click', hideDonationModal);
+            confirmBtn.addEventListener('click', processDonation);
+            
+            // Amount slider
+            amountSlider.addEventListener('input', updateAmountDisplay);
+            
+            // Modal close on overlay click
+            donationModal.addEventListener('click', (e) => {
+                if (e.target === donationModal) {
+                    hideDonationModal();
+                }
+            });
+        }
+        
+        async function checkConnection() {
+            if (!wallet) return;
+            
+            try {
+                isConnected = wallet.connected;
+                if (isConnected) {
+                    const accounts = await wallet.getAccounts();
+                    updateUI(true, accounts[0]?.address);
+                } else {
+                    updateUI(false);
+                }
+            } catch (error) {
+                console.error('Error checking connection:', error);
+                updateUI(false);
+            }
+        }
+        
+        async function connectWallet() {
+            if (!wallet) {
+                updateStatus('Quasar wallet not available', 'disconnected');
+                return;
+            }
+            
+            try {
+                updateStatus('Connecting...', 'connecting');
+                const accounts = await wallet.connect();
+                
+                if (accounts && accounts.length > 0) {
+                    isConnected = true;
+                    updateUI(true, accounts[0].address);
+                } else {
+                    throw new Error('No accounts returned');
+                }
+            } catch (error) {
+                console.error('Connection error:', error);
+                updateStatus('Connection failed: ' + error.message, 'disconnected');
+                updateUI(false);
+            }
+        }
+        
+        function updateUI(connected, address = null) {
+            isConnected = connected;
+            
+            if (connected && address) {
+                updateStatus('Connected', 'connected');
+                walletAddress.textContent = address;
+                connectedSection.style.display = 'block';
+                disconnectedSection.style.display = 'none';
+            } else {
+                updateStatus('Wallet not connected', 'disconnected');
+                connectedSection.style.display = 'none';
+                disconnectedSection.style.display = 'block';
+            }
+        }
+        
+        function updateStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function showDonationModal() {
+            if (!isConnected) {
+                updateStatus('Please connect your wallet first', 'disconnected');
+                return;
+            }
+            
+            resetModal();
+            donationModal.classList.add('active');
+        }
+        
+        function hideDonationModal() {
+            donationModal.classList.remove('active');
+        }
+        
+        function resetModal() {
+            donationForm.style.display = 'block';
+            loadingSection.classList.remove('active');
+            resultSection.classList.remove('active');
+            amountSlider.value = '1.0';
+            updateAmountDisplay();
+        }
+        
+        function updateAmountDisplay() {
+            const amount = parseFloat(amountSlider.value);
+            amountDisplay.textContent = `${amount.toFixed(1)} STE`;
+        }
+        
+        async function processDonation() {
+            const amount = parseFloat(amountSlider.value);
+            
+            try {
+                // Show loading
+                donationForm.style.display = 'none';
+                loadingSection.classList.add('active');
+                
+                // Prepare transaction
+                const transaction = {
+                    to: DONATION_ADDRESS,
+                    amount: amount.toString(),
+                    asset: 'STE',
+                    memo: 'Donation via Quasar test page'
+                };
+                
+                // Send transaction
+                const result = await wallet.sendTransaction(transaction);
+                
+                // Hide loading
+                loadingSection.classList.remove('active');
+                
+                if (result.success) {
+                    // Show success
+                    resultSection.classList.add('active');
+                    resultSection.className = 'result active success';
+                    resultMessage.textContent = `Donation of ${amount} STE sent successfully!`;
+                    
+                    if (result.txHash) {
+                        txHash.style.display = 'block';
+                        txHash.textContent = `Transaction Hash: ${result.txHash}`;
+                    }
+                } else {
+                    throw new Error(result.error || 'Transaction failed');
+                }
+                
+            } catch (error) {
+                console.error('Donation error:', error);
+                
+                // Hide loading
+                loadingSection.classList.remove('active');
+                
+                // Show error
+                resultSection.classList.add('active');
+                resultSection.className = 'result active error';
+                resultMessage.textContent = `Donation failed: ${error.message}`;
+                txHash.style.display = 'none';
+            }
+        }
+        
+        // Initialize when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        
+        // Try to load logo image if available
+        const logoElement = document.getElementById('logo');
+        const logoImg = document.createElement('img');
+        logoImg.src = '../src/assets/img/logo-transparent.png';
+        logoImg.onerror = function() {
+            // Fallback to text logo if image fails to load
+            logoElement.textContent = 'Q';
+        };
+        logoImg.onload = function() {
+            logoElement.innerHTML = '';
+            logoElement.appendChild(logoImg);
+        };
+    </script>
+</body>
+</html>
