@@ -47,7 +47,7 @@ class QuasarWallet {
     constructor() {
         // Listen for messages from content script
         window.addEventListener('message', this.handleMessage.bind(this));
-        
+
         // Initialize connection check
         this.checkConnection();
     }
@@ -91,16 +91,16 @@ class QuasarWallet {
     private sendMessage(type: string, payload?: any): Promise<any> {
         return new Promise((resolve, reject) => {
             const requestId = Math.random().toString(36).substr(2, 9);
-            
+
             const handleResponse = (event: MessageEvent) => {
-                if (event.source !== window || 
-                    event.data.type !== `${type}_RESPONSE` || 
+                if (event.source !== window ||
+                    event.data.type !== `${type}_RESPONSE` ||
                     event.data.requestId !== requestId) {
                     return;
                 }
 
                 window.removeEventListener('message', handleResponse);
-                
+
                 if (event.data.error) {
                     reject(new Error(event.data.error));
                 } else {
@@ -136,11 +136,18 @@ class QuasarWallet {
     async connect(): Promise<WalletAccount[]> {
         try {
             const result = await this.sendMessage('QUASAR_CONNECT');
-            this.isConnected = true;
-            this.accounts = result.accounts;
-            return result.accounts;
+            if (result && result.accounts) {
+                this.isConnected = true;
+                this.accounts = result.accounts;
+                return result.accounts;
+            } else {
+                this.isConnected = false;
+                this.accounts = [];
+                throw new Error('No accounts returned from wallet');
+            }
         } catch (error) {
             this.isConnected = false;
+            this.accounts = [];
             throw error;
         }
     }
@@ -162,7 +169,7 @@ class QuasarWallet {
         if (!this.isConnected) {
             throw new Error('Wallet not connected');
         }
-        
+
         const result = await this.sendMessage('QUASAR_GET_ASSETS', { address });
         return result.assets;
     }
@@ -171,7 +178,7 @@ class QuasarWallet {
         if (!this.isConnected) {
             throw new Error('Wallet not connected');
         }
-        
+
         const result = await this.sendMessage('QUASAR_SEND_TRANSACTION', request);
         return result;
     }
@@ -180,7 +187,7 @@ class QuasarWallet {
         if (!this.isConnected) {
             throw new Error('Wallet not connected');
         }
-        
+
         const result = await this.sendMessage('QUASAR_SIGN_MESSAGE', { message, address });
         return result.signature;
     }
@@ -226,7 +233,7 @@ declare global {
 // Initialize and expose wallet
 if (typeof window !== 'undefined') {
     window.quasar = new QuasarWallet();
-    
+
     // Dispatch ready event
     window.dispatchEvent(new CustomEvent('quasar:ready', {
         detail: { wallet: window.quasar }
