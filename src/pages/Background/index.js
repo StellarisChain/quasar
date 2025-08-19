@@ -166,8 +166,8 @@ async function handleConnectWallet(origin, hostname, requestedAddress = null) {
             origin,
             hostname,
             title: 'Connect Wallet',
-            message: requestedAddress 
-                ? `${hostname} wants to connect to wallet with address: ${requestedAddress}` 
+            message: requestedAddress
+                ? `${hostname} wants to connect to wallet with address: ${requestedAddress}`
                 : `${hostname} wants to connect to your wallet`,
             requestedAddress
         });

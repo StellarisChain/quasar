@@ -23,6 +23,8 @@
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes slideIn {
@@ -44,6 +46,7 @@
     padding: 16px 20px;
     border-bottom: 1px solid #333;
     background: #1a1a1a;
+    flex-shrink: 0;
 }
 
 .request-header h3 {
@@ -71,6 +74,29 @@
 .request-content {
     padding: 20px;
     color: #ffffff;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Custom scrollbar styling */
+.request-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.request-content::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+.request-content::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+.request-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
 
 .request-site {
@@ -210,9 +236,44 @@
 }
 
 .wallet-checkbox input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    background: #1a1a1a;
     margin: 0;
     cursor: pointer;
-    accent-color: #007acc;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.wallet-checkbox input[type="radio"]:hover {
+    border-color: #007acc;
+}
+
+.wallet-checkbox input[type="radio"]:checked {
+    border-color: #007acc;
+    background: #007acc;
+}
+
+.wallet-checkbox input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+.wallet-checkbox input[type="radio"]:focus {
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 122, 204, 0.5);
 }
 
 .wallet-info {
@@ -294,250 +355,7 @@
     padding: 16px 20px;
     border-top: 1px solid #333;
     background: #1a1a1a;
-}
-
-.error-message {
-    background: #ff6b6b20;
-    border: 1px solid #ff6b6b;
-    border-radius: 6px;
-    padding: 8px 12px;
-    color: #ff6b6b;
-    font-size: 13px;
-    text-align: center;
-}
-
-.request-buttons {
-    display: flex;
-    gap: 12px;
-}
-
-.request-buttons .btn {
-    flex: 1;
-}
-
-.btn {
-    padding: 12px 16px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-.btn-primary {
-    background: #0066ff;
-    color: #ffffff;
-}
-
-.btn-primary:hover {
-    background: #0052cc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
-}
-
-.btn-secondary {
-    background: #333;
-    color: #ffffff;
-    border: 1px solid #555;
-}
-
-.btn-secondary:hover {
-    background: #444;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.request-loading,
-.request-error {
-    padding: 40px 20px;
-    text-align: center;
-    color: #cccccc;
-}
-
-.spinner {
-    width: 24px;
-    height: 24px;
-    border: 2px solid #333;
-    border-top: 2px solid #0066ff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 12px;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.spinner-small {
-    width: 16px;
-    height: 16px;
-    border: 2px solid #ffffff40;
-    border-top: 2px solid #ffffff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-.request-error p {
-    color: #ff6b6b;
-    margin-bottom: 16px;
-}
-
-.wallet-selector {
-    background: #1a1a1a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    color: #ffffff;
-    padding: 8px 12px;
-    font-size: 13px;
-    width: 100%;
-    cursor: pointer;
-}
-
-.wallet-selector:focus {
-    outline: none;
-    border-color: #0066ff;
-}
-
-.connect-wallets {
-    background: #252525;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
-}
-
-.request-dialog {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    max-height: 80vh;
-    overflow: hidden;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px) scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.request-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    background: #1a1a1a;
-}
-
-.request-header h3 {
-    margin: 0;
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-    color: #ffffff;
-    background: #333;
-}
-
-.request-content {
-    padding: 20px;
-    color: #ffffff;
-}
-
-.transaction-details,
-.message-details {
-    background: #252525;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.detail-row:last-child {
-    margin-bottom: 0;
-}
-
-.detail-row .label {
-    color: #888;
-    font-size: 13px;
-    min-width: 60px;
     flex-shrink: 0;
-}
-
-.detail-row .value {
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 500;
-    text-align: right;
-    word-break: break-all;
-}
-
-.message-text {
-    font-family: monospace;
-    background: #1a1a1a;
-    padding: 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.request-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 16px 20px;
-    border-top: 1px solid #333;
-    background: #1a1a1a;
 }
 
 .error-message {

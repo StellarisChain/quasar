@@ -42,11 +42,11 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
             if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
                 // If a specific address is requested, find that wallet
                 if (requestData.requestedAddress) {
-                    const requestedWallet = wallets.find(wallet => 
-                        wallet.address === requestData.requestedAddress || 
+                    const requestedWallet = wallets.find(wallet =>
+                        wallet.address === requestData.requestedAddress ||
                         wallet.address?.toLowerCase() === requestData.requestedAddress?.toLowerCase()
                     );
-                    
+
                     if (requestedWallet) {
                         setSelectedWalletForRequest(requestedWallet);
                     } else {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
             background-color: #1a1a1a;
             color: #ffffff;
         }
+
         .section {
             background-color: #2a2a2a;
             padding: 20px;
@@ -20,6 +22,7 @@
             border-radius: 8px;
             border: 1px solid #3a3a3a;
         }
+
         button {
             background: #8b5cf6;
             color: white;
@@ -30,16 +33,20 @@
             margin: 5px;
             font-size: 14px;
         }
+
         button:hover {
             background: #7c3aed;
         }
+
         button:disabled {
             background: #555;
             cursor: not-allowed;
         }
+
         .input-group {
             margin: 10px 0;
         }
+
         input {
             background: #1a1a1a;
             border: 1px solid #555;
@@ -49,6 +56,7 @@
             width: 100%;
             box-sizing: border-box;
         }
+
         .result {
             background: #1a1a1a;
             border: 1px solid #555;
@@ -58,16 +66,19 @@
             font-family: monospace;
             white-space: pre-wrap;
         }
+
         .error {
             border-color: #dc2626;
             background: #7f1d1d20;
         }
+
         .success {
             border-color: #16a34a;
             background: #14532d20;
         }
     </style>
 </head>
+
 <body>
     <h1>🌟 Quasar Wallet - Connect with Address Test</h1>
     <p>This page tests the new functionality to connect to a specific wallet address.</p>
@@ -157,7 +168,7 @@
             try {
                 const wallet = await waitForWallet();
                 updateResult('result1', 'Connecting to any available wallet...');
-                
+
                 const accounts = await wallet.connect();
                 updateResult('result1', `Success! Connected to: ${JSON.stringify(accounts, null, 2)}`);
                 updateStatus();
@@ -176,7 +187,7 @@
 
                 const wallet = await waitForWallet();
                 updateResult('result2', `Connecting to specific address: ${address}...`);
-                
+
                 const accounts = await wallet.connect(address);
                 updateResult('result2', `Success! Connected to specific wallet: ${JSON.stringify(accounts, null, 2)}`);
                 updateStatus();
@@ -188,10 +199,10 @@
         async function connectNonExistentWallet() {
             try {
                 const nonExistentAddress = '0x0000000000000000000000000000000000000000';
-                
+
                 const wallet = await waitForWallet();
                 updateResult('result3', `Attempting to connect to non-existent address: ${nonExistentAddress}...`);
-                
+
                 const accounts = await wallet.connect(nonExistentAddress);
                 updateResult('result3', `Unexpected success: ${JSON.stringify(accounts, null, 2)}`, true);
                 updateStatus();
@@ -224,7 +235,7 @@
         // Initialize the page
         document.addEventListener('DOMContentLoaded', () => {
             updateStatus();
-            
+
             // Update status every 2 seconds
             setInterval(updateStatus, 2000);
         });
@@ -232,7 +243,7 @@
         // Listen for wallet events
         window.addEventListener('quasar:ready', () => {
             console.log('Quasar wallet ready');
-            
+
             if (window.quasar) {
                 window.quasar.on('accountsChanged', (accounts) => {
                     console.log('Accounts changed:', accounts);
@@ -252,4 +263,5 @@
         });
     </script>
 </body>
+
 </html>
