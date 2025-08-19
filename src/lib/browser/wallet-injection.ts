@@ -74,7 +74,7 @@ class QuasarWallet {
 
         // Initialize connection check
         this.checkConnection();
-        
+
         // Automatically fetch browser info on initialization
         this.initializeBrowserInfo();
     }
@@ -205,9 +205,10 @@ class QuasarWallet {
     }
 
     // Public API methods - now using relayMap for type safety
-    async connect(): Promise<WalletAccount[]> {
+    async connect(address?: string): Promise<WalletAccount[]> {
         try {
-            const result = await this.sendMessage('QUASAR_CONNECT');
+            const payload = address ? { address } : undefined;
+            const result = await this.sendMessage('QUASAR_CONNECT', payload);
             if (result && result.accounts) {
                 this.isConnected = true;
                 this.accounts = result.accounts;
@@ -319,11 +320,11 @@ class QuasarWallet {
                 platform: result.platform,
                 userAgent: result.userAgent
             };
-            
+
             // Cache the result
             this._browserInfo = browserInfo;
             this._extensionVersion = browserInfo.version;
-            
+
             return browserInfo;
         } catch (error) {
             console.error('Failed to get browser info:', error);
@@ -337,10 +338,10 @@ class QuasarWallet {
                 platform: 'unknown',
                 userAgent: 'unknown'
             };
-            
+
             // Cache fallback
             this._browserInfo = fallbackInfo;
-            
+
             return fallbackInfo;
         }
     }

@@ -103,8 +103,8 @@ async function getWalletData(origin = null, hostname = null) {
 }
 
 // Handle wallet connection request
-async function handleConnectWallet(origin, hostname) {
-    console.log(`Connection request from: ${hostname}`);
+async function handleConnectWallet(origin, hostname, requestedAddress = null) {
+    console.log(`Connection request from: ${hostname}${requestedAddress ? ` for address: ${requestedAddress}` : ''}`);
 
     // Check if already connected
     if (connectedSites.has(origin)) {
@@ -115,7 +115,8 @@ async function handleConnectWallet(origin, hostname) {
             origin,
             hostname,
             title: 'Get Wallet Data',
-            message: `Getting wallet data for ${hostname}`
+            message: `Getting wallet data for ${hostname}`,
+            requestedAddress
         });
 
         return new Promise((resolve, reject) => {
@@ -165,7 +166,10 @@ async function handleConnectWallet(origin, hostname) {
             origin,
             hostname,
             title: 'Connect Wallet',
-            message: `${hostname} wants to connect to your wallet`
+            message: requestedAddress 
+                ? `${hostname} wants to connect to wallet with address: ${requestedAddress}` 
+                : `${hostname} wants to connect to your wallet`,
+            requestedAddress
         });
 
         // Wait for user response
@@ -341,7 +345,7 @@ if (browserAPI.runtime.onMessage) {
                 break;
 
             case 'CONNECT_WALLET':
-                handleConnectWallet(message.origin, message.hostname).then(result => {
+                handleConnectWallet(message.origin, message.hostname, message.payload?.address).then(result => {
                     sendResponse(result);
                 }).catch(error => {
                     sendResponse({ success: false, error: error.message });

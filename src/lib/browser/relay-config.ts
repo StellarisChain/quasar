@@ -10,7 +10,7 @@ export const relayMap = {
     },
     'QUASAR_CONNECT': {
         type: 'CONNECT_WALLET',
-        includePayload: false,
+        includePayload: true,
         includeHostname: true
     },
     'QUASAR_DISCONNECT': {

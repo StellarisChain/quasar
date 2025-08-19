@@ -10,6 +10,7 @@ export interface RequestData {
     title: string;
     message: string;
     request?: any;
+    requestedAddress?: string;
 }
 
 interface RequestDialogProps {
@@ -39,8 +40,24 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
     useEffect(() => {
         if (requestData) {
             if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
-                // For CONNECT and GET_WALLET_DATA, we can use the default selected wallet or first available
-                setSelectedWalletForRequest(selectedWallet || (wallets.length > 0 ? wallets[0] : null));
+                // If a specific address is requested, find that wallet
+                if (requestData.requestedAddress) {
+                    const requestedWallet = wallets.find(wallet => 
+                        wallet.address === requestData.requestedAddress || 
+                        wallet.address?.toLowerCase() === requestData.requestedAddress?.toLowerCase()
+                    );
+                    
+                    if (requestedWallet) {
+                        setSelectedWalletForRequest(requestedWallet);
+                    } else {
+                        // Wallet with requested address not found
+                        setSelectedWalletForRequest(null);
+                        setError(`Wallet with address ${requestData.requestedAddress} is not loaded in the extension`);
+                    }
+                } else {
+                    // For CONNECT and GET_WALLET_DATA without specific address, use default selected wallet or first available
+                    setSelectedWalletForRequest(selectedWallet || (wallets.length > 0 ? wallets[0] : null));
+                }
             } else {
                 // For TRANSACTION/SIGN_MESSAGE, use selected wallet or first available
                 setSelectedWalletForRequest(selectedWallet || (wallets.length > 0 ? wallets[0] : null));
@@ -79,6 +96,11 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     // For CONNECT and GET_WALLET_DATA requests, return wallet data
                     if (!wallets || wallets.length === 0) {
                         throw new Error('No wallets available. Please create a wallet first.');
+                    }
+
+                    // Check if a specific address was requested but not found
+                    if (requestData.requestedAddress && !selectedWalletForRequest) {
+                        throw new Error(`Wallet with address ${requestData.requestedAddress} is not loaded in the extension.`);
                     }
 
                     // Use selected wallet or first available
@@ -311,8 +333,8 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                         </div>
                     )}
 
-                    {/* CONNECT request shows all available wallets */}
-                    {requestData.type === 'CONNECT' && wallets.length > 0 && (
+                    {/* CONNECT request shows all available wallets or specific wallet if requested */}
+                    {requestData.type === 'CONNECT' && wallets.length > 0 && !requestData.requestedAddress && (
                         <div className="connect-wallets">
                             <h4>Select Wallet to Connect:</h4>
                             <div className="wallet-list">
@@ -337,6 +359,30 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CONNECT request with specific address shows only that wallet */}
+                    {requestData.type === 'CONNECT' && requestData.requestedAddress && selectedWalletForRequest && (
+                        <div className="connect-wallets">
+                            <h4>Connecting with specific wallet:</h4>
+                            <div className="wallet-list">
+                                <div className="wallet-item selected">
+                                    <div className="wallet-checkbox">
+                                        <input
+                                            type="radio"
+                                            name="connect-wallet"
+                                            checked={true}
+                                            disabled={true}
+                                        />
+                                    </div>
+                                    <div className="wallet-info">
+                                        <div className="wallet-name">{selectedWalletForRequest.name || `Wallet ${selectedWalletForRequest.id}`}</div>
+                                        <div className="wallet-address">{selectedWalletForRequest.address}</div>
+                                        <div className="wallet-curve">{selectedWalletForRequest.curve || 'secp256k1'}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -393,7 +439,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                             <XIcon />
                             Reject
                         </button>
-                        <button onClick={handleApprove} className="btn btn-primary" disabled={processing}>
+                        <button onClick={handleApprove} className="btn btn-primary" disabled={processing || (!!requestData.requestedAddress && !selectedWalletForRequest)}>
                             {processing ? (
                                 <>
                                     <div className="spinner-small"></div>

@@ -31,18 +31,31 @@ window.addEventListener('quasar:ready', (event) => {
 
 ### Connection Management
 
-#### `connect(): Promise<WalletAccount[]>`
+#### `connect(address?: string): Promise<WalletAccount[]>`
 
 Requests connection to the user's wallet. Shows a connection approval modal.
 
 ```javascript
+// Connect to any available wallet
 try {
     const accounts = await window.quasar.connect();
     console.log('Connected accounts:', accounts);
 } catch (error) {
     console.error('Connection failed:', error);
 }
+
+// Connect to a specific wallet address
+try {
+    const accounts = await window.quasar.connect('0x1234567890abcdef...');
+    console.log('Connected to specific wallet:', accounts);
+} catch (error) {
+    console.error('Connection to specific wallet failed:', error);
+    // Error will be thrown if wallet with the address is not loaded in extension
+}
 ```
+
+**Parameters:**
+- `address` (optional): Specific wallet address to connect to. If provided, only that wallet will be shown in the connection dialog. If the wallet is not loaded in the extension, an error will be shown.
 
 #### `disconnect(): Promise<void>`
 

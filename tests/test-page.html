@@ -1,24 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quasar Wallet API Test</title>
     <style>
         body {
-            font-family: -apple        <div class="button-grid">
-            <button onclick="testCustomTransaction()">
-                Custom Transaction
-            </button>
-            
-            <button onclick="testBatchOperations()">
-                Batch Operations
-            </button>
-            
-            <button onclick="testGetBrowserInfo()">
-                Get Browser Info
-            </button>
-        </div>BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple <div class="button-grid" > <button onclick="testCustomTransaction()" > Custom Transaction </button> <button onclick="testBatchOperations()" > Batch Operations </button> <button onclick="testGetBrowserInfo()" > Get Browser Info </button> </div>BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
@@ -188,8 +177,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .intro {
@@ -209,12 +203,14 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🚀 Quasar Wallet API Test</h1>
-        
+
         <div class="intro">
-            <p>This page demonstrates the Quasar wallet API integration. Make sure you have the Quasar browser extension installed and loaded.</p>
+            <p>This page demonstrates the Quasar wallet API integration. Make sure you have the Quasar browser extension
+                installed and loaded.</p>
         </div>
 
         <div id="wallet-status" class="status disconnected">
@@ -230,23 +226,23 @@
             <button id="connect-btn" class="button-primary" onclick="connectWallet()">
                 Connect Wallet
             </button>
-            
+
             <button id="accounts-btn" onclick="getAccounts()" disabled>
                 Get Accounts
             </button>
-            
+
             <button id="assets-btn" onclick="getAssets()" disabled>
                 Get Assets
             </button>
-            
+
             <button id="send-btn" class="button-secondary" onclick="sendTransaction()" disabled>
                 Send Transaction
             </button>
-            
+
             <button id="sign-btn" onclick="signMessage()" disabled>
                 Sign Message
             </button>
-            
+
             <button id="disconnect-btn" class="button-danger" onclick="disconnectWallet()" disabled>
                 Disconnect
             </button>
@@ -256,15 +252,15 @@
             <button onclick="testCustomTransaction()">
                 Custom Transaction
             </button>
-            
+
             <button onclick="testBatchOperations()">
                 Batch Operations
             </button>
-            
+
             <button onclick="testGetBrowserInfo()">
                 Get Browser Info
             </button>
-            
+
             <button onclick="clearResults()">
                 Clear Results
             </button>
@@ -273,7 +269,8 @@
         <div id="results" class="results">
             <div class="result-item">
                 <div class="result-header">Welcome to Quasar Wallet API Test</div>
-                <div class="result-content">Click the buttons above to test wallet functionality. Results will appear here.</div>
+                <div class="result-content">Click the buttons above to test wallet functionality. Results will appear
+                    here.</div>
             </div>
         </div>
 
@@ -304,7 +301,7 @@
             try {
                 const wallet = await waitForWallet();
                 addResult('System', 'Quasar wallet API detected!', { version: 'latest' });
-                
+
                 // Check if already connected
                 if (wallet.connected) {
                     const accounts = await wallet.getAccounts();
@@ -328,12 +325,12 @@
             try {
                 const wallet = await waitForWallet();
                 const accounts = await wallet.connect();
-                
+
                 walletConnected = true;
                 currentAccount = accounts[0];
                 updateWalletStatus(true);
                 enableButtons();
-                
+
                 addResult('Connect', 'Wallet connected successfully!', accounts);
             } catch (error) {
                 addResult('Connect', 'Failed to connect wallet', { error: error.message }, true);
@@ -377,7 +374,7 @@
                     asset: 'STE',
                     memo: 'Test transaction from web page'
                 });
-                
+
                 addResult('Transaction', 'Transaction sent successfully!', result);
             } catch (error) {
                 addResult('Transaction', 'Failed to send transaction', { error: error.message }, true);
@@ -392,10 +389,10 @@
                 const wallet = await waitForWallet();
                 const message = `Hello from Quasar test page!\nTimestamp: ${new Date().toISOString()}\nRandom: ${Math.random()}`;
                 const signature = await wallet.signMessage(message);
-                
-                addResult('Sign', 'Message signed successfully!', { 
-                    message, 
-                    signature 
+
+                addResult('Sign', 'Message signed successfully!', {
+                    message,
+                    signature
                 });
             } catch (error) {
                 addResult('Sign', 'Failed to sign message', { error: error.message }, true);
@@ -406,12 +403,12 @@
             try {
                 const wallet = await waitForWallet();
                 await wallet.disconnect();
-                
+
                 walletConnected = false;
                 currentAccount = null;
                 updateWalletStatus(false);
                 disableButtons();
-                
+
                 addResult('Disconnect', 'Wallet disconnected successfully!', {});
             } catch (error) {
                 addResult('Disconnect', 'Failed to disconnect wallet', { error: error.message }, true);
@@ -428,7 +425,7 @@
                     memo: 'Custom test transaction with different parameters',
                     chain: 'Halogen'
                 });
-                
+
                 addResult('Custom TX', 'Custom transaction sent!', result);
             } catch (error) {
                 addResult('Custom TX', 'Failed to send custom transaction', { error: error.message }, true);
@@ -438,27 +435,27 @@
         async function testBatchOperations() {
             try {
                 const wallet = await waitForWallet();
-                
+
                 addResult('Batch', 'Starting batch operations...', {});
-                
+
                 // Get accounts
                 const accounts = await wallet.getAccounts();
                 addResult('Batch', 'Step 1: Got accounts', accounts);
-                
+
                 // Get assets
                 const assets = await wallet.getAssets();
                 addResult('Batch', 'Step 2: Got assets', { count: assets.length, assets: assets.slice(0, 3) });
-                
+
                 // Sign a message
                 const signature = await wallet.signMessage('Batch operation test message');
                 addResult('Batch', 'Step 3: Signed message', { signature });
-                
+
                 addResult('Batch', 'Batch operations completed successfully!', {
                     accountCount: accounts.length,
                     assetCount: assets.length,
                     signatureLength: signature.length
                 });
-                
+
             } catch (error) {
                 addResult('Batch', 'Batch operations failed', { error: error.message }, true);
             }
@@ -467,35 +464,35 @@
         async function testGetBrowserInfo() {
             try {
                 addResult('Browser Info', 'Retrieving browser information...', {});
-                
+
                 const wallet = window.quasar;
                 if (!wallet) {
                     throw new Error('Quasar wallet not available');
                 }
-                
+
                 // Get fresh browser info
                 const browserInfo = await wallet.getBrowserInfo();
                 addResult('Browser Info', 'Successfully retrieved browser info', browserInfo);
-                
+
                 // Test cached getters
                 const cachedInfo = wallet.browserInfo;
                 const quickInfo = wallet.quickBrowserInfo;
                 const extensionVersion = wallet.extensionVersion;
-                
+
                 addResult('Browser Info', 'Cached info retrieved', {
                     cached: cachedInfo,
                     quick: quickInfo,
                     version: extensionVersion,
                     isAvailable: wallet.isAvailable
                 });
-                
+
                 // Display message types for debugging
                 const messageTypes = wallet.availableMessageTypes;
-                addResult('Browser Info', 'Available message types', { 
+                addResult('Browser Info', 'Available message types', {
                     count: messageTypes.length,
-                    types: messageTypes 
+                    types: messageTypes
                 });
-                
+
             } catch (error) {
                 addResult('Browser Info', 'Failed to get browser info', { error: error.message }, true);
             }
@@ -505,7 +502,7 @@
             const statusEl = document.getElementById('wallet-status');
             const walletInfoEl = document.getElementById('wallet-info');
             const addressEl = document.getElementById('wallet-address');
-            
+
             if (connected && currentAccount) {
                 statusEl.className = 'status connected';
                 statusEl.textContent = 'Wallet Status: Connected';
@@ -538,19 +535,19 @@
             const resultsEl = document.getElementById('results');
             const resultEl = document.createElement('div');
             resultEl.className = `result-item ${isError ? 'error' : 'success'}`;
-            
+
             resultEl.innerHTML = `
                 <div class="result-header">${operation}: ${message}</div>
                 <div class="result-content">${JSON.stringify(data, null, 2)}</div>
             `;
-            
+
             // Insert at the top
             if (resultsEl.firstChild) {
                 resultsEl.insertBefore(resultEl, resultsEl.firstChild);
             } else {
                 resultsEl.appendChild(resultEl);
             }
-            
+
             // Keep only last 20 results
             while (resultsEl.children.length > 20) {
                 resultsEl.removeChild(resultsEl.lastChild);
@@ -579,4 +576,5 @@
         });
     </script>
 </body>
+
 </html>
