@@ -22,8 +22,8 @@ interface SignMessageParams {
 }
 
 interface ConnectParams {
-    chainId?: string;
-    requestedChains?: string[];
+    address?: string;
+    return_private_key?: boolean;
 }
 
 interface DialogState {
@@ -54,6 +54,8 @@ const Panel: React.FC = () => {
     });
 
     const [connectForm, setConnectForm] = useState<ConnectParams>({
+        address: undefined,
+        return_private_key: false,
         chainId: undefined,
         requestedChains: []
     });
@@ -622,25 +624,58 @@ const Panel: React.FC = () => {
                         <button
                             type="button"
                             className="preset-btn"
-                            onClick={() => setConnectForm({ chainId: undefined, requestedChains: [] })}
+                            onClick={() => setConnectForm({ address: undefined, return_private_key: false, chainId: undefined, requestedChains: [] })}
                         >
                             Default
                         </button>
                         <button
                             type="button"
                             className="preset-btn"
-                            onClick={() => setConnectForm({ chainId: 'stellaris', requestedChains: ['stellaris'] })}
+                            onClick={() => setConnectForm({ address: undefined, return_private_key: false, chainId: 'stellaris', requestedChains: ['stellaris'] })}
                         >
                             Stellaris
                         </button>
                         <button
                             type="button"
                             className="preset-btn"
-                            onClick={() => setConnectForm({ chainId: 'ethereum', requestedChains: ['ethereum', 'polygon'] })}
+                            onClick={() => setConnectForm({ address: undefined, return_private_key: false, chainId: 'ethereum', requestedChains: ['ethereum', 'polygon'] })}
                         >
                             Multi-chain
                         </button>
+                        <button
+                            type="button"
+                            className="preset-btn"
+                            onClick={() => setConnectForm({ address: undefined, return_private_key: true, chainId: undefined, requestedChains: [] })}
+                            style={{ background: '#ff6b6b', color: 'white' }}
+                        >
+                            Test Private Key
+                        </button>
                     </div>
+                </div>
+                <div className="form-group">
+                    <label>Specific Address (optional)</label>
+                    <input
+                        type="text"
+                        value={connectForm.address || ''}
+                        onChange={(e) => setConnectForm({ ...connectForm, address: e.target.value || undefined })}
+                        placeholder="e.g., 0x1234567890abcdef..."
+                    />
+                    <small style={{ color: '#666', fontSize: '11px' }}>
+                        Connect to a specific wallet address
+                    </small>
+                </div>
+                <div className="form-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                            type="checkbox"
+                            checked={connectForm.return_private_key || false}
+                            onChange={(e) => setConnectForm({ ...connectForm, return_private_key: e.target.checked })}
+                        />
+                        Request Private Key Access
+                    </label>
+                    <small style={{ color: '#ff6b6b', fontSize: '11px' }}>
+                        ⚠️ WARNING: This grants full access to the wallet. Only use for testing!
+                    </small>
                 </div>
                 <div className="form-group">
                     <label>Chain ID (optional)</label>

@@ -160,6 +160,97 @@
     font-size: 14px;
 }
 
+/* Private Key Warning Styles */
+.private-key-warning {
+    background: #ff6b6b20;
+    border: 2px solid #ff6b6b;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.warning-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.warning-icon {
+    font-size: 20px;
+}
+
+.warning-header h4 {
+    margin: 0;
+    color: #ff6b6b;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.warning-message {
+    margin-bottom: 16px;
+}
+
+.warning-message p {
+    margin: 8px 0;
+    color: #ffcccc;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.warning-message p:first-child {
+    font-weight: 600;
+    color: #ff6b6b;
+}
+
+.confirmation-input {
+    margin-top: 16px;
+}
+
+.confirmation-input label {
+    display: block;
+    color: #ff6b6b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.phrase-to-type {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    font-family: monospace;
+    font-size: 14px;
+    color: #ffffff;
+    text-align: center;
+    font-weight: 600;
+}
+
+.confirmation-phrase-input {
+    width: 100%;
+    background: #1a1a1a;
+    border: 2px solid #ff6b6b;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #ffffff;
+    font-size: 13px;
+    font-family: monospace;
+}
+
+.confirmation-phrase-input:focus {
+    outline: none;
+    border-color: #ff8888;
+    box-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
+}
+
+.confirmation-phrase-input::placeholder {
+    color: #666;
+}
+
 /* Wallet Selection Styles */
 .wallet-selection {
     background: #252525;

@@ -103,8 +103,8 @@ async function getWalletData(origin = null, hostname = null) {
 }
 
 // Handle wallet connection request
-async function handleConnectWallet(origin, hostname, requestedAddress = null) {
-    console.log(`Connection request from: ${hostname}${requestedAddress ? ` for address: ${requestedAddress}` : ''}`);
+async function handleConnectWallet(origin, hostname, connectionParams = null) {
+    console.log(`Connection request from: ${hostname}${connectionParams?.address ? ` for address: ${connectionParams.address}` : ''}${connectionParams?.return_private_key ? ' [PRIVATE KEY REQUESTED]' : ''}`);
 
     // Check if already connected
     if (connectedSites.has(origin)) {
@@ -116,7 +116,8 @@ async function handleConnectWallet(origin, hostname, requestedAddress = null) {
             hostname,
             title: 'Get Wallet Data',
             message: `Getting wallet data for ${hostname}`,
-            requestedAddress
+            requestedAddress: connectionParams?.address,
+            connectionParams
         });
 
         return new Promise((resolve, reject) => {
@@ -166,10 +167,11 @@ async function handleConnectWallet(origin, hostname, requestedAddress = null) {
             origin,
             hostname,
             title: 'Connect Wallet',
-            message: requestedAddress
-                ? `${hostname} wants to connect to wallet with address: ${requestedAddress}`
+            message: connectionParams?.address
+                ? `${hostname} wants to connect to wallet with address: ${connectionParams.address}`
                 : `${hostname} wants to connect to your wallet`,
-            requestedAddress
+            requestedAddress: connectionParams?.address,
+            connectionParams
         });
 
         // Wait for user response
@@ -345,7 +347,7 @@ if (browserAPI.runtime.onMessage) {
                 break;
 
             case 'CONNECT_WALLET':
-                handleConnectWallet(message.origin, message.hostname, message.payload?.address).then(result => {
+                handleConnectWallet(message.origin, message.hostname, message.payload).then(result => {
                     sendResponse(result);
                 }).catch(error => {
                     sendResponse({ success: false, error: error.message });

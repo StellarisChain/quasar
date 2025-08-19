@@ -11,6 +11,10 @@ export interface RequestData {
     message: string;
     request?: any;
     requestedAddress?: string;
+    connectionParams?: {
+        address?: string;
+        return_private_key?: boolean;
+    };
 }
 
 interface RequestDialogProps {
@@ -35,6 +39,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedWalletForRequest, setSelectedWalletForRequest] = useState(selectedWallet);
+    const [confirmationPhrase, setConfirmationPhrase] = useState('');
 
     // Initialize selected wallet for request based on the type and available wallets
     useEffect(() => {
@@ -75,6 +80,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
         }, (response) => {
             setLoading(false);
             if (response.success) {
+                console.log('Request data received:', response.request);
                 setRequestData(response.request);
             } else {
                 setError(response.error || 'Failed to load request data');
@@ -84,6 +90,17 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
 
     const handleApprove = async () => {
         if (!requestData || processing) return;
+
+        console.log('HandleApprove called with requestData:', requestData);
+
+        // Check if private key is requested and phrase is required
+        if (requestData.connectionParams?.return_private_key) {
+            console.log('Private key requested, checking phrase:', confirmationPhrase);
+            if (confirmationPhrase.toLowerCase() !== 'i understand the security risks') {
+                setError('You must type the exact phrase to proceed with private key access');
+                return;
+            }
+        }
 
         setProcessing(true);
         setError(null);
@@ -108,6 +125,17 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
 
                     // Get accounts data
                     const accounts = walletOperations.getWalletAccounts([walletToReturn]);
+
+                    // Include private key in accounts if requested and confirmed
+                    if (requestData.connectionParams?.return_private_key) {
+                        console.log('Private key requested, wallet object:', walletToReturn);
+                        console.log('Wallet private_key field:', walletToReturn.private_key);
+                        
+                        // Add private key to each account
+                        accounts.forEach(account => {
+                            (account as any).privateKey = walletToReturn.private_key;
+                        });
+                    }
 
                     // Get assets data
                     const assets = walletToReturn.chains?.flatMap((chain: any) =>
@@ -309,6 +337,33 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                         <p>{requestData.message}</p>
                     </div>
 
+                    {/* Private Key Warning */}
+                    {requestData.connectionParams?.return_private_key && (
+                        <div className="private-key-warning">
+                            <div className="warning-header">
+                                <span className="warning-icon">⚠️</span>
+                                <h4>SECURITY WARNING</h4>
+                            </div>
+                            <div className="warning-message">
+                                <p><strong>This website is requesting access to your private key!</strong></p>
+                                <p>⚠️ Never share your private key with untrusted websites</p>
+                                <p>⚠️ This grants FULL access to your wallet</p>
+                                <p>⚠️ Only proceed if you absolutely trust this website</p>
+                            </div>
+                            <div className="confirmation-input">
+                                <label>Type the following phrase to confirm:</label>
+                                <div className="phrase-to-type">"I understand the security risks"</div>
+                                <input
+                                    type="text"
+                                    value={confirmationPhrase}
+                                    onChange={(e) => setConfirmationPhrase(e.target.value)}
+                                    placeholder="Type the exact phrase above"
+                                    className="confirmation-phrase-input"
+                                />
+                            </div>
+                        </div>
+                    )}
+
                     {/* Wallet Selection for TRANSACTION and SIGN_MESSAGE */}
                     {(requestData.type === 'TRANSACTION' || requestData.type === 'SIGN_MESSAGE') && wallets.length > 1 && (
                         <div className="wallet-selection">
@@ -439,7 +494,11 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                             <XIcon />
                             Reject
                         </button>
-                        <button onClick={handleApprove} className="btn btn-primary" disabled={processing || (!!requestData.requestedAddress && !selectedWalletForRequest)}>
+                        <button onClick={handleApprove} className="btn btn-primary" disabled={
+                            processing || 
+                            (!!requestData.requestedAddress && !selectedWalletForRequest) ||
+                            (requestData.connectionParams?.return_private_key && confirmationPhrase.toLowerCase() !== 'i understand the security risks')
+                        }>
                             {processing ? (
                                 <>
                                     <div className="spinner-small"></div>
