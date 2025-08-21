@@ -67,7 +67,7 @@ export interface WalletEvents {
     disconnect: () => void;
 }
 
-class QuasarWallet {
+export class QuasarWallet {
     private isConnected = false;
     private accounts: WalletAccount[] = [];
     private eventListeners: Partial<WalletEvents> = {};
