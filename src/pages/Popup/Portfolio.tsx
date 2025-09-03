@@ -35,6 +35,10 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     const [copied, setCopied] = useState(false);
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
 
+    // Ref to prevent infinite fetch loops
+    const isFetchingRef = useRef(false);
+    const isUpdatingWalletsRef = useRef(false);
+
     // TODO: There should be a global modal state
 
     // Send modal state
@@ -120,136 +124,163 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Fetch price data from API
     React.useEffect(() => {
         const fetchPrices = async () => {
+            // Prevent multiple concurrent fetches using ref
+            if (isFetchingRef.current) {
+                console.warn('Skipping fetch, already fetching prices');
+                return;
+            }
+
+            // Skip if we're in the middle of updating wallets ourselves
+            if (isUpdatingWalletsRef.current) {
+                console.warn('Skipping fetch, currently updating wallets');
+                return;
+            }
+
             if (lastFetch && Date.now() - lastFetch < 600) {
                 console.warn('Skipping fetch, last fetch was less than 600 milliseconds ago');
                 return;
             }
+            
+            isFetchingRef.current = true;
             setLoadingPrices(true);
             setLastFetch(Date.now());
-            if (wallets && wallets.length > 0) {
-                // Collect all symbols to fetch
-                const symbols = Array.from(new Set(wallets.flatMap(w => (w.chains ?? []).flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
-                if (symbols.length === 0) {
-                    setLoadingPrices(false);
-                    return;
-                }
-                let priceData: Record<string, { price: number; change24h: number }> = {};
-                try {
-                    // Fetch prices for all symbols
-                    const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
-                    priceData = await res.json();
-                    // If the stub returns nothing or invalid, fallback
-                    if (!priceData || typeof priceData !== 'object' || Object.keys(priceData).length === 0) {
-                        throw new Error('Stub API returned no data');
+
+            try {
+                if (wallets && wallets.length > 0) {
+                    // Collect all symbols to fetch
+                    const symbols = Array.from(new Set(wallets.flatMap(w => (w.chains ?? []).flatMap(c => [c.symbol, ...c.tokens.map(t => t.symbol)]))));
+                    if (symbols.length === 0) {
+                        return;
                     }
-                } catch (e) {
-                    // fallback: use default stub prices
-                    priceData = {};
-                    symbols.forEach(symbol => {
-                        priceData[symbol] = {
-                            price: Math.random() * 100 + 1, // Random price between 1 and 100
-                            change24h: (Math.random() - 0.5) * 2 //
-                        };
-                    });
-                }
-                // Update wallets with price info
-                const updatedWallets = await Promise.all(wallets.map(async wallet => {
-                    const tokenFromXMLData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
-                    const chains = await Promise.all(
-                        (wallet.chains ?? []).map(async chain => {
-                            const chainPrice = priceData[chain.symbol]?.price ?? 0;
-                            const chainChange = priceData[chain.symbol]?.change24h ?? 0;
-                            const tokenData: TokenFromXML = tokenFromXMLData.find(token => token.Symbol === chain.symbol) || {
-                                Name: 'Fallback',
-                                Symbol: chain.symbol,
-                                Color: '',
-                                TokenSupport: false,
-                                Node: 'ur fucked',
-                                Curve: 'secp256k1', // Default curve
-                                // Add any other required properties with default values
+                    let priceData: Record<string, { price: number; change24h: number }> = {};
+                    try {
+                        // Fetch prices for all symbols
+                        const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
+                        priceData = await res.json();
+                        // If the stub returns nothing or invalid, fallback
+                        if (!priceData || typeof priceData !== 'object' || Object.keys(priceData).length === 0) {
+                            throw new Error('Stub API returned no data');
+                        }
+                    } catch (e) {
+                        // fallback: use default stub prices
+                        priceData = {};
+                        symbols.forEach(symbol => {
+                            priceData[symbol] = {
+                                price: Math.random() * 100 + 1, // Random price between 1 and 100
+                                change24h: (Math.random() - 0.5) * 2 //
                             };
-                            const subTokens: SubToken[] = tokenData.SubTokens || [];
+                        });
+                    }
+                    // Update wallets with price info
+                    const updatedWallets = await Promise.all(wallets.map(async wallet => {
+                        const tokenFromXMLData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
+                        const chains = await Promise.all(
+                            (wallet.chains ?? []).map(async chain => {
+                                const chainPrice = priceData[chain.symbol]?.price ?? 0;
+                                const chainChange = priceData[chain.symbol]?.change24h ?? 0;
+                                const tokenData: TokenFromXML = tokenFromXMLData.find(token => token.Symbol === chain.symbol) || {
+                                    Name: 'Fallback',
+                                    Symbol: chain.symbol,
+                                    Color: '',
+                                    TokenSupport: false,
+                                    Node: 'ur fucked',
+                                    Curve: 'secp256k1', // Default curve
+                                    // Add any other required properties with default values
+                                };
+                                const subTokens: SubToken[] = tokenData.SubTokens || [];
 
-                            // Map subTokens to Token format
-                            chain.tokens = subTokens.map(subToken => ({
-                                symbol: subToken.Symbol,
-                                name: subToken.Name,
-                                balance: '0.00', // Default balance
-                                price: 0,
-                                change24h: 0 // Default change
-                            }));
+                                // Map subTokens to Token format
+                                chain.tokens = subTokens.map(subToken => ({
+                                    symbol: subToken.Symbol,
+                                    name: subToken.Name,
+                                    balance: '0.00', // Default balance
+                                    price: 0,
+                                    change24h: 0 // Default change
+                                }));
 
-                            // Cosmetic
-                            chain.color = tokenData.Color || '';
+                                // Cosmetic
+                                chain.color = tokenData.Color || '';
 
-                            // Load Balance - only if wallet is unlocked or not encrypted
-                            let balance = '0.00';
-                            if (!wallet.isEncrypted || !isWalletLocked(wallet)) {
-                                try {
-                                    const [balanceResult] = await getBalanceInfo(
-                                        wallet.address || '',
-                                        tokenData.Node || ''
-                                    );
-                                    balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
-                                } catch (error) {
-                                    console.warn('Failed to fetch balance for locked/encrypted wallet:', error);
+                                // Load Balance - only if wallet is unlocked or not encrypted
+                                let balance = '0.00';
+                                if (!wallet.isEncrypted || !isWalletLocked(wallet)) {
+                                    try {
+                                        const [balanceResult] = await getBalanceInfo(
+                                            wallet.address || '',
+                                            tokenData.Node || ''
+                                        );
+                                        balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
+                                    } catch (error) {
+                                        console.warn('Failed to fetch balance for locked/encrypted wallet:', error);
+                                    }
                                 }
-                            }
-                            chain.balance = balance;
+                                chain.balance = balance;
 
-                            // Calculate fiatValue for chain
-                            const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
+                                // Calculate fiatValue for chain
+                                const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
 
-                            // api.cex.connor33341.dev is a stub rn, so we generate plausible data
-                            // Generate plausible chartData as a random walk based on price
-                            const chartPoints = 24; // e.g., 24 points for 24h
-                            const base = chainPrice || 1;
-                            let last = base * (1 - chainChange / 200); // start near price, offset by half 24h change
-                            const chartData = [last];
-                            for (let i = 1; i < chartPoints; i++) {
-                                // Simulate a small random walk, trending toward the current price
-                                const drift = (base - last) * 0.1; // pull toward base price
-                                const noise = (Math.random() - 0.5) * base * 0.02; // up to ±2% noise
-                                last = Math.max(0, last + drift + noise);
-                                chartData.push(Number(last.toFixed(4)));
-                            }
+                                // api.cex.connor33341.dev is a stub rn, so we generate plausible data
+                                // Generate plausible chartData as a random walk based on price
+                                const chartPoints = 24; // e.g., 24 points for 24h
+                                const base = chainPrice || 1;
+                                let last = base * (1 - chainChange / 200); // start near price, offset by half 24h change
+                                const chartData = [last];
+                                for (let i = 1; i < chartPoints; i++) {
+                                    // Simulate a small random walk, trending toward the current price
+                                    const drift = (base - last) * 0.1; // pull toward base price
+                                    const noise = (Math.random() - 0.5) * base * 0.02; // up to ±2% noise
+                                    last = Math.max(0, last + drift + noise);
+                                    chartData.push(Number(last.toFixed(4)));
+                                }
 
-                            return {
-                                ...chain,
-                                fiatValue,
-                                change24h: chainChange,
-                                chartData,
-                                tokens: chain.tokens.map(token => {
-                                    const tokenPrice = priceData[token.symbol]?.price ?? 0;
-                                    const tokenChange = priceData[token.symbol]?.change24h ?? 0;
-                                    return {
-                                        ...token,
-                                        price: tokenPrice,
-                                        change24h: tokenChange,
-                                    };
-                                })
-                            };
-                        })
+                                return {
+                                    ...chain,
+                                    fiatValue,
+                                    change24h: chainChange,
+                                    chartData,
+                                    tokens: chain.tokens.map(token => {
+                                        const tokenPrice = priceData[token.symbol]?.price ?? 0;
+                                        const tokenChange = priceData[token.symbol]?.change24h ?? 0;
+                                        return {
+                                            ...token,
+                                            price: tokenPrice,
+                                            change24h: tokenChange,
+                                        };
+                                    })
+                                };
+                            })
+                        );
+                        return {
+                            ...wallet,
+                            chains
+                        };
+                    }));
+                    // If selectedWallet changed, update it too
+                    isUpdatingWalletsRef.current = true;
+                    setSelectedWallet(
+                        selectedWallet
+                            ? updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]
+                            : updatedWallets[0]
                     );
-                    return {
-                        ...wallet,
-                        chains
-                    };
-                }));
-                // If selectedWallet changed, update it too
-                setSelectedWallet(
-                    selectedWallet
-                        ? updatedWallets.find(w => w.id === selectedWallet.id) || updatedWallets[0]
-                        : updatedWallets[0]
-                );
-                saveWallets(updatedWallets);
+                    saveWallets(updatedWallets);
+                    
+                    // Reset the updating flag after a short delay to allow React to process updates
+                    setTimeout(() => {
+                        isUpdatingWalletsRef.current = false;
+                    }, 100);
+                } else {
+                    console.warn('No wallets found');
+                }
+            } finally {
                 setLoadingPrices(false);
-            } else {
-                console.warn('No wallets found');
-                setLoadingPrices(false);
+                isFetchingRef.current = false;
             }
         };
-        fetchPrices();
+        
+        // Only fetch if we have wallets
+        if (wallets && wallets.length > 0) {
+            fetchPrices();
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [wallets, selectedWallet]);
 
