@@ -140,7 +140,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 console.warn('Skipping fetch, last fetch was less than 600 milliseconds ago');
                 return;
             }
-            
+
             isFetchingRef.current = true;
             setLoadingPrices(true);
             setLastFetch(Date.now());
@@ -263,7 +263,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             : updatedWallets[0]
                     );
                     saveWallets(updatedWallets);
-                    
+
                     // Reset the updating flag after a short delay to allow React to process updates
                     setTimeout(() => {
                         isUpdatingWalletsRef.current = false;
@@ -276,7 +276,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 isFetchingRef.current = false;
             }
         };
-        
+
         // Only fetch if we have wallets
         if (wallets && wallets.length > 0) {
             fetchPrices();
