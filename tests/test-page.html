@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Wallet API Test</title>
+    <style>
+        body {
+            font-family: -apple <div class="button-grid" > <button onclick="testCustomTransaction()" > Custom Transaction </button> <button onclick="testBatchOperations()" > Batch Operations </button> <button onclick="testGetBrowserInfo()" > Get Browser Info </button> </div>BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .status.connected {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 2px solid #68d391;
+        }
+
+        .status.disconnected {
+            background: #fed7d7;
+            color: #c53030;
+            border: 2px solid #fc8181;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+
+        .button-danger {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+        }
+
+        .results {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4299e1;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-item.success {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .result-item.error {
+            border-left-color: #f56565;
+            background: #fffafa;
+        }
+
+        .result-header {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+
+        .result-content {
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .wallet-info {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .wallet-info h3 {
+            margin: 0 0 10px;
+            color: #2d3748;
+        }
+
+        .wallet-address {
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            color: #4a5568;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🚀 Quasar Wallet API Test</h1>
+
+        <div class="intro">
+            <p>This page demonstrates the Quasar wallet API integration. Make sure you have the Quasar browser extension
+                installed and loaded.</p>
+        </div>
+
+        <div id="wallet-status" class="status disconnected">
+            Wallet Status: Not Connected
+        </div>
+
+        <div id="wallet-info" class="wallet-info" style="display: none;">
+            <h3>Connected Wallet</h3>
+            <div class="wallet-address" id="wallet-address"></div>
+        </div>
+
+        <div class="button-grid">
+            <button id="connect-btn" class="button-primary" onclick="connectWallet()">
+                Connect Wallet
+            </button>
+
+            <button id="accounts-btn" onclick="getAccounts()" disabled>
+                Get Accounts
+            </button>
+
+            <button id="assets-btn" onclick="getAssets()" disabled>
+                Get Assets
+            </button>
+
+            <button id="send-btn" class="button-secondary" onclick="sendTransaction()" disabled>
+                Send Transaction
+            </button>
+
+            <button id="sign-btn" onclick="signMessage()" disabled>
+                Sign Message
+            </button>
+
+            <button id="disconnect-btn" class="button-danger" onclick="disconnectWallet()" disabled>
+                Disconnect
+            </button>
+        </div>
+
+        <div class="button-grid">
+            <button onclick="testCustomTransaction()">
+                Custom Transaction
+            </button>
+
+            <button onclick="testBatchOperations()">
+                Batch Operations
+            </button>
+
+            <button onclick="testGetBrowserInfo()">
+                Get Browser Info
+            </button>
+
+            <button onclick="clearResults()">
+                Clear Results
+            </button>
+        </div>
+
+        <div id="results" class="results">
+            <div class="result-item">
+                <div class="result-header">Welcome to Quasar Wallet API Test</div>
+                <div class="result-content">Click the buttons above to test wallet functionality. Results will appear
+                    here.</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Quasar Wallet Extension Test Page | Check the browser console for detailed logs</p>
+        </div>
+    </div>
+
+    <script>
+        let walletConnected = false;
+        let currentAccount = null;
+
+        // Wait for wallet to be available
+        function waitForWallet() {
+            return new Promise((resolve) => {
+                if (window.quasar) {
+                    resolve(window.quasar);
+                } else {
+                    window.addEventListener('quasar:ready', (event) => {
+                        resolve(event.detail.wallet);
+                    });
+                }
+            });
+        }
+
+        // Initialize page
+        async function initializePage() {
+            try {
+                const wallet = await waitForWallet();
+                addResult('System', 'Quasar wallet API detected!', { version: 'latest' });
+
+                // Check if already connected
+                if (wallet.connected) {
+                    const accounts = await wallet.getAccounts();
+                    if (accounts.length > 0) {
+                        walletConnected = true;
+                        currentAccount = accounts[0];
+                        updateWalletStatus(true);
+                        enableButtons();
+                    }
+                }
+            } catch (error) {
+                addResult('System', 'Failed to initialize wallet API', { error: error.message }, true);
+            }
+        }
+
+        async function connectWallet() {
+            const btn = document.getElementById('connect-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Connecting...';
+
+            try {
+                const wallet = await waitForWallet();
+                const accounts = await wallet.connect();
+
+                walletConnected = true;
+                currentAccount = accounts[0];
+                updateWalletStatus(true);
+                enableButtons();
+
+                addResult('Connect', 'Wallet connected successfully!', accounts);
+            } catch (error) {
+                addResult('Connect', 'Failed to connect wallet', { error: error.message }, true);
+                updateWalletStatus(false);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Connect Wallet';
+            }
+        }
+
+        async function getAccounts() {
+            try {
+                const wallet = await waitForWallet();
+                const accounts = await wallet.getAccounts();
+                addResult('Accounts', 'Retrieved accounts', accounts);
+            } catch (error) {
+                addResult('Accounts', 'Failed to get accounts', { error: error.message }, true);
+            }
+        }
+
+        async function getAssets() {
+            try {
+                const wallet = await waitForWallet();
+                const assets = await wallet.getAssets();
+                addResult('Assets', 'Retrieved assets', assets);
+            } catch (error) {
+                addResult('Assets', 'Failed to get assets', { error: error.message }, true);
+            }
+        }
+
+        async function sendTransaction() {
+            const btn = document.getElementById('send-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Sending...';
+
+            try {
+                const wallet = await waitForWallet();
+                const result = await wallet.sendTransaction({
+                    to: '0xRecipient1234567890abcdef',
+                    amount: '1.5',
+                    asset: 'STE',
+                    memo: 'Test transaction from web page'
+                });
+
+                addResult('Transaction', 'Transaction sent successfully!', result);
+            } catch (error) {
+                addResult('Transaction', 'Failed to send transaction', { error: error.message }, true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Send Transaction';
+            }
+        }
+
+        async function signMessage() {
+            try {
+                const wallet = await waitForWallet();
+                const message = `Hello from Quasar test page!\nTimestamp: ${new Date().toISOString()}\nRandom: ${Math.random()}`;
+                const signature = await wallet.signMessage(message);
+
+                addResult('Sign', 'Message signed successfully!', {
+                    message,
+                    signature
+                });
+            } catch (error) {
+                addResult('Sign', 'Failed to sign message', { error: error.message }, true);
+            }
+        }
+
+        async function disconnectWallet() {
+            try {
+                const wallet = await waitForWallet();
+                await wallet.disconnect();
+
+                walletConnected = false;
+                currentAccount = null;
+                updateWalletStatus(false);
+                disableButtons();
+
+                addResult('Disconnect', 'Wallet disconnected successfully!', {});
+            } catch (error) {
+                addResult('Disconnect', 'Failed to disconnect wallet', { error: error.message }, true);
+            }
+        }
+
+        async function testCustomTransaction() {
+            try {
+                const wallet = await waitForWallet();
+                const result = await wallet.sendTransaction({
+                    to: '0xCustomRecipientAddress123456789',
+                    amount: '0.001',
+                    asset: 'HAL',
+                    memo: 'Custom test transaction with different parameters',
+                    chain: 'Halogen'
+                });
+
+                addResult('Custom TX', 'Custom transaction sent!', result);
+            } catch (error) {
+                addResult('Custom TX', 'Failed to send custom transaction', { error: error.message }, true);
+            }
+        }
+
+        async function testBatchOperations() {
+            try {
+                const wallet = await waitForWallet();
+
+                addResult('Batch', 'Starting batch operations...', {});
+
+                // Get accounts
+                const accounts = await wallet.getAccounts();
+                addResult('Batch', 'Step 1: Got accounts', accounts);
+
+                // Get assets
+                const assets = await wallet.getAssets();
+                addResult('Batch', 'Step 2: Got assets', { count: assets.length, assets: assets.slice(0, 3) });
+
+                // Sign a message
+                const signature = await wallet.signMessage('Batch operation test message');
+                addResult('Batch', 'Step 3: Signed message', { signature });
+
+                addResult('Batch', 'Batch operations completed successfully!', {
+                    accountCount: accounts.length,
+                    assetCount: assets.length,
+                    signatureLength: signature.length
+                });
+
+            } catch (error) {
+                addResult('Batch', 'Batch operations failed', { error: error.message }, true);
+            }
+        }
+
+        async function testGetBrowserInfo() {
+            try {
+                addResult('Browser Info', 'Retrieving browser information...', {});
+
+                const wallet = window.quasar;
+                if (!wallet) {
+                    throw new Error('Quasar wallet not available');
+                }
+
+                // Get fresh browser info
+                const browserInfo = await wallet.getBrowserInfo();
+                addResult('Browser Info', 'Successfully retrieved browser info', browserInfo);
+
+                // Test cached getters
+                const cachedInfo = wallet.browserInfo;
+                const quickInfo = wallet.quickBrowserInfo;
+                const extensionVersion = wallet.extensionVersion;
+
+                addResult('Browser Info', 'Cached info retrieved', {
+                    cached: cachedInfo,
+                    quick: quickInfo,
+                    version: extensionVersion,
+                    isAvailable: wallet.isAvailable
+                });
+
+                // Display message types for debugging
+                const messageTypes = wallet.availableMessageTypes;
+                addResult('Browser Info', 'Available message types', {
+                    count: messageTypes.length,
+                    types: messageTypes
+                });
+
+            } catch (error) {
+                addResult('Browser Info', 'Failed to get browser info', { error: error.message }, true);
+            }
+        }
+
+        function updateWalletStatus(connected) {
+            const statusEl = document.getElementById('wallet-status');
+            const walletInfoEl = document.getElementById('wallet-info');
+            const addressEl = document.getElementById('wallet-address');
+
+            if (connected && currentAccount) {
+                statusEl.className = 'status connected';
+                statusEl.textContent = 'Wallet Status: Connected';
+                walletInfoEl.style.display = 'block';
+                addressEl.textContent = currentAccount.address;
+            } else {
+                statusEl.className = 'status disconnected';
+                statusEl.textContent = 'Wallet Status: Not Connected';
+                walletInfoEl.style.display = 'none';
+            }
+        }
+
+        function enableButtons() {
+            document.getElementById('accounts-btn').disabled = false;
+            document.getElementById('assets-btn').disabled = false;
+            document.getElementById('send-btn').disabled = false;
+            document.getElementById('sign-btn').disabled = false;
+            document.getElementById('disconnect-btn').disabled = false;
+        }
+
+        function disableButtons() {
+            document.getElementById('accounts-btn').disabled = true;
+            document.getElementById('assets-btn').disabled = true;
+            document.getElementById('send-btn').disabled = true;
+            document.getElementById('sign-btn').disabled = true;
+            document.getElementById('disconnect-btn').disabled = true;
+        }
+
+        function addResult(operation, message, data, isError = false) {
+            const resultsEl = document.getElementById('results');
+            const resultEl = document.createElement('div');
+            resultEl.className = `result-item ${isError ? 'error' : 'success'}`;
+
+            resultEl.innerHTML = `
+                <div class="result-header">${operation}: ${message}</div>
+                <div class="result-content">${JSON.stringify(data, null, 2)}</div>
+            `;
+
+            // Insert at the top
+            if (resultsEl.firstChild) {
+                resultsEl.insertBefore(resultEl, resultsEl.firstChild);
+            } else {
+                resultsEl.appendChild(resultEl);
+            }
+
+            // Keep only last 20 results
+            while (resultsEl.children.length > 20) {
+                resultsEl.removeChild(resultsEl.lastChild);
+            }
+
+            // Log to console as well
+            console.log(`[${operation}] ${message}`, data);
+        }
+
+        function clearResults() {
+            const resultsEl = document.getElementById('results');
+            resultsEl.innerHTML = `
+                <div class="result-item">
+                    <div class="result-header">Results cleared</div>
+                    <div class="result-content">Ready for new test results...</div>
+                </div>
+            `;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Listen for wallet events
+        window.addEventListener('quasar:ready', () => {
+            console.log('Quasar wallet is ready!');
+        });
+    </script>
+</body>
+
+</html>

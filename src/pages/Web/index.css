@@ -127,7 +127,8 @@
 
 .mobile-device .form-input {
     padding: 16px 12px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
+    /* Prevents zoom on iOS */
 }
 
 .desktop-device .form-group {
@@ -156,18 +157,19 @@
     .mobile-device .popup-header {
         padding: 12px 16px;
     }
-    
+
     .mobile-device .balance-card {
         padding: 16px 20px !important;
     }
-    
+
     .mobile-device .balance-amount {
         font-size: 24px !important;
     }
 }
 
 /* High DPI/Retina display optimizations */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
     .web-wallet {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;

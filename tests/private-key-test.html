@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Private Key Access Test</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff6b6b;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+        }
+
+        .section {
+            background: #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #ff6b6b;
+            font-size: 1.3em;
+        }
+
+        .warning {
+            background: #ff6b6b20;
+            border: 2px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .warning h3 {
+            color: #ff6b6b;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.connected {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        .status.connecting {
+            background: #ff9800;
+            color: white;
+        }
+
+        .result {
+            background: #444;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #555;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result.success {
+            border-color: #4caf50;
+            background: #1a331a;
+        }
+
+        .result.error {
+            border-color: #f44336;
+            background: #331a1a;
+        }
+
+        .private-key-display {
+            background: #1a1a1a;
+            border: 2px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .info-item {
+            background: #444;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #ff6b6b;
+        }
+
+        .info-item h4 {
+            margin: 0 0 10px 0;
+            color: #ff6b6b;
+        }
+
+        .info-item p {
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚠️ Quasar Private Key Access Test</h1>
+        
+        <div class="warning">
+            <h3>🔒 SECURITY WARNING</h3>
+            <p><strong>This page tests private key access functionality!</strong></p>
+            <p>• Never use this on production websites</p>
+            <p>• Only test with development/test wallets</p>
+            <p>• Private keys grant FULL access to your wallet</p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <h4>Wallet Available</h4>
+                <p id="available">Checking...</p>
+            </div>
+            <div class="info-item">
+                <h4>Connected</h4>
+                <p id="connected">No</p>
+            </div>
+            <div class="info-item">
+                <h4>Current Address</h4>
+                <p id="currentAddress">None</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>1. Normal Connection Test</h2>
+            <p>Test standard wallet connection without private key access.</p>
+            <button onclick="connectNormal()">Connect Normally</button>
+            <div id="result1" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. Private Key Access Test</h2>
+            <p>Test connection with private key access. This will show the security warning.</p>
+            <button onclick="connectWithPrivateKey()">Connect with Private Key Access</button>
+            <div id="result2" class="result"></div>
+            <div id="privateKeyDisplay"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Connection with Parameters</h2>
+            <p>Test connection with multiple parameters including private key access.</p>
+            <button onclick="connectWithParams()">Connect with All Parameters</button>
+            <div id="result3" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h2>Utility Functions</h2>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="updateStatus()">Update Status</button>
+            <button onclick="getBrowserInfo()">Get Browser Info</button>
+            <div id="browserInfo" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the wallet to be available
+        function waitForWallet() {
+            return new Promise((resolve, reject) => {
+                if (window.quasar) {
+                    resolve(window.quasar);
+                    return;
+                }
+
+                // Listen for the ready event
+                window.addEventListener('quasar:ready', (event) => {
+                    resolve(event.detail.wallet);
+                });
+
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    reject(new Error('Quasar wallet not available after 10 seconds'));
+                }, 10000);
+            });
+        }
+
+        function updateResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${isError ? 'error' : 'success'}`;
+        }
+
+        function updateStatus() {
+            if (window.quasar) {
+                document.getElementById('available').textContent = 'Yes';
+                document.getElementById('connected').textContent = window.quasar.connected ? 'Yes' : 'No';
+                document.getElementById('currentAddress').textContent = window.quasar.address || 'None';
+            } else {
+                document.getElementById('available').textContent = 'No';
+                document.getElementById('connected').textContent = 'No';
+                document.getElementById('currentAddress').textContent = 'None';
+            }
+        }
+
+        async function connectNormal() {
+            try {
+                const wallet = await waitForWallet();
+                updateResult('result1', 'Connecting normally...');
+
+                const accounts = await wallet.connect();
+                updateResult('result1', `Success! Connected accounts:\n${JSON.stringify(accounts, null, 2)}`);
+                updateStatus();
+            } catch (error) {
+                updateResult('result1', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function connectWithPrivateKey() {
+            try {
+                const wallet = await waitForWallet();
+                updateResult('result2', 'Connecting with private key access...');
+
+                const accounts = await wallet.connect({
+                    return_private_key: true
+                });
+
+                console.log('Full connect result:', accounts);
+                updateResult('result2', `Success! Connection result:\n${JSON.stringify(accounts, null, 2)}`);
+                
+                // Display private key if returned in accounts
+                const privateKey = accounts[0]?.privateKey;
+                if (privateKey) {
+                    document.getElementById('privateKeyDisplay').innerHTML = `
+                        <div class="private-key-display">
+                            <strong>🔑 PRIVATE KEY RECEIVED:</strong><br>
+                            <code style="word-break: break-all; font-size: 12px;">${privateKey}</code>
+                            <br><br>
+                            <strong>Key Length:</strong> ${privateKey.length} characters<br>
+                            <strong>Format:</strong> ${privateKey.startsWith('0x') ? 'Hex with 0x prefix' : privateKey.length === 64 ? 'Raw hex' : 'Unknown format'}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('privateKeyDisplay').innerHTML = `
+                        <div class="private-key-display" style="border-color: #ff9800; color: #ff9800;">
+                            <strong>⚠️ NO PRIVATE KEY FOUND</strong><br>
+                            The accounts were returned but privateKey field is missing or empty.
+                        </div>
+                    `;
+                }
+                
+                updateStatus();
+            } catch (error) {
+                console.error('Connect error:', error);
+                updateResult('result2', `Error: ${error.message}`, true);
+                document.getElementById('privateKeyDisplay').innerHTML = '';
+            }
+        }
+
+        async function connectWithParams() {
+            try {
+                const wallet = await waitForWallet();
+                updateResult('result3', 'Connecting with multiple parameters...');
+
+                const params = {
+                    return_private_key: true
+                };
+
+                const accounts = await wallet.connect(params);
+                updateResult('result3', `Success! Accounts:\n${JSON.stringify(accounts, null, 2)}\n\nParameters used:\n${JSON.stringify(params, null, 2)}`);
+                updateStatus();
+            } catch (error) {
+                updateResult('result3', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function disconnect() {
+            try {
+                const wallet = await waitForWallet();
+                await wallet.disconnect();
+                updateStatus();
+                console.log('Disconnected from wallet');
+            } catch (error) {
+                console.error('Disconnect error:', error);
+            }
+        }
+
+        async function getBrowserInfo() {
+            try {
+                const wallet = await waitForWallet();
+                const browserInfo = await wallet.getBrowserInfo();
+                updateResult('browserInfo', JSON.stringify(browserInfo, null, 2));
+            } catch (error) {
+                updateResult('browserInfo', `Error: ${error.message}`, true);
+            }
+        }
+
+        // Initial setup
+        window.addEventListener('load', () => {
+            updateStatus();
+            
+            // Set up event listeners if wallet becomes available
+            if (window.quasar) {
+                window.quasar.on('connect', () => {
+                    console.log('Wallet connected');
+                    updateStatus();
+                });
+
+                window.quasar.on('disconnect', () => {
+                    console.log('Wallet disconnected');
+                    updateStatus();
+                });
+            }
+
+            // Listen for wallet ready event
+            window.addEventListener('quasar:ready', () => {
+                updateStatus();
+                
+                window.quasar.on('connect', () => {
+                    console.log('Wallet connected');
+                    updateStatus();
+                });
+
+                window.quasar.on('disconnect', () => {
+                    console.log('Wallet disconnected');
+                    updateStatus();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

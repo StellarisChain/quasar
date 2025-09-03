@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Browser Info Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        .test-button:hover {
+            opacity: 0.9;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🌟 Quasar Browser Info Test</h1>
+
+        <div class="test-section">
+            <h3>Browser Info Tests</h3>
+            <button class="test-button" onclick="testGetBrowserInfo()">Get Browser Info</button>
+            <button class="test-button" onclick="testCachedInfo()">Test Cached Info</button>
+            <button class="test-button" onclick="testQuickInfo()">Test Quick Info</button>
+            <button class="test-button" onclick="testAvailability()">Test Availability</button>
+            <div id="browserInfoResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Debug Tests</h3>
+            <button class="test-button" onclick="testMessageTypes()">Available Message Types</button>
+            <button class="test-button" onclick="testWalletReady()">Check Wallet Ready</button>
+            <button class="test-button" onclick="clearResults()">Clear Results</button>
+            <div id="debugResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, content, isError = false) {
+            const resultEl = document.getElementById(elementId);
+            resultEl.textContent = content;
+            resultEl.className = `result ${isError ? 'error' : 'success'}`;
+            resultEl.style.display = 'block';
+        }
+
+        async function testGetBrowserInfo() {
+            try {
+                console.log('Testing getBrowserInfo...');
+
+                // Wait for wallet to be ready
+                await waitForWallet();
+
+                const browserInfo = await window.quasar.getBrowserInfo();
+                console.log('Browser info received:', browserInfo);
+
+                const result = `✅ Browser Info Retrieved Successfully:
+
+Browser: ${browserInfo.browser}
+Version: ${browserInfo.version}
+Manifest Version: ${browserInfo.manifestVersion}
+Extension ID: ${browserInfo.extensionId}
+Name: ${browserInfo.name}
+Platform: ${browserInfo.platform}
+User Agent: ${browserInfo.userAgent}`;
+
+                showResult('browserInfoResult', result);
+
+            } catch (error) {
+                console.error('getBrowserInfo test failed:', error);
+                showResult('browserInfoResult', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testCachedInfo() {
+            try {
+                await waitForWallet();
+
+                const cachedInfo = window.quasar.browserInfo;
+                const extensionVersion = window.quasar.extensionVersion;
+
+                const result = `✅ Cached Info:
+
+Cached Browser Info: ${cachedInfo ? JSON.stringify(cachedInfo, null, 2) : 'Not cached yet'}
+Extension Version: ${extensionVersion || 'Not available'}`;
+
+                showResult('browserInfoResult', result);
+
+            } catch (error) {
+                showResult('browserInfoResult', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testQuickInfo() {
+            try {
+                await waitForWallet();
+
+                const quickInfo = window.quasar.quickBrowserInfo;
+                const isAvailable = window.quasar.isAvailable;
+
+                const result = `✅ Quick Info:
+
+Quick Browser Info: ${quickInfo}
+Wallet Available: ${isAvailable}`;
+
+                showResult('browserInfoResult', result);
+
+            } catch (error) {
+                showResult('browserInfoResult', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testAvailability() {
+            try {
+                const isWalletDefined = typeof window.quasar !== 'undefined';
+                const hasQuasarReady = window.quasar ? window.quasar.isAvailable : false;
+
+                const result = `✅ Availability Check:
+
+Window.quasar defined: ${isWalletDefined}
+Wallet.isAvailable: ${hasQuasarReady}
+Ready for testing: ${isWalletDefined && hasQuasarReady}`;
+
+                showResult('browserInfoResult', result);
+
+            } catch (error) {
+                showResult('browserInfoResult', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testMessageTypes() {
+            try {
+                await waitForWallet();
+
+                const messageTypes = window.quasar.availableMessageTypes;
+                const relayConfig = window.quasar.relayMapConfig;
+
+                const result = `✅ Debug Info:
+
+Available Message Types:
+${messageTypes.join('\n')}
+
+Relay Config:
+${JSON.stringify(relayConfig, null, 2)}`;
+
+                showResult('debugResult', result);
+
+            } catch (error) {
+                showResult('debugResult', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testWalletReady() {
+            const result = `✅ Wallet Status:
+
+typeof window.quasar: ${typeof window.quasar}
+quasar ready event fired: ${window.quasarReadyFired || 'Not tracked'}
+Extension injected: ${document.querySelector('script[src*="wallet-injection"]') ? 'Yes' : 'No'}`;
+
+            showResult('debugResult', result);
+        }
+
+        function clearResults() {
+            document.getElementById('browserInfoResult').style.display = 'none';
+            document.getElementById('debugResult').style.display = 'none';
+        }
+
+        function waitForWallet() {
+            return new Promise((resolve, reject) => {
+                if (window.quasar) {
+                    resolve(window.quasar);
+                } else {
+                    let attempts = 0;
+                    const maxAttempts = 50; // 5 seconds
+
+                    const checkWallet = () => {
+                        attempts++;
+                        if (window.quasar) {
+                            resolve(window.quasar);
+                        } else if (attempts >= maxAttempts) {
+                            reject(new Error('Wallet not available after 5 seconds'));
+                        } else {
+                            setTimeout(checkWallet, 100);
+                        }
+                    };
+
+                    checkWallet();
+                }
+            });
+        }
+
+        // Track ready event
+        window.addEventListener('quasar:ready', () => {
+            window.quasarReadyFired = true;
+            console.log('Quasar ready event received!');
+        });
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            setTimeout(testAvailability, 1000);
+        });
+    </script>
+</body>
+
+</html>

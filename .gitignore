@@ -31,3 +31,4 @@ secrets.*.js
 /tests/test_wallets/
 # lmao I have the private key hardcoded in some of the 23+ files. I spend soo much time debugging.
 /tests/private/
+QUASAR_*.md

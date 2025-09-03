@@ -13,7 +13,21 @@
         "activeTab",
         "tabs",
         "storage",
+        "notifications",
+        "windows",
         "<all_urls>"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.bundle.js"
+            ],
+            "run_at": "document_start",
+            "all_frames": false
+        }
     ],
     "browser_action": {
         "default_popup": "popup.html",
@@ -27,6 +41,7 @@
         "content.styles.css",
         "icon-128.png",
         "icon-34.png",
-        "tokens.xml"
+        "tokens.xml",
+        "wallet-injection.bundle.js"
     ]
 }

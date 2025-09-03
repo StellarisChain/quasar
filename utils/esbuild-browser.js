@@ -72,6 +72,7 @@ const entryPoints = {
     content: 'src/pages/Content/index.js',
     devtools: 'src/pages/Devtools/index.js',
     panel: 'src/pages/Panel/index.jsx',
+    'wallet-injection': 'src/lib/browser/wallet-injection.ts',
 };
 
 // Browser-specific build configuration
@@ -121,11 +122,16 @@ const buildConfig = {
     ],
 };
 
-// For Firefox, we might need different settings
+// Browser-specific adjustments for service worker compatibility
 if (browser === 'firefox') {
     // Firefox-specific adjustments
     buildConfig.format = 'iife'; // Firefox sometimes works better with IIFE
     buildConfig.splitting = false; // Disable code splitting for Firefox compatibility
+} else if (browser === 'chrome') {
+    // Chrome service workers have issues with ES modules and code splitting
+    // Use IIFE format to avoid import statement issues in service workers
+    buildConfig.format = 'iife';
+    buildConfig.splitting = false; // Disable code splitting to avoid import issues
 }
 
 esbuild.build(buildConfig).then(() => {

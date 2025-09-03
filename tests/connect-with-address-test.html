@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect with Address Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+        }
+
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #7c3aed;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .input-group {
+            margin: 10px 0;
+        }
+
+        input {
+            background: #1a1a1a;
+            border: 1px solid #555;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .result {
+            background: #1a1a1a;
+            border: 1px solid #555;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            border-color: #dc2626;
+            background: #7f1d1d20;
+        }
+
+        .success {
+            border-color: #16a34a;
+            background: #14532d20;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🌟 Quasar Wallet - Connect with Address Test</h1>
+    <p>This page tests the new functionality to connect to a specific wallet address.</p>
+
+    <div class="section">
+        <h2>Wallet Connection Status</h2>
+        <p><strong>Available:</strong> <span id="available">Checking...</span></p>
+        <p><strong>Connected:</strong> <span id="connected">Checking...</span></p>
+        <p><strong>Current Address:</strong> <span id="currentAddress">None</span></p>
+        <div id="accountsList" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Test: Connect to Any Wallet</h2>
+        <p>This will show the normal connection dialog with all available wallets.</p>
+        <button onclick="connectAnyWallet()">Connect to Any Wallet</button>
+        <div id="result1" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Test: Connect to Specific Address</h2>
+        <p>Enter a wallet address below to connect only to that specific wallet.</p>
+        <div class="input-group">
+            <input type="text" id="specificAddress" placeholder="Enter wallet address (e.g., 0x1234567890abcdef...)" />
+        </div>
+        <button onclick="connectSpecificWallet()">Connect to Specific Address</button>
+        <div id="result2" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Test: Connect to Non-existent Address</h2>
+        <p>This should show an error message indicating the wallet is not found.</p>
+        <button onclick="connectNonExistentWallet()">Connect to Non-existent Address</button>
+        <div id="result3" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>Utility Functions</h2>
+        <button onclick="disconnect()">Disconnect</button>
+        <button onclick="updateStatus()">Update Status</button>
+        <button onclick="getBrowserInfo()">Get Browser Info</button>
+        <div id="browserInfo" class="result"></div>
+    </div>
+
+    <script>
+        // Wait for the wallet to be available
+        function waitForWallet() {
+            return new Promise((resolve, reject) => {
+                if (window.quasar) {
+                    resolve(window.quasar);
+                    return;
+                }
+
+                // Listen for the ready event
+                window.addEventListener('quasar:ready', (event) => {
+                    resolve(event.detail.wallet);
+                });
+
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    reject(new Error('Quasar wallet not available after 10 seconds'));
+                }, 10000);
+            });
+        }
+
+        function updateResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${isError ? 'error' : 'success'}`;
+        }
+
+        function updateStatus() {
+            if (window.quasar) {
+                document.getElementById('available').textContent = 'Yes';
+                document.getElementById('connected').textContent = window.quasar.connected ? 'Yes' : 'No';
+                document.getElementById('currentAddress').textContent = window.quasar.address || 'None';
+                document.getElementById('accountsList').textContent = JSON.stringify(window.quasar.accountsList, null, 2);
+            } else {
+                document.getElementById('available').textContent = 'No';
+                document.getElementById('connected').textContent = 'No';
+                document.getElementById('currentAddress').textContent = 'None';
+                document.getElementById('accountsList').textContent = 'Wallet not available';
+            }
+        }
+
+        async function connectAnyWallet() {
+            try {
+                const wallet = await waitForWallet();
+                updateResult('result1', 'Connecting to any available wallet...');
+
+                const accounts = await wallet.connect();
+                updateResult('result1', `Success! Connected to: ${JSON.stringify(accounts, null, 2)}`);
+                updateStatus();
+            } catch (error) {
+                updateResult('result1', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function connectSpecificWallet() {
+            try {
+                const address = document.getElementById('specificAddress').value.trim();
+                if (!address) {
+                    updateResult('result2', 'Please enter a wallet address', true);
+                    return;
+                }
+
+                const wallet = await waitForWallet();
+                updateResult('result2', `Connecting to specific address: ${address}...`);
+
+                const accounts = await wallet.connect(address);
+                updateResult('result2', `Success! Connected to specific wallet: ${JSON.stringify(accounts, null, 2)}`);
+                updateStatus();
+            } catch (error) {
+                updateResult('result2', `Error: ${error.message}`, true);
+            }
+        }
+
+        async function connectNonExistentWallet() {
+            try {
+                const nonExistentAddress = '0x0000000000000000000000000000000000000000';
+
+                const wallet = await waitForWallet();
+                updateResult('result3', `Attempting to connect to non-existent address: ${nonExistentAddress}...`);
+
+                const accounts = await wallet.connect(nonExistentAddress);
+                updateResult('result3', `Unexpected success: ${JSON.stringify(accounts, null, 2)}`, true);
+                updateStatus();
+            } catch (error) {
+                updateResult('result3', `Expected error: ${error.message}`);
+            }
+        }
+
+        async function disconnect() {
+            try {
+                const wallet = await waitForWallet();
+                await wallet.disconnect();
+                updateStatus();
+                alert('Disconnected successfully');
+            } catch (error) {
+                alert(`Disconnect error: ${error.message}`);
+            }
+        }
+
+        async function getBrowserInfo() {
+            try {
+                const wallet = await waitForWallet();
+                const info = await wallet.getBrowserInfo();
+                updateResult('browserInfo', JSON.stringify(info, null, 2));
+            } catch (error) {
+                updateResult('browserInfo', `Error: ${error.message}`, true);
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus();
+
+            // Update status every 2 seconds
+            setInterval(updateStatus, 2000);
+        });
+
+        // Listen for wallet events
+        window.addEventListener('quasar:ready', () => {
+            console.log('Quasar wallet ready');
+
+            if (window.quasar) {
+                window.quasar.on('accountsChanged', (accounts) => {
+                    console.log('Accounts changed:', accounts);
+                    updateStatus();
+                });
+
+                window.quasar.on('connect', () => {
+                    console.log('Wallet connected');
+                    updateStatus();
+                });
+
+                window.quasar.on('disconnect', () => {
+                    console.log('Wallet disconnected');
+                    updateStatus();
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

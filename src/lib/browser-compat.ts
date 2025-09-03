@@ -55,6 +55,7 @@ export const browserAPI = {
     runtime: {
         sendMessage: browser.runtime.sendMessage,
         onMessage: browser.runtime.onMessage,
+        onInstalled: browser.runtime.onInstalled,
         getURL: browser.runtime.getURL,
         id: browser.runtime.id,
         lastError: browser.runtime.lastError,
@@ -75,6 +76,7 @@ export const browserAPI = {
 
     // Scripting API (Chrome MV3) or Tabs API (Firefox/Chrome MV2)
     scripting: {
+        available: !!(browser as any).scripting,
         executeScript: async (injection: any) => {
             if ((browser as any).scripting) {
                 // Chrome MV3
@@ -94,6 +96,19 @@ export const browserAPI = {
         request: browser.permissions.request,
         contains: browser.permissions.contains,
         remove: browser.permissions.remove,
+    },
+
+    // Windows API
+    windows: {
+        create: browser.windows.create,
+        update: browser.windows.update,
+        remove: browser.windows.remove,
+        get: browser.windows.get,
+        getAll: browser.windows.getAll,
+        getCurrent: browser.windows.getCurrent,
+        onCreated: browser.windows.onCreated,
+        onRemoved: browser.windows.onRemoved,
+        onFocusChanged: browser.windows.onFocusChanged,
     }
 };
 

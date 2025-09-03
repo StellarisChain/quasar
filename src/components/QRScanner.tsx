@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/library';
-import { XIcon, CameraIcon } from './Icons';
+import { XIcon, CameraIcon, CameraSwitchIcon } from './Icons';
 import { ReceiveQR } from '../pages/Popup/DataTypes';
 
 interface QRScannerProps {
@@ -13,6 +13,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState<string>('');
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+    const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+    const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
     const videoRef = useRef<HTMLVideoElement>(null);
     const codeReader = useRef<BrowserMultiFormatReader | null>(null);
 
@@ -46,7 +48,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
         setIsScanning(false);
     }, []);
 
-    const startScanning = useCallback(async () => {
+    const startScanning = useCallback(async (cameraIndex?: number) => {
         if (!codeReader.current || !videoRef.current) return;
 
         try {
@@ -59,8 +61,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
                 throw new Error('No camera devices found');
             }
 
-            // Use the first available camera (usually rear camera)
-            const selectedDevice = videoInputDevices[0];
+            // Store available cameras
+            setCameras(videoInputDevices);
+
+            // Use the specified camera index or the current one
+            const selectedIndex = cameraIndex !== undefined ? cameraIndex : currentCameraIndex;
+            const selectedDevice = videoInputDevices[selectedIndex] || videoInputDevices[0];
 
             await codeReader.current.decodeFromVideoDevice(
                 selectedDevice.deviceId,
@@ -79,7 +85,25 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
             setError('Failed to start camera. Please check your camera permissions.');
             setIsScanning(false);
         }
-    }, [handleScanResult]);
+    }, [handleScanResult, currentCameraIndex]);
+
+    const switchCamera = useCallback(async () => {
+        if (cameras.length <= 1) return;
+
+        // Stop current scanning
+        if (codeReader.current) {
+            codeReader.current.reset();
+        }
+
+        // Switch to next camera
+        const nextIndex = (currentCameraIndex + 1) % cameras.length;
+        setCurrentCameraIndex(nextIndex);
+
+        // Restart scanning with new camera
+        setTimeout(() => {
+            startScanning(nextIndex);
+        }, 100);
+    }, [cameras.length, currentCameraIndex, startScanning]);
 
     useEffect(() => {
         const initializeScanner = async () => {
@@ -188,6 +212,15 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
                                 <div className="scanner-overlay">
                                     <div className="scanner-frame"></div>
                                 </div>
+                                {cameras.length > 1 && (
+                                    <button
+                                        className="camera-switch-btn"
+                                        onClick={switchCamera}
+                                        title="Switch Camera"
+                                    >
+                                        <CameraSwitchIcon />
+                                    </button>
+                                )}
                                 {isScanning && (
                                     <div className="scanner-status">
                                         <p>Point your camera at a QR code</p>
