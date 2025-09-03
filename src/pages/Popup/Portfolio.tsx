@@ -28,6 +28,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
 }) => {
     // State
     const [loadingPrices, setLoadingPrices] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [lastFetch, setLastFetch] = useState<number | null>(null);
     const [showManageAssets, setShowManageAssets] = useState(false);
 
@@ -273,6 +274,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                 }
             } finally {
                 setLoadingPrices(false);
+                setIsInitialLoad(false); // Mark that initial load is complete
                 isFetchingRef.current = false;
             }
         };
@@ -442,7 +444,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     </button>
                     <div className="balance-label">Total Portfolio Value</div>
                     <div className="balance-amount" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {loadingPrices ? (
+                        {isInitialLoad && loadingPrices ? (
                             <span>Loading...</span>
                         ) : (
                             <>
