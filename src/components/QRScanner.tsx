@@ -213,8 +213,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose, isOpen })
                                     <div className="scanner-frame"></div>
                                 </div>
                                 {cameras.length > 1 && (
-                                    <button 
-                                        className="camera-switch-btn" 
+                                    <button
+                                        className="camera-switch-btn"
                                         onClick={switchCamera}
                                         title="Switch Camera"
                                     >

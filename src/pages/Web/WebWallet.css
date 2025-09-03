@@ -4,6 +4,10 @@
     min-height: 100vh;
     background: radial-gradient(ellipse at top, #1a1a2e 0%, #0f0f23 50%, #000 100%);
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
 }
 
 .web-wallet-mobile {
@@ -84,6 +88,50 @@
 .web-wallet-desktop .wallet-popup {
     position: relative;
     z-index: 1;
+    /* Override fixed height for web environment */
+    height: auto;
+    min-height: 600px;
+    max-height: 90vh;
+    /* Ensure proper scrolling */
+    overflow: visible;
+    /* Add some visual styling for desktop */
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure content area can scroll properly on desktop */
+.web-wallet-desktop .popup-content {
+    max-height: calc(90vh - 140px); /* Account for header and margins */
+    overflow-y: auto;
+}
+
+/* Responsive adjustments for different screen sizes */
+@media (min-width: 1200px) {
+    .web-wallet-desktop .wallet-popup {
+        max-height: 80vh;
+    }
+    
+    .web-wallet-desktop .popup-content {
+        max-height: calc(80vh - 140px);
+    }
+}
+
+@media (max-width: 768px) {
+    .web-wallet-desktop {
+        align-items: flex-start;
+        padding: 1rem;
+    }
+    
+    .web-wallet-desktop .wallet-popup {
+        max-height: 95vh;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 360px;
+    }
+    
+    .web-wallet-desktop .popup-content {
+        max-height: calc(95vh - 140px);
+    }
 }
 
 /* Smooth transitions for responsive changes */
