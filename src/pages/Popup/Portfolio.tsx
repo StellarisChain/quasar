@@ -12,6 +12,7 @@ import { ReceiveModal } from '../../components/ReceiveModal';
 import { WalletUnlockModal } from '../../components/WalletUnlockModal';
 import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
+import { fetchMultipleStellarisChainPrices, isStellarisBasedChain } from '../../lib/stellaris_price_api';
 import './Popup.css';
 
 // Utility to shorten address
@@ -153,9 +154,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     if (symbols.length === 0) {
                         return;
                     }
-                    let priceData: Record<string, { price: number; change24h: number }> = {};
+                    let priceData: Record<string, { price: number; change24h: number; chartData?: number[] }> = {};
                     try {
-                        // Fetch prices for all symbols
+                        // Fetch prices for all symbols from CEX
                         const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
                         priceData = await res.json();
                         // If the stub returns nothing or invalid, fallback
@@ -163,18 +164,52 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             throw new Error('Stub API returned no data');
                         }
                     } catch (e) {
-                        // fallback: use default stub prices
+                        console.warn('CEX API failed, using fallback prices:', e);
                         priceData = {};
-                        symbols.forEach(symbol => {
+                    }
+
+                    // Collect Stellaris-based chains that need price data
+                    const tokenFromXMLData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
+                    const stellarisChainNodeMap: Record<string, string> = {};
+                    
+                    // Identify chains missing from CEX that are Stellaris-based
+                    for (const wallet of wallets) {
+                        for (const chain of wallet.chains || []) {
+                            if (!priceData[chain.symbol]) {
+                                const tokenData = tokenFromXMLData.find(token => token.Symbol === chain.symbol);
+                                if (tokenData?.Node && isStellarisBasedChain(tokenData.Node)) {
+                                    stellarisChainNodeMap[chain.symbol] = tokenData.Node;
+                                }
+                            }
+                        }
+                    }
+
+                    // Fetch prices from Stellaris nodes for missing data
+                    if (Object.keys(stellarisChainNodeMap).length > 0) {
+                        console.log(`Fetching prices for ${Object.keys(stellarisChainNodeMap).length} Stellaris-based chains:`, Object.keys(stellarisChainNodeMap));
+                        const stellarisPrices = await fetchMultipleStellarisChainPrices(stellarisChainNodeMap);
+                        
+                        // Merge Stellaris prices into priceData
+                        Object.entries(stellarisPrices).forEach(([symbol, stellarisData]) => {
                             priceData[symbol] = {
-                                price: Math.random() * 100 + 1, // Random price between 1 and 100
-                                change24h: (Math.random() - 0.5) * 2 //
+                                price: stellarisData.price,
+                                change24h: stellarisData.change24h,
+                                chartData: stellarisData.historicalPrices
                             };
                         });
                     }
+
+                    // Fill in any remaining missing symbols with random data as final fallback
+                    symbols.forEach(symbol => {
+                        if (!priceData[symbol]) {
+                            priceData[symbol] = {
+                                price: Math.random() * 100 + 1, // Random price between 1 and 100
+                                change24h: (Math.random() - 0.5) * 2 // Random change between -1% and 1%
+                            };
+                        }
+                    });
                     // Update wallets with price info
                     const updatedWallets = await Promise.all(wallets.map(async wallet => {
-                        const tokenFromXMLData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
                         const chains = await Promise.all(
                             (wallet.chains ?? []).map(async chain => {
                                 const chainPrice = priceData[chain.symbol]?.price ?? 0;
@@ -220,18 +255,24 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 // Calculate fiatValue for chain
                                 const fiatValue = chainPrice * parseFloat(chain.balance.replace(/,/g, ''));
 
-                                // api.cex.connor33341.dev is a stub rn, so we generate plausible data
-                                // Generate plausible chartData as a random walk based on price
-                                const chartPoints = 24; // e.g., 24 points for 24h
-                                const base = chainPrice || 1;
-                                let last = base * (1 - chainChange / 200); // start near price, offset by half 24h change
-                                const chartData = [last];
-                                for (let i = 1; i < chartPoints; i++) {
-                                    // Simulate a small random walk, trending toward the current price
-                                    const drift = (base - last) * 0.1; // pull toward base price
-                                    const noise = (Math.random() - 0.5) * base * 0.02; // up to ±2% noise
-                                    last = Math.max(0, last + drift + noise);
-                                    chartData.push(Number(last.toFixed(4)));
+                                // Use real chart data from Stellaris nodes if available, otherwise generate plausible data
+                                let chartData: number[];
+                                if (priceData[chain.symbol]?.chartData && priceData[chain.symbol].chartData!.length > 0) {
+                                    // Use real historical data from Stellaris node
+                                    chartData = priceData[chain.symbol].chartData!;
+                                } else {
+                                    // Generate plausible chartData as a random walk based on price (fallback)
+                                    const chartPoints = 24; // e.g., 24 points for 24h
+                                    const base = chainPrice || 1;
+                                    let last = base * (1 - chainChange / 200); // start near price, offset by half 24h change
+                                    chartData = [last];
+                                    for (let i = 1; i < chartPoints; i++) {
+                                        // Simulate a small random walk, trending toward the current price
+                                        const drift = (base - last) * 0.1; // pull toward base price
+                                        const noise = (Math.random() - 0.5) * base * 0.02; // up to ±2% noise
+                                        last = Math.max(0, last + drift + noise);
+                                        chartData.push(Number(last.toFixed(4)));
+                                    }
                                 }
 
                                 return {
