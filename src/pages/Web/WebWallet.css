@@ -101,7 +101,8 @@
 
 /* Ensure content area can scroll properly on desktop */
 .web-wallet-desktop .popup-content {
-    max-height: calc(90vh - 140px); /* Account for header and margins */
+    max-height: calc(90vh - 140px);
+    /* Account for header and margins */
     overflow-y: auto;
 }
 
@@ -110,7 +111,7 @@
     .web-wallet-desktop .wallet-popup {
         max-height: 80vh;
     }
-    
+
     .web-wallet-desktop .popup-content {
         max-height: calc(80vh - 140px);
     }
@@ -121,14 +122,14 @@
         align-items: flex-start;
         padding: 1rem;
     }
-    
+
     .web-wallet-desktop .wallet-popup {
         max-height: 95vh;
         border-radius: 8px;
         width: 100%;
         max-width: 360px;
     }
-    
+
     .web-wallet-desktop .popup-content {
         max-height: calc(95vh - 140px);
     }
