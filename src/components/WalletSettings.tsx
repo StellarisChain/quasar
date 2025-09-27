@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon, DownloadIcon, LockClosedIcon } from './Icons';
 import { Wallet } from '../pages/Popup/DataTypes';
 import { exportWallet, ExportOptions, validateExportOptions } from '../lib/wallet_export_utils';
-import { encryptWallet, changeWalletPassword, lockWallet, getWalletCredentials, isWalletLocked } from '../pages/Popup/WalletUtils';
+import { encryptWallet, changeWalletPassword, lockWallet, getWalletCredentials, isWalletLocked, saveWallets, getStoredWallets } from '../pages/Popup/WalletUtils';
 import { testCrypto } from '../lib/crypto';
 import { WalletUnlockModal } from './WalletUnlockModal';
 import './WalletSettings.css';
@@ -11,9 +11,19 @@ interface WalletSettingsModalProps {
     wallet: Wallet;
     onClose: () => void;
     onSave: (updatedWallet: Wallet) => void;
+    onDelete?: (wallet: Wallet) => void;
+    allWallets?: Wallet[];
+    onWalletsChange?: (wallets: Wallet[]) => void;
 }
 
-export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet, onClose, onSave }) => {
+export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ 
+    wallet, 
+    onClose, 
+    onSave, 
+    onDelete, 
+    allWallets, 
+    onWalletsChange 
+}) => {
     const [editingName, setEditingName] = useState(false);
     const [walletName, setWalletName] = useState<string>(wallet.name ?? '');
     const [showPrivateKey, setShowPrivateKey] = useState(false);
@@ -40,6 +50,11 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
     // Wallet unlock states
     const [showUnlockModal, setShowUnlockModal] = useState(false);
     const [walletIsLocked, setWalletIsLocked] = useState(false);
+
+    // Delete wallet states
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+    const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+    const [deleting, setDeleting] = useState(false);
 
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +169,46 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
             setError('Failed to export wallet');
         } finally {
             setExporting(false);
+        }
+    };
+
+    const handleDeleteWallet = async () => {
+        // Require exact wallet name confirmation
+        const requiredText = wallet.name || 'Unnamed Wallet';
+        if (deleteConfirmationText !== requiredText) {
+            setError('Please type the wallet name exactly as shown to confirm deletion.');
+            return;
+        }
+
+        try {
+            setDeleting(true);
+            setError('');
+
+            // Use onDelete callback if provided
+            if (onDelete) {
+                await onDelete(wallet);
+            } else {
+                // Fallback to direct wallet management
+                let walletsToUpdate: Wallet[];
+                
+                if (allWallets && onWalletsChange) {
+                    // Remove wallet from provided wallets array
+                    walletsToUpdate = allWallets.filter((w: Wallet) => w.id !== wallet.id);
+                    onWalletsChange(walletsToUpdate);
+                } else {
+                    // Get current wallets from storage and remove this wallet
+                    const currentWallets = getStoredWallets();
+                    walletsToUpdate = currentWallets.filter((w: Wallet) => w.id !== wallet.id);
+                    saveWallets(walletsToUpdate);
+                }
+            }
+            
+            onClose(); // Close the modal after successful deletion
+        } catch (error) {
+            console.error('Delete failed:', error);
+            setError('Failed to delete wallet');
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -1166,9 +1221,196 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({ wallet
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
 
+                    {/* Delete Wallet Section */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#9ca3af',
+                            marginBottom: '8px'
+                        }}>
+                            Danger Zone
+                        </label>
+                            <div style={{
+                                background: '#1f1416',
+                                border: '1px solid #7f1d1d',
+                                borderRadius: '8px',
+                                padding: '16px'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    marginBottom: '8px'
+                                }}>
+                                    <span style={{ fontSize: '16px' }}>🗑️</span>
+                                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#ef4444' }}>
+                                        Delete Wallet
+                                    </h4>
+                                </div>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: '#fca5a5',
+                                    margin: '0 0 16px 0',
+                                    lineHeight: '1.4'
+                                }}>
+                                    ⚠️ This action cannot be undone. Once deleted, you will lose access to this wallet forever unless you have backed up your private key or seed phrase.
+                                </p>
+
+                                {!showDeleteConfirmation ? (
+                                    <button
+                                        onClick={() => setShowDeleteConfirmation(true)}
+                                        style={{
+                                            background: '#dc2626',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            padding: '12px 16px',
+                                            color: 'white',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            width: '100%'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#b91c1c'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = '#dc2626'}
+                                    >
+                                        Delete This Wallet
+                                    </button>
+                                ) : (
+                                    <div style={{
+                                        background: '#7f1d1d',
+                                        border: '1px solid #dc2626',
+                                        borderRadius: '8px',
+                                        padding: '16px'
+                                    }}>
+                                        <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#fef2f2' }}>
+                                            Confirm Wallet Deletion
+                                        </h5>
+                                        
+                                        <p style={{
+                                            fontSize: '12px',
+                                            color: '#fca5a5',
+                                            margin: '0 0 12px 0',
+                                            lineHeight: '1.4'
+                                        }}>
+                                            To confirm deletion, type the wallet name exactly as shown below:
+                                        </p>
+
+                                        <div style={{
+                                            background: '#1a1a1a',
+                                            border: '1px solid #3a3a3a',
+                                            borderRadius: '6px',
+                                            padding: '8px 12px',
+                                            marginBottom: '12px',
+                                            textAlign: 'center'
+                                        }}>
+                                            <code style={{
+                                                color: '#ef4444',
+                                                fontSize: '14px',
+                                                fontWeight: '600'
+                                            }}>
+                                                {wallet.name || 'Unnamed Wallet'}
+                                            </code>
+                                        </div>
+
+                                        <input
+                                            type="text"
+                                            value={deleteConfirmationText}
+                                            onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                                            placeholder="Type wallet name to confirm"
+                                            style={{
+                                                width: '100%',
+                                                padding: '8px 12px',
+                                                background: '#1a1a1a',
+                                                border: error ? '1px solid #ef4444' : '1px solid #3a3a3a',
+                                                borderRadius: '6px',
+                                                color: '#fff',
+                                                fontSize: '14px',
+                                                outline: 'none',
+                                                marginBottom: '12px'
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleDeleteWallet();
+                                                if (e.key === 'Escape') {
+                                                    setShowDeleteConfirmation(false);
+                                                    setDeleteConfirmationText('');
+                                                    setError('');
+                                                }
+                                            }}
+                                        />
+
+                                        {error && deleteConfirmationText && (
+                                            <div style={{
+                                                color: '#fca5a5',
+                                                fontSize: '12px',
+                                                marginBottom: '12px'
+                                            }}>
+                                                {error}
+                                            </div>
+                                        )}
+
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                onClick={handleDeleteWallet}
+                                                disabled={deleting || deleteConfirmationText !== (wallet.name || 'Unnamed Wallet')}
+                                                style={{
+                                                    background: deleting ? '#374151' : (deleteConfirmationText === (wallet.name || 'Unnamed Wallet') ? '#dc2626' : '#4b5563'),
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    padding: '8px 16px',
+                                                    color: 'white',
+                                                    fontSize: '14px',
+                                                    fontWeight: '500',
+                                                    cursor: (deleting || deleteConfirmationText !== (wallet.name || 'Unnamed Wallet')) ? 'not-allowed' : 'pointer',
+                                                    transition: 'background 0.2s',
+                                                    flex: 1
+                                                }}
+                                            >
+                                                {deleting ? 'Deleting...' : 'Delete Wallet Forever'}
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setShowDeleteConfirmation(false);
+                                                    setDeleteConfirmationText('');
+                                                    setError('');
+                                                }}
+                                                disabled={deleting}
+                                                style={{
+                                                    background: 'none',
+                                                    border: '1px solid #4b5563',
+                                                    borderRadius: '6px',
+                                                    padding: '8px 16px',
+                                                    color: '#9ca3af',
+                                                    fontSize: '14px',
+                                                    fontWeight: '500',
+                                                    cursor: deleting ? 'not-allowed' : 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (!deleting) {
+                                                        e.currentTarget.style.borderColor = '#6b7280';
+                                                        e.currentTarget.style.color = '#e5e7eb';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (!deleting) {
+                                                        e.currentTarget.style.borderColor = '#4b5563';
+                                                        e.currentTarget.style.color = '#9ca3af';
+                                                    }
+                                                }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             {/* Wallet Unlock Modal */}
             {showUnlockModal && wallet.isEncrypted && (
                 <WalletUnlockModal
