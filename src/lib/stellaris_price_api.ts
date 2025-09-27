@@ -55,17 +55,17 @@ export async function fetchStellarisChainPrice(nodeUrl: string): Promise<Stellar
 
         // Extract historical prices for chart data (default to 24 points if available)
         const historicalPrices = data.historical_prices || [];
-        
+
         // If no historical data, generate a simple chart based on current price and change
         let chartData: number[] = historicalPrices;
         if (chartData.length === 0) {
             const currentPrice = data.price;
             const change24h = data.change_24h || 0;
-            
+
             // Generate 24 points representing hourly prices over 24h
             const startPrice = currentPrice / (1 + change24h / 100); // Calculate starting price 24h ago
             chartData = [];
-            
+
             for (let i = 0; i < 24; i++) {
                 // Simple linear progression from start to current price
                 const progress = i / 23; // 0 to 1
@@ -111,7 +111,7 @@ export async function fetchMultipleStellarisChainPrices(
             priceMap[result.value.symbol] = result.value.priceData;
         } else {
             const symbol = Object.keys(chainNodeMap)[index];
-            console.warn(`Failed to fetch price data for ${symbol}:`, 
+            console.warn(`Failed to fetch price data for ${symbol}:`,
                 result.status === 'rejected' ? result.reason : 'No data returned');
         }
     });
@@ -126,7 +126,7 @@ export async function fetchMultipleStellarisChainPrices(
  */
 export function isStellarisBasedChain(nodeUrl: string): boolean {
     if (!nodeUrl) return false;
-    
+
     // Common patterns for Stellaris-based chains
     const stellarisPatterns = [
         'stellaris',

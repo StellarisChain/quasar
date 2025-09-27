@@ -171,7 +171,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     // Collect Stellaris-based chains that need price data
                     const tokenFromXMLData: TokenFromXML[] = await loadTokensXmlAsJson('tokens.xml');
                     const stellarisChainNodeMap: Record<string, string> = {};
-                    
+
                     // Identify chains missing from CEX that are Stellaris-based
                     for (const wallet of wallets) {
                         for (const chain of wallet.chains || []) {
@@ -188,7 +188,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     if (Object.keys(stellarisChainNodeMap).length > 0) {
                         console.log(`Fetching prices for ${Object.keys(stellarisChainNodeMap).length} Stellaris-based chains:`, Object.keys(stellarisChainNodeMap));
                         const stellarisPrices = await fetchMultipleStellarisChainPrices(stellarisChainNodeMap);
-                        
+
                         // Merge Stellaris prices into priceData
                         Object.entries(stellarisPrices).forEach(([symbol, stellarisData]) => {
                             priceData[symbol] = {
