@@ -48,7 +48,7 @@
         <Name>Dinero</Name>
         <Symbol>DIN</Symbol>
         <Color>#5DE2E7</Color>
-        <Node>http://dinero.mine.bz/</Node>
+        <Node>http://dinero.mine.bz:3006</Node>
         <TokenSupport>false</TokenSupport>
         <Curve>p256</Curve>
     </Token>
