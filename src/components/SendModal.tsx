@@ -890,6 +890,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
         </div>
     );
 
+    const truncateHash = (hash: string, maxLength: number = 20): string => {
+        if (hash.length <= maxLength) return hash;
+        const halfLength = Math.floor((maxLength - 3) / 2);
+        return `${hash.substring(0, halfLength)}...${hash.substring(hash.length - halfLength)}`;
+    };
+
     const renderSuccess = () => (
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{
@@ -923,14 +929,25 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
                     Transaction Hash
                 </div>
-                <div style={{
-                    fontSize: '12px',
-                    color: '#8b5cf6',
-                    fontFamily: 'monospace',
-                    wordBreak: 'break-all'
-                }}>
-                    {transactionHash}
-                </div>
+                <a
+                    href={`https://stellaris-explorer.pages.dev/tx/${transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={transactionHash}
+                    style={{
+                        fontSize: '12px',
+                        color: '#8b5cf6',
+                        fontFamily: 'monospace',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        display: 'block',
+                        transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#a78bfa'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#8b5cf6'}
+                >
+                    {truncateHash(transactionHash)}
+                </a>
             </div>
         </div>
     );
