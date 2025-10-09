@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Wallet Filter Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .test-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-card h2 {
+            color: #2d3748;
+            margin-bottom: 12px;
+            font-size: 20px;
+        }
+
+        .test-card p {
+            color: #718096;
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .filter-display {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .filter-display pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #2d3748;
+        }
+
+        .test-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .test-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a67d8, #6b46c1);
+            transform: translateY(-1px);
+        }
+
+        .test-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .result.success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #68d391;
+            display: block;
+        }
+
+        .result.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #fc8181;
+            display: block;
+        }
+
+        .result-content {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .status-bar {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-label {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .status-value {
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fc8181;
+        }
+
+        .status-indicator.connected {
+            background: #68d391;
+        }
+
+        .disconnect-btn {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .disconnect-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .custom-filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .custom-filter-section h2 {
+            color: #2d3748;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #2d3748;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            display: block;
+            color: #718096;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            font-size: 14px;
+            color: #4a5568;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Wallet Filter Test</h1>
+            <p>Test Quasar's wallet filtering capabilities</p>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span class="status-label">Status:</span>
+                <span class="status-value" id="statusText">Disconnected</span>
+            </div>
+            <div class="status-item" id="addressDisplay" style="display: none;">
+                <span class="status-label">Address:</span>
+                <span class="status-value" id="addressValue"></span>
+            </div>
+            <button class="disconnect-btn" id="disconnectBtn" style="display: none;">Disconnect</button>
+        </div>
+
+        <!-- Pre-defined Test Cases -->
+        <div class="test-grid">
+            <!-- Test 1: No Filter -->
+            <div class="test-card">
+                <h2>✨ Basic Connection</h2>
+                <p>Connect without any filters. Shows all available wallets.</p>
+                <div class="filter-display">
+                    <pre>{ /* no filter */ }</pre>
+                </div>
+                <button class="test-btn" onclick="testBasicConnect()">Connect (No Filter)</button>
+                <div class="result" id="result-basic"></div>
+            </div>
+
+            <!-- Test 2: Curve Filter (P256) -->
+            <div class="test-card">
+                <h2>🔐 P256 Curve Only</h2>
+                <p>Filter to only show wallets using the P256 elliptic curve.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    curves: ['p256']
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testP256Filter()">Connect (P256 Only)</button>
+                <div class="result" id="result-p256"></div>
+            </div>
+
+            <!-- Test 3: Curve Filter (secp256k1) -->
+            <div class="test-card">
+                <h2>🔑 Secp256k1 Curve Only</h2>
+                <p>Filter to only show wallets using the secp256k1 curve.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    curves: ['secp256k1']
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testSecp256k1Filter()">Connect (Secp256k1 Only)</button>
+                <div class="result" id="result-secp256k1"></div>
+            </div>
+
+            <!-- Test 4: Asset Filter -->
+            <div class="test-card">
+                <h2>💎 Ethereum Assets</h2>
+                <p>Filter to only show wallets that have Ethereum or ETH-based assets.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    assets: ['ETH', 'USDC', 'USDT']
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testEthAssetFilter()">Connect (ETH Assets)</button>
+                <div class="result" id="result-eth-asset"></div>
+            </div>
+
+            <!-- Test 5: Stellaris Filter -->
+            <div class="test-card">
+                <h2>⭐ Stellaris Assets</h2>
+                <p>Filter to only show wallets that have Stellaris assets.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    assets: ['STRX', 'STE']
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testStellarisFilter()">Connect (Stellaris)</button>
+                <div class="result" id="result-stellaris"></div>
+            </div>
+
+            <!-- Test 6: Chain Filter -->
+            <div class="test-card">
+                <h2>⛓️ Ethereum Chain</h2>
+                <p>Filter to only show wallets that support the Ethereum chain.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    chains: ['Ethereum']
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testEthereumChainFilter()">Connect (Ethereum Chain)</button>
+                <div class="result" id="result-eth-chain"></div>
+            </div>
+
+            <!-- Test 7: Min Balance Filter -->
+            <div class="test-card">
+                <h2>💰 Minimum Balance</h2>
+                <p>Filter to only show wallets with at least $100 total balance.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    minBalance: 100
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testMinBalanceFilter()">Connect (Min $100)</button>
+                <div class="result" id="result-min-balance"></div>
+            </div>
+
+            <!-- Test 8: Combined Filters -->
+            <div class="test-card">
+                <h2>🎯 Combined Filters</h2>
+                <p>Multiple filters: P256 curve + Stellaris assets + $50 minimum.</p>
+                <div class="filter-display">
+                    <pre>{
+  filter: {
+    curves: ['p256'],
+    assets: ['STRX', 'STE'],
+    minBalance: 50
+  }
+}</pre>
+                </div>
+                <button class="test-btn" onclick="testCombinedFilter()">Connect (Combined)</button>
+                <div class="result" id="result-combined"></div>
+            </div>
+        </div>
+
+        <!-- Custom Filter Builder -->
+        <div class="custom-filter-section">
+            <h2>🛠️ Custom Filter Builder</h2>
+            <p style="color: #718096; margin-bottom: 24px;">Build your own custom filter with specific criteria.</p>
+
+            <div class="form-group">
+                <label>Curve Types</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="curve-secp256k1" value="secp256k1" checked>
+                        <label for="curve-secp256k1">secp256k1</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="curve-p256" value="p256" checked>
+                        <label for="curve-p256">p256</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="custom-assets">Assets (comma-separated)</label>
+                <input type="text" id="custom-assets" placeholder="e.g., ETH, BTC, STRX">
+                <small>Leave empty to allow all assets</small>
+            </div>
+
+            <div class="form-group">
+                <label for="custom-chains">Chains (comma-separated)</label>
+                <input type="text" id="custom-chains" placeholder="e.g., Ethereum, Stellaris, Bitcoin">
+                <small>Leave empty to allow all chains</small>
+            </div>
+
+            <div class="form-group">
+                <label for="custom-min-balance">Minimum Balance (USD)</label>
+                <input type="number" id="custom-min-balance" min="0" step="0.01" placeholder="0">
+                <small>Leave empty or 0 for no minimum</small>
+            </div>
+
+            <button class="test-btn" onclick="testCustomFilter()">Connect with Custom Filter</button>
+            <div class="result" id="result-custom"></div>
+        </div>
+    </div>
+
+    <script>
+        let wallet = null;
+        let isConnected = false;
+
+        // Wait for Quasar wallet
+        async function waitForWallet(timeout = 5000) {
+            const startTime = Date.now();
+            while (!window.quasar) {
+                if (Date.now() - startTime > timeout) {
+                    throw new Error('Quasar wallet not detected. Please install the extension.');
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            return window.quasar;
+        }
+
+        // Update status bar
+        function updateStatus(connected, address = null) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const addressDisplay = document.getElementById('addressDisplay');
+            const addressValue = document.getElementById('addressValue');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+
+            isConnected = connected;
+
+            if (connected) {
+                indicator.classList.add('connected');
+                statusText.textContent = 'Connected';
+                if (address) {
+                    addressDisplay.style.display = 'flex';
+                    addressValue.textContent = address.substring(0, 10) + '...' + address.substring(address.length - 8);
+                }
+                disconnectBtn.style.display = 'block';
+            } else {
+                indicator.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+                addressDisplay.style.display = 'none';
+                disconnectBtn.style.display = 'none';
+            }
+        }
+
+        // Show result
+        function showResult(elementId, success, message, data = null) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.className = `result ${success ? 'success' : 'error'}`;
+            resultElement.innerHTML = `
+                <strong>${success ? '✅ Success' : '❌ Error'}</strong>
+                <div>${message}</div>
+                ${data ? `<div class="result-content">${JSON.stringify(data, null, 2)}</div>` : ''}
+            `;
+        }
+
+        // Test functions
+        async function testBasicConnect() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect();
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-basic', true, 'Connected successfully!', accounts);
+            } catch (error) {
+                showResult('result-basic', false, error.message);
+            }
+        }
+
+        async function testP256Filter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        curves: ['p256']
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-p256', true, 'Connected to P256 wallet!', accounts);
+            } catch (error) {
+                showResult('result-p256', false, error.message);
+            }
+        }
+
+        async function testSecp256k1Filter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        curves: ['secp256k1']
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-secp256k1', true, 'Connected to Secp256k1 wallet!', accounts);
+            } catch (error) {
+                showResult('result-secp256k1', false, error.message);
+            }
+        }
+
+        async function testEthAssetFilter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        assets: ['ETH', 'USDC', 'USDT']
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-eth-asset', true, 'Connected to wallet with ETH assets!', accounts);
+            } catch (error) {
+                showResult('result-eth-asset', false, error.message);
+            }
+        }
+
+        async function testStellarisFilter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        assets: ['STRX', 'STE']
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-stellaris', true, 'Connected to wallet with Stellaris assets!', accounts);
+            } catch (error) {
+                showResult('result-stellaris', false, error.message);
+            }
+        }
+
+        async function testEthereumChainFilter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        chains: ['Ethereum']
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-eth-chain', true, 'Connected to wallet with Ethereum chain!', accounts);
+            } catch (error) {
+                showResult('result-eth-chain', false, error.message);
+            }
+        }
+
+        async function testMinBalanceFilter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        minBalance: 100
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-min-balance', true, 'Connected to wallet with min $100 balance!', accounts);
+            } catch (error) {
+                showResult('result-min-balance', false, error.message);
+            }
+        }
+
+        async function testCombinedFilter() {
+            try {
+                wallet = await waitForWallet();
+                const accounts = await wallet.connect({
+                    filter: {
+                        curves: ['p256'],
+                        assets: ['STRX', 'STE'],
+                        minBalance: 50
+                    }
+                });
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-combined', true, 'Connected with combined filters!', accounts);
+            } catch (error) {
+                showResult('result-combined', false, error.message);
+            }
+        }
+
+        async function testCustomFilter() {
+            try {
+                wallet = await waitForWallet();
+
+                // Build filter from form
+                const filter = {};
+
+                // Curves
+                const curves = [];
+                if (document.getElementById('curve-secp256k1').checked) curves.push('secp256k1');
+                if (document.getElementById('curve-p256').checked) curves.push('p256');
+                if (curves.length > 0) filter.curves = curves;
+
+                // Assets
+                const assetsInput = document.getElementById('custom-assets').value.trim();
+                if (assetsInput) {
+                    filter.assets = assetsInput.split(',').map(a => a.trim()).filter(a => a);
+                }
+
+                // Chains
+                const chainsInput = document.getElementById('custom-chains').value.trim();
+                if (chainsInput) {
+                    filter.chains = chainsInput.split(',').map(c => c.trim()).filter(c => c);
+                }
+
+                // Min Balance
+                const minBalance = parseFloat(document.getElementById('custom-min-balance').value);
+                if (!isNaN(minBalance) && minBalance > 0) {
+                    filter.minBalance = minBalance;
+                }
+
+                // Connect
+                const params = Object.keys(filter).length > 0 ? { filter } : undefined;
+                const accounts = await wallet.connect(params);
+                
+                updateStatus(true, accounts[0]?.address);
+                showResult('result-custom', true, 'Connected with custom filter!', { filter, accounts });
+            } catch (error) {
+                showResult('result-custom', false, error.message);
+            }
+        }
+
+        // Disconnect
+        document.getElementById('disconnectBtn').addEventListener('click', async () => {
+            if (wallet && isConnected) {
+                try {
+                    await wallet.disconnect();
+                    updateStatus(false);
+                    
+                    // Clear all results
+                    document.querySelectorAll('.result').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                } catch (error) {
+                    console.error('Disconnect error:', error);
+                }
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            waitForWallet().then(() => {
+                console.log('Quasar wallet detected and ready!');
+            }).catch(error => {
+                console.error('Quasar wallet not detected:', error);
+            });
+        });
+    </script>
+</body>
+
+</html>

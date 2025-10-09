@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, CheckIcon } from '../../components/Icons';
 import { walletOperations } from './WalletOperations';
+import { Wallet } from './DataTypes';
 import './RequestDialog.css';
+
+export interface WalletFilter {
+    curves?: string[];
+    assets?: string[];
+    chains?: string[];
+    minBalance?: number;
+}
 
 export interface RequestData {
     type: 'CONNECT' | 'TRANSACTION' | 'SIGN_MESSAGE' | 'GET_WALLET_DATA';
@@ -14,6 +22,7 @@ export interface RequestData {
     connectionParams?: {
         address?: string;
         return_private_key?: boolean;
+        filter?: WalletFilter;
     };
 }
 
@@ -24,6 +33,86 @@ interface RequestDialogProps {
     onApprove: (result: any) => void;
     onReject: (reason?: string) => void;
     onClose: () => void;
+}
+
+/**
+ * Filters wallets based on the provided filter criteria
+ */
+function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
+    if (!filter || !wallets || wallets.length === 0) {
+        return wallets;
+    }
+
+    return wallets.filter(wallet => {
+        // Filter by curve
+        if (filter.curves && filter.curves.length > 0) {
+            const walletCurve = wallet.curve || 'secp256k1';
+            if (!filter.curves.includes(walletCurve)) {
+                return false;
+            }
+        }
+
+        // Filter by chains
+        if (filter.chains && filter.chains.length > 0) {
+            const walletChains = wallet.chains?.map((c: any) => c.name) || [];
+            const hasMatchingChain = filter.chains.some(chain => 
+                walletChains.some((wc: string) => wc.toLowerCase() === chain.toLowerCase())
+            );
+            if (!hasMatchingChain) {
+                return false;
+            }
+        }
+
+        // Filter by assets
+        if (filter.assets && filter.assets.length > 0) {
+            const walletAssets: string[] = [];
+            
+            // Collect all asset symbols from chains
+            wallet.chains?.forEach((chain: any) => {
+                if (chain.symbol) {
+                    walletAssets.push(chain.symbol.toUpperCase());
+                }
+                // Also check tokens within chains
+                chain.tokens?.forEach((token: any) => {
+                    if (token.symbol) {
+                        walletAssets.push(token.symbol.toUpperCase());
+                    }
+                });
+            });
+
+            const hasMatchingAsset = filter.assets.some(asset => 
+                walletAssets.includes(asset.toUpperCase())
+            );
+            if (!hasMatchingAsset) {
+                return false;
+            }
+        }
+
+        // Filter by minimum balance
+        if (filter.minBalance !== undefined && filter.minBalance > 0) {
+            let totalBalance = 0;
+            
+            // Sum up all fiat values
+            wallet.chains?.forEach((chain: any) => {
+                if (chain.fiatValue) {
+                    totalBalance += parseFloat(chain.fiatValue) || 0;
+                }
+                // Also check tokens within chains
+                chain.tokens?.forEach((token: any) => {
+                    // If token has a price, calculate its fiat value
+                    if (token.price && token.balance) {
+                        totalBalance += parseFloat(token.balance) * parseFloat(token.price);
+                    }
+                });
+            });
+
+            if (totalBalance < filter.minBalance) {
+                return false;
+            }
+        }
+
+        return true;
+    });
 }
 
 export const RequestDialog: React.FC<RequestDialogProps> = ({
@@ -40,14 +129,20 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [selectedWalletForRequest, setSelectedWalletForRequest] = useState(selectedWallet);
     const [confirmationPhrase, setConfirmationPhrase] = useState('');
+    const [filteredWallets, setFilteredWallets] = useState<any[]>(wallets);
 
     // Initialize selected wallet for request based on the type and available wallets
     useEffect(() => {
         if (requestData) {
+            // Apply filters if provided
+            const filter = requestData.connectionParams?.filter;
+            const walletsToConsider = filterWallets(wallets, filter);
+            setFilteredWallets(walletsToConsider);
+
             if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
                 // If a specific address is requested, find that wallet
                 if (requestData.requestedAddress) {
-                    const requestedWallet = wallets.find(wallet =>
+                    const requestedWallet = walletsToConsider.find(wallet =>
                         wallet.address === requestData.requestedAddress ||
                         wallet.address?.toLowerCase() === requestData.requestedAddress?.toLowerCase()
                     );
@@ -55,17 +150,24 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     if (requestedWallet) {
                         setSelectedWalletForRequest(requestedWallet);
                     } else {
-                        // Wallet with requested address not found
+                        // Wallet with requested address not found (or doesn't match filters)
                         setSelectedWalletForRequest(null);
-                        setError(`Wallet with address ${requestData.requestedAddress} is not loaded in the extension`);
+                        setError(`Wallet with address ${requestData.requestedAddress} is not loaded in the extension or does not match the requested filters`);
                     }
                 } else {
-                    // For CONNECT and GET_WALLET_DATA without specific address, use default selected wallet or first available
-                    setSelectedWalletForRequest(selectedWallet || (wallets.length > 0 ? wallets[0] : null));
+                    // For CONNECT and GET_WALLET_DATA without specific address, use default selected wallet or first available from filtered list
+                    const defaultWallet = walletsToConsider.find(w => w.id === selectedWallet?.id) || 
+                                        (walletsToConsider.length > 0 ? walletsToConsider[0] : null);
+                    setSelectedWalletForRequest(defaultWallet);
+
+                    // Show error if no wallets match the filter
+                    if (walletsToConsider.length === 0) {
+                        setError('No wallets match the requested filter criteria');
+                    }
                 }
             } else {
                 // For TRANSACTION/SIGN_MESSAGE, use selected wallet or first available
-                setSelectedWalletForRequest(selectedWallet || (wallets.length > 0 ? wallets[0] : null));
+                setSelectedWalletForRequest(selectedWallet || (walletsToConsider.length > 0 ? walletsToConsider[0] : null));
             }
         }
     }, [requestData, selectedWallet, wallets]);
@@ -365,20 +467,20 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     )}
 
                     {/* Wallet Selection for TRANSACTION and SIGN_MESSAGE */}
-                    {(requestData.type === 'TRANSACTION' || requestData.type === 'SIGN_MESSAGE') && wallets.length > 1 && (
+                    {(requestData.type === 'TRANSACTION' || requestData.type === 'SIGN_MESSAGE') && filteredWallets.length > 1 && (
                         <div className="wallet-selection">
                             <div className="detail-row">
                                 <span className="label">Wallet:</span>
                                 <select
                                     value={selectedWalletForRequest?.id || ''}
                                     onChange={(e) => {
-                                        const wallet = wallets.find(w => w.id === e.target.value);
+                                        const wallet = filteredWallets.find(w => w.id === e.target.value);
                                         setSelectedWalletForRequest(wallet);
                                     }}
                                     className="wallet-selector"
                                 >
                                     {!selectedWalletForRequest && <option value="">Select a wallet...</option>}
-                                    {wallets.map(wallet => (
+                                    {filteredWallets.map(wallet => (
                                         <option key={wallet.id} value={wallet.id}>
                                             {wallet.name || `Wallet ${wallet.id}`} ({wallet.address?.substring(0, 8)}...)
                                         </option>
@@ -389,11 +491,36 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     )}
 
                     {/* CONNECT request shows all available wallets or specific wallet if requested */}
-                    {requestData.type === 'CONNECT' && wallets.length > 0 && !requestData.requestedAddress && (
+                    {requestData.type === 'CONNECT' && filteredWallets.length > 0 && !requestData.requestedAddress && (
                         <div className="connect-wallets">
-                            <h4>Select Wallet to Connect:</h4>
+                            <h4>Select Wallet to Connect{requestData.connectionParams?.filter ? ' (Filtered)' : ''}:</h4>
+                            {requestData.connectionParams?.filter && (
+                                <div className="filter-info" style={{
+                                    background: '#2a2a2a',
+                                    border: '1px solid #3a3a3a',
+                                    borderRadius: '6px',
+                                    padding: '8px 12px',
+                                    marginBottom: '12px',
+                                    fontSize: '12px',
+                                    color: '#9ca3af'
+                                }}>
+                                    <strong>Active Filters:</strong>
+                                    {requestData.connectionParams.filter.curves && (
+                                        <div>• Curves: {requestData.connectionParams.filter.curves.join(', ')}</div>
+                                    )}
+                                    {requestData.connectionParams.filter.assets && (
+                                        <div>• Assets: {requestData.connectionParams.filter.assets.join(', ')}</div>
+                                    )}
+                                    {requestData.connectionParams.filter.chains && (
+                                        <div>• Chains: {requestData.connectionParams.filter.chains.join(', ')}</div>
+                                    )}
+                                    {requestData.connectionParams.filter.minBalance && (
+                                        <div>• Min Balance: ${requestData.connectionParams.filter.minBalance}</div>
+                                    )}
+                                </div>
+                            )}
                             <div className="wallet-list">
-                                {wallets.map(wallet => (
+                                {filteredWallets.map(wallet => (
                                     <div
                                         key={wallet.id}
                                         className={`wallet-item ${selectedWalletForRequest?.id === wallet.id ? 'selected' : ''}`}
