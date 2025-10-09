@@ -217,6 +217,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 (wallet.curve ?? 'secp256k1') as CurveType
             );
             //await new Promise(resolve => setTimeout(resolve, 2000));
+            //if (!result?.tx_hash) result?.hash(); // if no tx_hash, hash it
             setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));
             setTransactionFee(result?.fees ?? new Decimal(0));
             setIsProcessing(false);

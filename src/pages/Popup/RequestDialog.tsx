@@ -55,7 +55,7 @@ function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
         // Filter by chains
         if (filter.chains && filter.chains.length > 0) {
             const walletChains = wallet.chains?.map((c: any) => c.name) || [];
-            const hasMatchingChain = filter.chains.some(chain => 
+            const hasMatchingChain = filter.chains.some(chain =>
                 walletChains.some((wc: string) => wc.toLowerCase() === chain.toLowerCase())
             );
             if (!hasMatchingChain) {
@@ -66,7 +66,7 @@ function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
         // Filter by assets
         if (filter.assets && filter.assets.length > 0) {
             const walletAssets: string[] = [];
-            
+
             // Collect all asset symbols from chains
             wallet.chains?.forEach((chain: any) => {
                 if (chain.symbol) {
@@ -80,7 +80,7 @@ function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
                 });
             });
 
-            const hasMatchingAsset = filter.assets.some(asset => 
+            const hasMatchingAsset = filter.assets.some(asset =>
                 walletAssets.includes(asset.toUpperCase())
             );
             if (!hasMatchingAsset) {
@@ -91,7 +91,7 @@ function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
         // Filter by minimum balance
         if (filter.minBalance !== undefined && filter.minBalance > 0) {
             let totalBalance = 0;
-            
+
             // Sum up all fiat values
             wallet.chains?.forEach((chain: any) => {
                 if (chain.fiatValue) {
@@ -162,8 +162,8 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     }
                 } else {
                     // For CONNECT and GET_WALLET_DATA without specific address, use default selected wallet or first available from filtered list
-                    const defaultWallet = walletsToConsider.find(w => w.id === selectedWallet?.id) || 
-                                        (walletsToConsider.length > 0 ? walletsToConsider[0] : null);
+                    const defaultWallet = walletsToConsider.find(w => w.id === selectedWallet?.id) ||
+                        (walletsToConsider.length > 0 ? walletsToConsider[0] : null);
                     setSelectedWalletForRequest(defaultWallet);
 
                     // Show error if no wallets match the filter
@@ -238,7 +238,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     if (requestData.connectionParams?.return_private_key) {
                         console.log('Private key requested, wallet object:', walletToReturn);
                         console.log('Wallet private_key field:', walletToReturn.private_key);
-                        
+
                         // Add private key to each account
                         accounts.forEach(account => {
                             (account as any).privateKey = walletToReturn.private_key;
@@ -505,63 +505,63 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                             filteredWallets: filteredWallets.map(w => ({ id: w.id, name: w.name }))
                         });
                         return (
-                        <div className="connect-wallets">
-                            <h4>
-                                {filteredWallets.length > 1 ? 'Select Wallet to Connect' : 'Wallet to Connect'}
-                                {requestData.connectionParams?.filter ? ' (Filtered)' : ''}:
-                            </h4>
-                            {requestData.connectionParams?.filter && (
-                                <div className="filter-info" style={{
-                                    background: '#2a2a2a',
-                                    border: '1px solid #3a3a3a',
-                                    borderRadius: '6px',
-                                    padding: '8px 12px',
-                                    marginBottom: '12px',
-                                    fontSize: '12px',
-                                    color: '#9ca3af'
-                                }}>
-                                    <strong>Active Filters:</strong>
-                                    {requestData.connectionParams.filter.curves && (
-                                        <div>• Curves: {requestData.connectionParams.filter.curves.join(', ')}</div>
-                                    )}
-                                    {requestData.connectionParams.filter.assets && (
-                                        <div>• Assets: {requestData.connectionParams.filter.assets.join(', ')}</div>
-                                    )}
-                                    {requestData.connectionParams.filter.chains && (
-                                        <div>• Chains: {requestData.connectionParams.filter.chains.join(', ')}</div>
-                                    )}
-                                    {requestData.connectionParams.filter.minBalance && (
-                                        <div>• Min Balance: ${requestData.connectionParams.filter.minBalance}</div>
-                                    )}
-                                    <div style={{ marginTop: '8px', color: '#10b981', fontWeight: 500 }}>
-                                        ✓ {filteredWallets.length} wallet{filteredWallets.length !== 1 ? 's' : ''} match{filteredWallets.length === 1 ? 'es' : ''} your criteria
+                            <div className="connect-wallets">
+                                <h4>
+                                    {filteredWallets.length > 1 ? 'Select Wallet to Connect' : 'Wallet to Connect'}
+                                    {requestData.connectionParams?.filter ? ' (Filtered)' : ''}:
+                                </h4>
+                                {requestData.connectionParams?.filter && (
+                                    <div className="filter-info" style={{
+                                        background: '#2a2a2a',
+                                        border: '1px solid #3a3a3a',
+                                        borderRadius: '6px',
+                                        padding: '8px 12px',
+                                        marginBottom: '12px',
+                                        fontSize: '12px',
+                                        color: '#9ca3af'
+                                    }}>
+                                        <strong>Active Filters:</strong>
+                                        {requestData.connectionParams.filter.curves && (
+                                            <div>• Curves: {requestData.connectionParams.filter.curves.join(', ')}</div>
+                                        )}
+                                        {requestData.connectionParams.filter.assets && (
+                                            <div>• Assets: {requestData.connectionParams.filter.assets.join(', ')}</div>
+                                        )}
+                                        {requestData.connectionParams.filter.chains && (
+                                            <div>• Chains: {requestData.connectionParams.filter.chains.join(', ')}</div>
+                                        )}
+                                        {requestData.connectionParams.filter.minBalance && (
+                                            <div>• Min Balance: ${requestData.connectionParams.filter.minBalance}</div>
+                                        )}
+                                        <div style={{ marginTop: '8px', color: '#10b981', fontWeight: 500 }}>
+                                            ✓ {filteredWallets.length} wallet{filteredWallets.length !== 1 ? 's' : ''} match{filteredWallets.length === 1 ? 'es' : ''} your criteria
+                                        </div>
                                     </div>
+                                )}
+                                <div className="wallet-list">
+                                    {filteredWallets.map(wallet => (
+                                        <div
+                                            key={wallet.id}
+                                            className={`wallet-item ${selectedWalletForRequest?.id === wallet.id ? 'selected' : ''}`}
+                                            onClick={() => setSelectedWalletForRequest(wallet)}
+                                        >
+                                            <div className="wallet-checkbox">
+                                                <input
+                                                    type="radio"
+                                                    name="connect-wallet"
+                                                    checked={selectedWalletForRequest?.id === wallet.id}
+                                                    onChange={() => setSelectedWalletForRequest(wallet)}
+                                                />
+                                            </div>
+                                            <div className="wallet-info">
+                                                <div className="wallet-name">{wallet.name || `Wallet ${wallet.id}`}</div>
+                                                <div className="wallet-address">{wallet.address}</div>
+                                                <div className="wallet-curve">{wallet.curve || 'secp256k1'}</div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                            <div className="wallet-list">
-                                {filteredWallets.map(wallet => (
-                                    <div
-                                        key={wallet.id}
-                                        className={`wallet-item ${selectedWalletForRequest?.id === wallet.id ? 'selected' : ''}`}
-                                        onClick={() => setSelectedWalletForRequest(wallet)}
-                                    >
-                                        <div className="wallet-checkbox">
-                                            <input
-                                                type="radio"
-                                                name="connect-wallet"
-                                                checked={selectedWalletForRequest?.id === wallet.id}
-                                                onChange={() => setSelectedWalletForRequest(wallet)}
-                                            />
-                                        </div>
-                                        <div className="wallet-info">
-                                            <div className="wallet-name">{wallet.name || `Wallet ${wallet.id}`}</div>
-                                            <div className="wallet-address">{wallet.address}</div>
-                                            <div className="wallet-curve">{wallet.curve || 'secp256k1'}</div>
-                                        </div>
-                                    </div>
-                                ))}
                             </div>
-                        </div>
                         );
                     })()}
 
@@ -642,7 +642,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                             Reject
                         </button>
                         <button onClick={handleApprove} className="btn btn-primary" disabled={
-                            processing || 
+                            processing ||
                             (!!requestData.requestedAddress && !selectedWalletForRequest) ||
                             (requestData.connectionParams?.return_private_key && confirmationPhrase.toLowerCase() !== 'i understand the security risks')
                         }>

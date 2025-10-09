@@ -222,14 +222,14 @@ export class QuasarWallet {
     async connect(params?: QuasarConnectionParams | string): Promise<WalletAccount[]> {
         try {
             let payload: QuasarConnectionParams | undefined;
-            
+
             // Handle backward compatibility - if params is a string, treat it as address
             if (typeof params === 'string') {
                 payload = { address: params };
             } else {
                 payload = params;
             }
-            
+
             const result = await this.sendMessage('QUASAR_CONNECT', payload);
             if (result && result.accounts) {
                 this.isConnected = true;

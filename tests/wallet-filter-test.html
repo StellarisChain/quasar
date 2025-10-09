@@ -660,7 +660,7 @@
                 // Connect
                 const params = Object.keys(filter).length > 0 ? { filter } : undefined;
                 const accounts = await wallet.connect(params);
-                
+
                 updateStatus(true, accounts[0]?.address);
                 showResult('result-custom', true, 'Connected with custom filter!', { filter, accounts });
             } catch (error) {
@@ -674,7 +674,7 @@
                 try {
                     await wallet.disconnect();
                     updateStatus(false);
-                    
+
                     // Clear all results
                     document.querySelectorAll('.result').forEach(el => {
                         el.style.display = 'none';
