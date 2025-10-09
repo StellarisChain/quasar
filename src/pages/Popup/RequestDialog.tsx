@@ -137,6 +137,12 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
             // Apply filters if provided
             const filter = requestData.connectionParams?.filter;
             const walletsToConsider = filterWallets(wallets, filter);
+            console.log('RequestDialog - Filtering wallets:', {
+                totalWallets: wallets.length,
+                filter: filter,
+                filteredCount: walletsToConsider.length,
+                filteredWallets: walletsToConsider.map(w => ({ id: w.id, name: w.name, curve: w.curve }))
+            });
             setFilteredWallets(walletsToConsider);
 
             if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
@@ -491,9 +497,19 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     )}
 
                     {/* CONNECT request shows all available wallets or specific wallet if requested */}
-                    {requestData.type === 'CONNECT' && filteredWallets.length > 0 && !requestData.requestedAddress && (
+                    {requestData.type === 'CONNECT' && filteredWallets.length > 0 && !requestData.requestedAddress && (() => {
+                        console.log('Rendering wallet list:', {
+                            type: requestData.type,
+                            filteredWalletsLength: filteredWallets.length,
+                            requestedAddress: requestData.requestedAddress,
+                            filteredWallets: filteredWallets.map(w => ({ id: w.id, name: w.name }))
+                        });
+                        return (
                         <div className="connect-wallets">
-                            <h4>Select Wallet to Connect{requestData.connectionParams?.filter ? ' (Filtered)' : ''}:</h4>
+                            <h4>
+                                {filteredWallets.length > 1 ? 'Select Wallet to Connect' : 'Wallet to Connect'}
+                                {requestData.connectionParams?.filter ? ' (Filtered)' : ''}:
+                            </h4>
                             {requestData.connectionParams?.filter && (
                                 <div className="filter-info" style={{
                                     background: '#2a2a2a',
@@ -517,6 +533,9 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                                     {requestData.connectionParams.filter.minBalance && (
                                         <div>• Min Balance: ${requestData.connectionParams.filter.minBalance}</div>
                                     )}
+                                    <div style={{ marginTop: '8px', color: '#10b981', fontWeight: 500 }}>
+                                        ✓ {filteredWallets.length} wallet{filteredWallets.length !== 1 ? 's' : ''} match{filteredWallets.length === 1 ? 'es' : ''} your criteria
+                                    </div>
                                 </div>
                             )}
                             <div className="wallet-list">
@@ -543,7 +562,8 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                                 ))}
                             </div>
                         </div>
-                    )}
+                        );
+                    })()}
 
                     {/* CONNECT request with specific address shows only that wallet */}
                     {requestData.type === 'CONNECT' && requestData.requestedAddress && selectedWalletForRequest && (
