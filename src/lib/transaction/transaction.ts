@@ -41,7 +41,7 @@ export class Transaction {
         this.tx_hash = undefined;
     }
 
-    hex(full: boolean = true): string {
+    hex(full: boolean = true, terminator: boolean = true): string {
         const inputs = this.inputs, outputs = this.outputs;
         const hex_inputs = inputs.map(tx_input => Buffer.from(tx_input.toBytes()).toString('hex')).join('');
         const hex_outputs = outputs.map(tx_output => Buffer.from(tx_output.toBytes()).toString('hex')).join('');
@@ -88,9 +88,12 @@ export class Transaction {
                 hex += signed;
             }
         }
-        // Add signature terminator (null signature with r=0) - might be required by node
-        hex += '0000000000000000000000000000000000000000000000000000000000000000';  // r = 0 (32 bytes)
-        hex += '0000000000000000000000000000000000000000000000000000000000000000';  // s = 0 (32 bytes)
+
+        if (terminator) {
+            // Add signature terminator (null signature with r=0) - might be required by node
+            hex += '0000000000000000000000000000000000000000000000000000000000000000';  // r = 0 (32 bytes)
+            hex += '0000000000000000000000000000000000000000000000000000000000000000';  // s = 0 (32 bytes)
+        }
         this._hex = hex;
         console.debug('Transaction hex (full with signatures):', hex);
         return hex;
@@ -99,7 +102,10 @@ export class Transaction {
 
     async hash(): Promise<string> {
         if (!this.tx_hash) {
-            this.tx_hash = await sha256(this.hex());
+            // Hash the full transaction hex (with signatures) but without terminator
+            // This matches the Python implementation: sha256(self.hex())
+            const hexString = this.hex(true, false);
+            this.tx_hash = await sha256(hexString);
         }
         return this.tx_hash!;
     }
