@@ -13,6 +13,7 @@ import { WalletUnlockModal } from '../../components/WalletUnlockModal';
 import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
 import { fetchMultipleStellarisChainPrices, isStellarisBasedChain } from '../../lib/stellaris_price_api';
+import { useTranslation } from '../../lib/i18n';
 import './Popup.css';
 
 // Utility to shorten address
@@ -27,6 +28,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     setSelectedWallet: (wallet: Wallet | null) => void;
     setWallets: (wallets: Wallet[]) => void;
 }) => {
+    const { t } = useTranslation();
     // State
     const [loadingPrices, setLoadingPrices] = useState(false);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -520,30 +522,30 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         }}
                     >
                         <ArrowsRightLeftIcon />
-                        <span>Send</span>
+                        <span>{t('portfolio.send')}</span>
                     </button>
                     <button
                         className="action-btn action-btn-anim"
                         onClick={() => setShowReceiveModal(true)}
                     >
                         <PlusIcon />
-                        <span>Receive</span>
+                        <span>{t('portfolio.receive')}</span>
                     </button>
                     <button className="action-btn action-btn-anim">
                         <CreditCardIcon />
-                        <span>Buy</span>
+                        <span>{t('portfolio.buy')}</span>
                     </button>
                 </div>
 
                 {/* Assets Section */}
                 <div className="assets-section">
                     <div className="assets-header">
-                        <span className="assets-label">Assets ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
+                        <span className="assets-label">{t('portfolio.assets')} ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
                         <button
                             className="manage-btn manage-btn-anim"
                             onClick={() => setShowManageAssets(true)}
                         >
-                            Manage
+                            {t('portfolio.manage')}
                         </button>
                     </div>
                     <div className="assets-list">
@@ -604,7 +606,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
                             onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
                         >
-                            <DownloadIcon /> Export All Wallets
+                            <DownloadIcon /> {t('portfolio.bulkExport')}
                         </button>
                     </div>
                 )}

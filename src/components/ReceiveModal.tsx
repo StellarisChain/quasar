@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { XIcon, CopyIcon } from './Icons';
 import { Wallet, ReceiveQR } from '../pages/Popup/DataTypes';
 import qrCode from 'qrcode-generator';
+import { useTranslation } from '../lib/i18n';
 import './WalletSettings.css';
 
 interface ReceiveModalProps {
@@ -10,6 +11,7 @@ interface ReceiveModalProps {
 }
 
 export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) => {
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
     const qrCodeRef = useRef<HTMLDivElement>(null);
@@ -90,7 +92,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content receive-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>Receive {wallet.curve || 'secp256k1'}</h2>
+                    <h2>{t('receiveModal.title', { curve: wallet.curve || 'secp256k1' })}</h2>
                     <button className="close-btn" onClick={onClose}>
                         <XIcon />
                     </button>
@@ -108,7 +110,7 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
                         </div>
 
                         <div className="address-section">
-                            <label className="field-label">Wallet Address</label>
+                            <label className="field-label">{t('receiveModal.walletAddress')}</label>
                             <div className="address-container">
                                 <div className="address-display">
                                     <span className="address-text" title={wallet.address}>
@@ -118,28 +120,28 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
                                 <button
                                     className={`copy-btn ${copied ? 'copied' : ''}`}
                                     onClick={handleCopyAddress}
-                                    title="Copy address"
+                                    title={t('receiveModal.copyAddress')}
                                 >
                                     <CopyIcon />
                                     <span className="copy-text">
-                                        {copied ? 'Copied!' : 'Copy'}
+                                        {copied ? t('common.copied') : t('common.copy')}
                                     </span>
                                 </button>
                             </div>
                             {copied && (
                                 <div className="copy-feedback">
-                                    Address copied to clipboard!
+                                    {t('receiveModal.addressCopied')}
                                 </div>
                             )}
                         </div>
 
                         <div className="qr-section">
-                            <label className="field-label">QR Code</label>
+                            <label className="field-label">{t('receiveModal.qrCode')}</label>
                             <div className="qr-container">
                                 <div ref={qrCodeRef} className="qr-code"></div>
                             </div>
                             <div className="qr-info">
-                                Share this QR code to receive payments
+                                {t('receiveModal.qrInfo')}
                             </div>
                         </div>
                     </div>

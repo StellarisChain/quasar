@@ -3,6 +3,7 @@ import { loadTokensXmlAsJson, Chain, filterTokensByCurve } from '../lib/token_lo
 import { Wallet } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { ChevronDownIcon, CopyIcon, SettingsIcon } from './Icons';
+import { useTranslation } from '../lib/i18n';
 import './ManageAssets.css';
 
 interface ManageAssetsProps {
@@ -12,6 +13,7 @@ interface ManageAssetsProps {
 }
 
 export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onClose, onSave }) => {
+    const { t } = useTranslation();
     const [availableTokens, setAvailableTokens] = useState<Chain[]>([]);
     const [selectedTokens, setSelectedTokens] = useState<Chain[]>([]);
     const [loading, setLoading] = useState(true);
@@ -171,21 +173,21 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                     {loading && (
                         <div className="loading-state">
                             <div className="spinner"></div>
-                            <p>Loading available tokens...</p>
+                            <p>{t('manageAssets.loading')}</p>
                         </div>
                     )}
                     
                     {error && (
                         <div className="error-state">
                             <p>{error}</p>
-                            <button onClick={() => window.location.reload()}>Retry</button>
+                            <button onClick={() => window.location.reload()}>{t('common.retry')}</button>
                         </div>
                     )}
                     
                     {!loading && !error && (
                         <>
                             <div className="selection-summary">
-                                <p>{selectedTokens.length} of {availableTokens.length} assets selected</p>
+                                <p>{t('manageAssets.selectionSummary', { selected: selectedTokens.length, total: availableTokens.length })}</p>
                             </div>
                             
                             <div className="tokens-grid">
@@ -225,13 +227,13 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                 </div>
                 
                 <div className="manage-assets-footer">
-                    <button className="cancel-btn" onClick={onClose}>Cancel</button>
+                    <button className="cancel-btn" onClick={onClose}>{t('common.cancel')}</button>
                     <button 
                         className="save-btn" 
                         onClick={handleSave}
                         disabled={loading}
                     >
-                        Save Changes
+                        {t('common.saveChanges')}
                     </button>
                 </div>
             </div>

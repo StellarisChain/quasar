@@ -5,6 +5,7 @@ import { loadTokensXmlAsJson, getAvailableCurves } from '../../lib/token_loader'
 import { CurveSelector } from '../../components/CurveSelector';
 import { CompatibleAssetsDisplay } from '../../components/CompatibleAssetsDisplay';
 import { Wallet } from '../Popup/DataTypes';
+import { useTranslation } from '../../lib/i18n/TranslationContext';
 import './Popup.css';
 
 interface NewWalletProps {
@@ -13,6 +14,7 @@ interface NewWalletProps {
 }
 
 export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
+    const { t } = useTranslation();
     const [step, setStep] = useState<'curve' | 'generate' | 'confirm' | 'name'>('curve');
     const [selectedCurve, setSelectedCurve] = useState<string>('secp256k1');
     const [availableCurves, setAvailableCurves] = useState<string[]>(['secp256k1', 'p256']);
@@ -130,14 +132,14 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             textAlign: 'center',
                             margin: '0 0 8px',
                             color: 'white'
-                        }}>Choose Cryptographic Curve</h2>
+                        }}>{t('newWallet.curve.title')}</h2>
                         <p style={{
                             fontSize: '14px',
                             color: '#9ca3af',
                             textAlign: 'center',
                             margin: '0 0 32px',
                             lineHeight: '1.5'
-                        }}>Select the cryptographic curve for your wallet. This determines which assets you can use.</p>
+                        }}>{t('newWallet.curve.subtitle')}</p>
                     </div>
                 </div>
 
@@ -161,7 +163,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             color: '#e5e7eb',
                             marginBottom: '12px'
                         }}>
-                            Available Assets for {selectedCurve}
+                            {t('newWallet.curve.availableAssets', { curve: selectedCurve })}
                         </h4>
                         <CompatibleAssetsDisplay curve={selectedCurve} maxDisplay={4} />
                     </div>
@@ -184,7 +186,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             transition: 'all 0.2s cubic-bezier(.4, 0, .2, 1)'
                         }}
                     >
-                        Continue to Seed Generation
+                        {t('newWallet.curve.continue')}
                     </button>
                 </div>
             </div>
@@ -227,7 +229,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                         }}
                     >
                         <BackIcon />
-                        <span>Back</span>
+                        <span>{t('common.back')}</span>
                     </button>
 
                     <div className="create-wallet-title">
@@ -245,10 +247,10 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             <KeyIcon />
                         </div>
                         <h2 style={{ fontSize: '24px', fontWeight: '600', textAlign: 'center', margin: '0 0 8px', color: 'white' }}>
-                            Your Secret Recovery Phrase
+                            {t('newWallet.generate.title')}
                         </h2>
                         <p style={{ fontSize: '14px', color: '#9ca3af', textAlign: 'center', margin: '0 0 32px', lineHeight: '1.5' }}>
-                            This phrase is the only way to recover your wallet. Keep it secure and never share it.
+                            {t('newWallet.generate.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -274,7 +276,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                                 borderRadius: '50%',
                                 animation: 'spin 1s linear infinite'
                             }}></div>
-                            <span style={{ color: '#9ca3af', fontSize: '14px' }}>Generating secure seed phrase...</span>
+                            <span style={{ color: '#9ca3af', fontSize: '14px' }}>{t('newWallet.generate.generating')}</span>
                         </div>
                     ) : (
                         <div className="seed-phrase-grid" style={{
@@ -380,7 +382,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             boxSizing: 'border-box'
                         }}
                     >
-                        {isGenerating ? 'Generating...' : 'I\'ve Written It Down'}
+                        {isGenerating ? t('newWallet.generate.generating') : t('newWallet.generate.written')}
                     </button>
                 </div>
 
@@ -435,7 +437,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                         }}
                     >
                         <BackIcon />
-                        <span>Back</span>
+                        <span>{t('common.back')}</span>
                     </button>
 
                     <div className="create-wallet-title">
@@ -453,10 +455,10 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             <KeyIcon />
                         </div>
                         <h2 style={{ fontSize: '24px', fontWeight: '600', textAlign: 'center', margin: '0 0 8px', color: 'white' }}>
-                            Confirm Your Phrase
+                            {t('newWallet.confirm.title')}
                         </h2>
                         <p style={{ fontSize: '14px', color: '#9ca3af', textAlign: 'center', margin: '0 0 32px', lineHeight: '1.5' }}>
-                            Enter the missing words from your seed phrase to continue
+                            {t('newWallet.confirm.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -486,7 +488,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                                     type="text"
                                     value={confirmPhrase[index]}
                                     onChange={(e) => handleConfirmWord(index, e.target.value)}
-                                    placeholder="Enter word"
+                                    placeholder={t('newWallet.confirm.enterWord')}
                                     style={{
                                         background: 'transparent',
                                         border: 'none',
@@ -525,7 +527,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                         opacity: isConfirmationValid() ? 1 : 0.6
                     }}
                 >
-                    Continue
+                    {t('common.continue')}
                 </button>
             </div>
         );
@@ -555,7 +557,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                         }}
                     >
                         <BackIcon />
-                        <span>Back</span>
+                        <span>{t('common.back')}</span>
                     </button>
 
                     <div className="create-wallet-title">
@@ -573,10 +575,10 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                             <WalletIcon />
                         </div>
                         <h2 style={{ fontSize: '24px', fontWeight: '600', textAlign: 'center', margin: '0 0 8px', color: 'white' }}>
-                            Name Your Wallet
+                            {t('newWallet.name.title')}
                         </h2>
                         <p style={{ fontSize: '14px', color: '#9ca3af', textAlign: 'center', margin: '0 0 32px', lineHeight: '1.5' }}>
-                            Give your wallet a memorable name
+                            {t('newWallet.name.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -584,13 +586,13 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                 {/* Wallet Name Input */}
                 <div className="wallet-name-section" style={{ marginBottom: '32px' }}>
                     <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: 'white', marginBottom: '8px' }}>
-                        Wallet Name
+                        {t('newWallet.name.label')}
                     </label>
                     <input
                         type="text"
                         value={walletName}
                         onChange={(e) => setWalletName(e.target.value)}
-                        placeholder="My Wallet"
+                        placeholder={t('newWallet.name.placeholder')}
                         style={{
                             width: '100%',
                             padding: '16px',
@@ -618,11 +620,11 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                         <span style={{ fontSize: '16px' }}>✅</span>
                         <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>
-                            Wallet Created Successfully!
+                            {t('newWallet.name.successTitle')}
                         </span>
                     </div>
                     <p style={{ color: 'white', fontSize: '12px', lineHeight: '1.4', margin: 0 }}>
-                        Your wallet has been generated and is ready to use. You can now start managing your assets.
+                        {t('newWallet.name.successMessage')}
                     </p>
                 </div>
 
@@ -647,7 +649,7 @@ export const NewWallet: React.FC<NewWalletProps> = ({ onBack, onComplete }) => {
                         gap: '8px'
                     }}
                 >
-                    <span>Complete Setup</span>
+                    <span>{t('newWallet.name.complete')}</span>
                     <ArrowUpRightIcon />
                 </button>
             </div>
