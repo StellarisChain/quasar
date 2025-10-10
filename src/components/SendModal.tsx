@@ -216,12 +216,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined,
                 (wallet.curve ?? 'secp256k1') as CurveType
             );
-            
+
             // Generate the transaction hash if not already set
             if (result && !result.tx_hash) {
                 await result.hash();
             }
-            
+
             setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));
             setTransactionFee(result?.fees ?? new Decimal(0));
             setIsProcessing(false);
