@@ -77,7 +77,7 @@ export const PaperWalletModal: React.FC<PaperWalletModalProps> = ({ wallet, onCl
                 <title>${t('paperWallet.title')} - ${wallet.name}</title>
                 <style>
                     @page {
-                        size: A4;
+                        size: A4 landscape;
                         margin: 0;
                     }
                     * {
@@ -86,25 +86,23 @@ export const PaperWalletModal: React.FC<PaperWalletModalProps> = ({ wallet, onCl
                         box-sizing: border-box;
                     }
                     body {
-                        font-family: 'Courier New', monospace;
-                        background: #2d2d2d;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        min-height: 100vh;
-                        padding: 20mm;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Roboto', sans-serif;
+                        background: #ffffff;
+                        padding: 0;
+                        margin: 0;
                     }
                     .paper-wallet {
-                        width: 100%;
-                        max-width: 170mm;
-                        background: #2d2d2d;
-                        border: 3px solid #1a1a1a;
-                        border-radius: 8px;
-                        padding: 20mm;
+                        width: 297mm;
+                        height: 105mm;
+                        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+                        border: 2px solid #8b5cf6;
                         position: relative;
-                        box-shadow: 0 0 30px rgba(0,0,0,0.3);
+                        display: flex;
+                        align-items: stretch;
+                        gap: 8mm;
+                        padding: 6mm 8mm 6mm 15mm;
+                        box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
                     }
-                    /* Professional diagonal lines pattern */
                     .paper-wallet::before {
                         content: '';
                         position: absolute;
@@ -116,111 +114,101 @@ export const PaperWalletModal: React.FC<PaperWalletModalProps> = ({ wallet, onCl
                             repeating-linear-gradient(
                                 45deg,
                                 transparent,
-                                transparent 10px,
-                                rgba(255,255,255,0.02) 10px,
-                                rgba(255,255,255,0.02) 20px
+                                transparent 8px,
+                                rgba(139, 92, 246, 0.03) 8px,
+                                rgba(139, 92, 246, 0.03) 16px
                             ),
                             repeating-linear-gradient(
                                 -45deg,
                                 transparent,
-                                transparent 10px,
-                                rgba(255,255,255,0.02) 10px,
-                                rgba(255,255,255,0.02) 20px
+                                transparent 8px,
+                                rgba(139, 92, 246, 0.03) 8px,
+                                rgba(139, 92, 246, 0.03) 16px
                             );
                         pointer-events: none;
-                        border-radius: 6px;
                     }
                     .content {
                         position: relative;
                         z-index: 1;
-                        text-align: center;
+                        display: flex;
+                        width: 100%;
+                        gap: 8mm;
+                    }
+                    .left-section {
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 3mm;
+                        justify-content: space-between;
                     }
                     .header {
-                        margin-bottom: 8mm;
-                        padding-bottom: 6mm;
-                        border-bottom: 2px solid #404040;
+                        padding-bottom: 3mm;
+                        border-bottom: 2px solid #8b5cf6;
                     }
                     .brand {
-                        font-size: 28px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        letter-spacing: 2px;
-                        margin-bottom: 3mm;
-                        text-transform: uppercase;
+                        font-size: 24px;
+                        font-weight: 600;
+                        color: #8b5cf6;
+                        letter-spacing: 1px;
+                        margin-bottom: 2mm;
                     }
                     .wallet-name {
-                        font-size: 14px;
-                        color: #999;
-                        letter-spacing: 1px;
+                        font-size: 13px;
+                        color: #a78bfa;
+                        font-weight: 400;
+                    }
+                    .info-section {
+                        flex: 1;
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 1fr;
+                        gap: 2mm;
+                    }
+                    .info-block {
+                        background: rgba(139, 92, 246, 0.08);
+                        border: 1px solid #8b5cf6;
+                        border-radius: 2px;
+                        padding: 2mm;
+                    }
+                    .info-label {
+                        font-size: 6px;
+                        color: #a78bfa;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                        margin-bottom: 1mm;
+                        font-weight: 600;
+                    }
+                    .info-value {
+                        font-size: 5px;
+                        color: #e9d5ff;
+                        word-break: break-all;
+                        line-height: 1.2;
+                        font-family: "Monaco", "Courier New", monospace;
+                    }
+                        color: #e9d5ff;
+                        word-break: break-all;
+                        line-height: 1.4;
+                        font-family: 'Monaco', 'Courier New', monospace;
                     }
                     .qr-section {
-                        margin: 8mm 0;
-                        padding: 6mm;
+                        padding: 3mm;
                         background: #ffffff;
-                        border-radius: 6px;
-                        display: inline-block;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+                        border-radius: 4px;
+                        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                     }
                     .qr-code svg {
                         display: block;
-                        width: 50mm !important;
-                        height: 50mm !important;
-                    }
-                    .address-section {
-                        margin-top: 8mm;
-                        padding: 5mm;
-                        background: #1a1a1a;
-                        border: 1px solid #404040;
-                        border-radius: 4px;
-                    }
-                    .address-label {
-                        font-size: 10px;
-                        color: #888;
-                        text-transform: uppercase;
-                        letter-spacing: 1px;
-                        margin-bottom: 3mm;
-                    }
-                    .address-value {
-                        font-size: 9px;
-                        color: #ffffff;
-                        word-break: break-all;
-                        line-height: 1.6;
-                        font-family: 'Courier New', monospace;
-                    }
-                    .private-section {
-                        margin-top: 6mm;
-                        padding: 4mm;
-                        background: #1a1a1a;
-                        border: 1px dashed #666;
-                        border-radius: 4px;
-                    }
-                    .private-label {
-                        font-size: 9px;
-                        color: #ff6b6b;
-                        text-transform: uppercase;
-                        letter-spacing: 1px;
-                        margin-bottom: 2mm;
-                        font-weight: bold;
-                    }
-                    .private-value {
-                        font-size: 8px;
-                        color: #ccc;
-                        word-break: break-all;
-                        line-height: 1.5;
-                        font-family: 'Courier New', monospace;
+                        width: 35mm !important;
+                        height: 35mm !important;
                     }
                     .footer {
-                        margin-top: 8mm;
-                        padding-top: 4mm;
-                        border-top: 1px solid #404040;
-                        font-size: 8px;
-                        color: #666;
-                    }
-                    .warning {
-                        font-size: 7px;
-                        color: #888;
-                        margin-top: 2mm;
-                        line-height: 1.4;
+                        position: absolute;
+                        bottom: 3mm;
+                        right: 5mm;
+                        font-size: 6px;
+                        color: #6b7280;
                     }
                     @media print {
                         body {
@@ -369,185 +357,167 @@ export const PaperWalletModal: React.FC<PaperWalletModalProps> = ({ wallet, onCl
                 {/* Paper Wallet Preview */}
                 <div style={{ padding: '0 24px 24px' }}>
                     <div ref={printRef} className="paper-wallet" style={{
-                        background: '#2d2d2d',
-                        border: '3px solid #1a1a1a',
-                        borderRadius: '8px',
-                        padding: '40px',
+                        width: '100%',
+                        aspectRatio: '297/105',
+                        background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%)',
+                        border: '2px solid #8b5cf6',
                         position: 'relative',
-                        boxShadow: '0 0 30px rgba(0,0,0,0.5)'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '20px',
+                        boxShadow: '0 0 30px rgba(139, 92, 246, 0.3)'
                     }}>
-                        {/* Professional diagonal pattern overlay */}
-                        <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundImage: `
-                                repeating-linear-gradient(
-                                    45deg,
-                                    transparent,
-                                    transparent 10px,
-                                    rgba(255,255,255,0.02) 10px,
-                                    rgba(255,255,255,0.02) 20px
-                                ),
-                                repeating-linear-gradient(
-                                    -45deg,
-                                    transparent,
-                                    transparent 10px,
-                                    rgba(255,255,255,0.02) 10px,
-                                    rgba(255,255,255,0.02) 20px
-                                )
-                            `,
-                            pointerEvents: 'none',
-                            borderRadius: '6px'
-                        }} />
-
-                        <div className="content" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-                            {/* Header */}
-                            <div className="header" style={{
-                                marginBottom: '16mm',
-                                paddingBottom: '12mm',
-                                borderBottom: '2px solid #404040'
+                        {/* Header */}
+                        <div className="header" style={{
+                            textAlign: 'center',
+                            marginBottom: '20px'
+                        }}>
+                            <div className="brand" style={{
+                                fontSize: '28px',
+                                fontWeight: '700',
+                                color: '#8b5cf6',
+                                letterSpacing: '1px',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif'
                             }}>
-                                <div className="brand" style={{
-                                    fontSize: '28px',
-                                    fontWeight: 'bold',
-                                    color: '#ffffff',
-                                    letterSpacing: '2px',
-                                    marginBottom: '6mm',
-                                    textTransform: 'uppercase',
-                                    fontFamily: '"Courier New", monospace'
+                                QUASAR WALLET
+                            </div>
+                            <div className="wallet-name" style={{
+                                fontSize: '16px',
+                                color: '#a78bfa',
+                                fontWeight: '500',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif'
+                            }}>
+                                {wallet.name}
+                            </div>
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="content" style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: '20px'
+                        }}>
+                            {/* Info Blocks */}
+                            <div className="info-section" style={{
+                                flex: 3,
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1fr',
+                                gap: '10px'
+                            }}>
+                                {/* Address */}
+                                <div className="info-block" style={{
+                                    background: 'rgba(139, 92, 246, 0.08)',
+                                    border: '1px solid #8b5cf6',
+                                    borderRadius: '6px',
+                                    padding: '10px'
                                 }}>
-                                    QUASAR WALLET
+                                    <div className="info-label" style={{
+                                        fontSize: '10px',
+                                        color: '#a78bfa',
+                                        textTransform: 'uppercase',
+                                        marginBottom: '6px',
+                                        fontWeight: '600',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif'
+                                    }}>
+                                        Address
+                                    </div>
+                                    <div className="info-value" style={{
+                                        fontSize: '9px',
+                                        color: '#e9d5ff',
+                                        wordBreak: 'break-word',
+                                        lineHeight: '1.4',
+                                        fontFamily: '"Monaco", "Courier New", monospace'
+                                    }}>
+                                        {wallet.address}
+                                    </div>
                                 </div>
-                                <div className="wallet-name" style={{
-                                    fontSize: '14px',
-                                    color: '#999',
-                                    letterSpacing: '1px',
-                                    fontFamily: '"Courier New", monospace'
-                                }}>
-                                    {wallet.name}
-                                </div>
+
+                                {/* Private Key */}
+                                {!walletLocked && credentials?.privateKey && (
+                                    <div className="info-block" style={{
+                                        background: 'rgba(139, 92, 246, 0.08)',
+                                        border: '1px solid #8b5cf6',
+                                        borderRadius: '6px',
+                                        padding: '10px'
+                                    }}>
+                                        <div className="info-label" style={{
+                                            fontSize: '10px',
+                                            color: '#a78bfa',
+                                            textTransform: 'uppercase',
+                                            marginBottom: '6px',
+                                            fontWeight: '600',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif'
+                                        }}>
+                                            Private Key
+                                        </div>
+                                        <div className="info-value" style={{
+                                            fontSize: '9px',
+                                            color: '#e9d5ff',
+                                            wordBreak: 'break-word',
+                                            lineHeight: '1.4',
+                                            fontFamily: '"Monaco", "Courier New", monospace'
+                                        }}>
+                                            {credentials.privateKey}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Mnemonic */}
+                                {!walletLocked && credentials?.mnemonic && (
+                                    <div className="info-block" style={{
+                                        background: 'rgba(139, 92, 246, 0.08)',
+                                        border: '1px solid #8b5cf6',
+                                        borderRadius: '6px',
+                                        padding: '10px'
+                                    }}>
+                                        <div className="info-label" style={{
+                                            fontSize: '10px',
+                                            color: '#a78bfa',
+                                            textTransform: 'uppercase',
+                                            marginBottom: '6px',
+                                            fontWeight: '600',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif'
+                                        }}>
+                                            Recovery Phrase
+                                        </div>
+                                        <div className="info-value" style={{
+                                            fontSize: '9px',
+                                            color: '#e9d5ff',
+                                            wordBreak: 'break-word',
+                                            lineHeight: '1.4',
+                                            fontFamily: '"Monaco", "Courier New", monospace'
+                                        }}>
+                                            {credentials.mnemonic}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* QR Code Section */}
                             <div className="qr-section" style={{
-                                margin: '16mm auto',
-                                padding: '12mm',
+                                flex: 1,
+                                padding: '10px',
                                 background: '#ffffff',
                                 borderRadius: '6px',
-                                display: 'inline-block',
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
+                                boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             }}>
                                 <div ref={qrCodeRef} style={{ lineHeight: 0 }}></div>
                             </div>
+                        </div>
 
-                            {/* Address Section */}
-                            <div className="address-section" style={{
-                                marginTop: '16mm',
-                                padding: '10mm',
-                                background: '#1a1a1a',
-                                border: '1px solid #404040',
-                                borderRadius: '4px'
-                            }}>
-                                <div className="address-label" style={{
-                                    fontSize: '10px',
-                                    color: '#888',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px',
-                                    marginBottom: '6mm',
-                                    fontFamily: '"Courier New", monospace'
-                                }}>
-                                    Wallet Address
-                                </div>
-                                <div className="address-value" style={{
-                                    fontSize: '9px',
-                                    color: '#ffffff',
-                                    wordBreak: 'break-all',
-                                    lineHeight: '1.6',
-                                    fontFamily: '"Courier New", monospace'
-                                }}>
-                                    {wallet.address}
-                                </div>
-                            </div>
-
-                            {/* Private Key Section */}
-                            {!walletLocked && credentials?.privateKey && (
-                                <div className="private-section" style={{
-                                    marginTop: '12mm',
-                                    padding: '8mm',
-                                    background: '#1a1a1a',
-                                    border: '1px dashed #666',
-                                    borderRadius: '4px'
-                                }}>
-                                    <div className="private-label" style={{
-                                        fontSize: '9px',
-                                        color: '#ff6b6b',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '1px',
-                                        marginBottom: '4mm',
-                                        fontWeight: 'bold',
-                                        fontFamily: '"Courier New", monospace'
-                                    }}>
-                                        ⚠ Private Key (Keep Secret)
-                                    </div>
-                                    <div className="private-value" style={{
-                                        fontSize: '8px',
-                                        color: '#ccc',
-                                        wordBreak: 'break-all',
-                                        lineHeight: '1.5',
-                                        fontFamily: '"Courier New", monospace'
-                                    }}>
-                                        {credentials.privateKey}
-                                    </div>
-                                    {credentials.mnemonic && (
-                                        <>
-                                            <div className="private-label" style={{
-                                                fontSize: '9px',
-                                                color: '#ff6b6b',
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '1px',
-                                                marginTop: '6mm',
-                                                marginBottom: '4mm',
-                                                fontWeight: 'bold',
-                                                fontFamily: '"Courier New", monospace'
-                                            }}>
-                                                Recovery Phrase
-                                            </div>
-                                            <div className="private-value" style={{
-                                                fontSize: '8px',
-                                                color: '#ccc',
-                                                wordBreak: 'break-all',
-                                                lineHeight: '1.5',
-                                                fontFamily: '"Courier New", monospace'
-                                            }}>
-                                                {credentials.mnemonic}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Footer */}
-                            <div className="footer" style={{
-                                marginTop: '16mm',
-                                paddingTop: '8mm',
-                                borderTop: '1px solid #404040',
-                                fontSize: '8px',
-                                color: '#666',
-                                fontFamily: '"Courier New", monospace'
-                            }}>
-                                <div>Generated: {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}</div>
-                                <div className="warning" style={{
-                                    fontSize: '7px',
-                                    color: '#888',
-                                    marginTop: '4mm',
-                                    lineHeight: '1.4'
-                                }}>
-                                    Keep this paper wallet in a secure location. Anyone with access to the private key can control the funds.
-                                </div>
-                            </div>
+                        {/* Footer */}
+                        <div className="footer" style={{
+                            textAlign: 'center',
+                            marginTop: '20px',
+                            fontSize: '8px',
+                            color: '#6b7280',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Roboto", sans-serif'
+                        }}>
+                            {new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}
                         </div>
                     </div>
                 </div>
