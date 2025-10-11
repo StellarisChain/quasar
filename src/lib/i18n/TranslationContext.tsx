@@ -65,7 +65,7 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
     const t = (key: string, vars?: Record<string, any>): string => {
         const keys = key.split('.');
         let value: any = translations;
-        
+
         for (const k of keys) {
             if (value && typeof value === 'object' && k in value) {
                 value = value[k];
@@ -73,16 +73,16 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
                 return key; // Return key if translation not found
             }
         }
-        
+
         let result = typeof value === 'string' ? value : key;
-        
+
         // Replace variables in the format {{varName}}
         if (vars && typeof result === 'string') {
             Object.keys(vars).forEach(varKey => {
                 result = result.replace(new RegExp(`{{${varKey}}}`, 'g'), String(vars[varKey]));
             });
         }
-        
+
         return result;
     };
 

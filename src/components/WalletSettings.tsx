@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon, DownloadIcon, LockClosedIcon } from './Icons';
+import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon, DownloadIcon, LockClosedIcon, PrinterIcon } from './Icons';
 import { Wallet } from '../pages/Popup/DataTypes';
 import { exportWallet, ExportOptions, validateExportOptions } from '../lib/wallet_export_utils';
 import { encryptWallet, changeWalletPassword, lockWallet, getWalletCredentials, isWalletLocked, saveWallets, getStoredWallets } from '../pages/Popup/WalletUtils';
 import { useTranslation, SUPPORTED_LANGUAGES } from '../lib/i18n';
 import { testCrypto } from '../lib/crypto';
 import { WalletUnlockModal } from './WalletUnlockModal';
+import { PaperWalletModal } from './PaperWalletModal';
 import './WalletSettings.css';
 
 interface WalletSettingsModalProps {
@@ -57,6 +58,9 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
     const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [deleting, setDeleting] = useState(false);
+
+    // Paper wallet states
+    const [showPaperWalletModal, setShowPaperWalletModal] = useState(false);
 
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
@@ -1171,29 +1175,54 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                         </p>
 
                         {!showExportModal ? (
-                            <button
-                                onClick={() => setShowExportModal(true)}
-                                style={{
-                                    background: '#10b981',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    padding: '12px 16px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
-                            >
-                                <DownloadIcon /> {t('walletSettings.exportAsJSON')}
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => setShowExportModal(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: '#10b981',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '12px 16px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                                >
+                                    <DownloadIcon /> {t('walletSettings.exportAsJSON')}
+                                </button>
+                                <button
+                                    onClick={() => setShowPaperWalletModal(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: '#8b5cf6',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '12px 16px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
+                                >
+                                    <PrinterIcon /> {t('paperWallet.title')}
+                                </button>
+                            </div>
                         ) : (
                             <div style={{
                                 background: '#1f2937',
@@ -1505,6 +1534,13 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                     }}
                     onClose={() => setShowUnlockModal(false)}
                     autoShow={false}
+                />
+            )}
+            {/* Paper Wallet Modal */}
+            {showPaperWalletModal && (
+                <PaperWalletModal
+                    wallet={wallet}
+                    onClose={() => setShowPaperWalletModal(false)}
                 />
             )}
         </div>

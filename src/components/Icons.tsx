@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 
 // SVG Icons
 export const ChevronDownIcon = () => (
@@ -158,5 +158,13 @@ export const CameraSwitchIcon = ({ className }: { className?: string }) => (
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l2-2m0 0l2 2m-2-2v4" />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-2 2m0 0l-2-2m2 2v-4" />
+  </svg>
+);
+
+export const PrinterIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" />
   </svg>
 );

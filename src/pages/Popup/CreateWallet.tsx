@@ -34,12 +34,12 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
       description: t('createWallet.manualImport.description'),
       color: '#10b981'
     }
-  ];  return (
+  ]; return (
     <div className="popup-content create-wallet-page" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
       {/* Header */}
       <div className="create-wallet-header">
-        <button 
-          className="back-btn back-btn-anim" 
+        <button
+          className="back-btn back-btn-anim"
           onClick={onBack}
           style={{
             background: 'none',
@@ -60,7 +60,7 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
           <BackIcon />
           <span>Back</span>
         </button>
-        
+
         <div className="create-wallet-title">
           <div className="wallet-icon-large" style={{
             width: '48px',
@@ -130,7 +130,7 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
                 Recommended
               </div>
             )}
-            
+
             <div className="option-header" style={{
               display: 'flex',
               alignItems: 'center',
@@ -158,7 +158,7 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
                 {option.title}
               </div>
             </div>
-            
+
             <div className="option-description" style={{
               fontSize: '14px',
               color: '#9ca3af',
