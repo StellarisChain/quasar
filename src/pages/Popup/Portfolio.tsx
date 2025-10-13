@@ -158,8 +158,15 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     }
                     let priceData: Record<string, { price: number; change24h: number; chartData?: number[] }> = {};
                     try {
-                        // Fetch prices for all symbols from CEX
-                        const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
+                        // Fetch prices for all symbols from CEX with timeout
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
+                        
+                        const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`, {
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        
                         priceData = await res.json();
                         // If the stub returns nothing or invalid, fallback
                         if (!priceData || typeof priceData !== 'object' || Object.keys(priceData).length === 0) {
@@ -179,7 +186,8 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         for (const chain of wallet.chains || []) {
                             if (!priceData[chain.symbol]) {
                                 const tokenData = tokenFromXMLData.find(token => matchesSymbol(chain.symbol, token.Symbol));
-                                if (tokenData?.Node && isStellarisBasedChain(tokenData.Node)) {
+                                // Only add if node URL exists and is valid, and is Stellaris-based
+                                if (tokenData?.Node && tokenData.Node.trim() !== '' && isStellarisBasedChain(tokenData.Node)) {
                                     stellarisChainNodeMap[chain.symbol] = tokenData.Node;
                                 }
                             }
@@ -210,7 +218,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             };
                         }
                     });
-                    
+
                     // Update wallets with price info
                     const updatedWallets = await Promise.all(wallets.map(async wallet => {
                         const chains = await Promise.all(
@@ -222,7 +230,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                     Symbol: chain.symbol,
                                     Color: '',
                                     TokenSupport: false,
-                                    Node: 'ur fucked',
+                                    Node: '',
                                     Curve: 'secp256k1', // Default curve
                                     // Add any other required properties with default values
                                 };
@@ -243,14 +251,17 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 // Load Balance - only if wallet is unlocked or not encrypted
                                 let balance = '0.00';
                                 if (!wallet.isEncrypted || !isWalletLocked(wallet)) {
-                                    try {
-                                        const [balanceResult] = await getBalanceInfo(
-                                            wallet.address || '',
-                                            tokenData.Node || ''
-                                        );
-                                        balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
-                                    } catch (error) {
-                                        console.warn('Failed to fetch balance for locked/encrypted wallet:', error);
+                                    // Only fetch balance if we have a valid node URL
+                                    if (tokenData.Node && tokenData.Node.trim() !== '') {
+                                        try {
+                                            const [balanceResult] = await getBalanceInfo(
+                                                wallet.address || '',
+                                                tokenData.Node
+                                            );
+                                            balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
+                                        } catch (error) {
+                                            console.warn('Failed to fetch balance:', error);
+                                        }
                                     }
                                 }
                                 chain.balance = balance;

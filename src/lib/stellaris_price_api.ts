@@ -36,7 +36,7 @@ export async function fetchStellarisChainPrice(nodeUrl: string): Promise<Stellar
             },
             // Add timeout to prevent hanging (if AbortSignal.timeout is available)
             ...(typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? {
-                signal: AbortSignal.timeout(10000) // 10 second timeout
+                signal: AbortSignal.timeout(20000) // 20 second timeout
             } : {})
         });
 
