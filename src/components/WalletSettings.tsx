@@ -1,10 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon, DownloadIcon, LockClosedIcon } from './Icons';
+import { SettingsIcon, CopyIcon, EyeIcon, EyeOffIcon, XIcon, EditIcon, SaveIcon, DownloadIcon, LockClosedIcon, PrinterIcon } from './Icons';
 import { Wallet } from '../pages/Popup/DataTypes';
 import { exportWallet, ExportOptions, validateExportOptions } from '../lib/wallet_export_utils';
 import { encryptWallet, changeWalletPassword, lockWallet, getWalletCredentials, isWalletLocked, saveWallets, getStoredWallets } from '../pages/Popup/WalletUtils';
+import { useTranslation, SUPPORTED_LANGUAGES } from '../lib/i18n';
 import { testCrypto } from '../lib/crypto';
 import { WalletUnlockModal } from './WalletUnlockModal';
+import { PaperWalletModal } from './PaperWalletModal';
+import { ConnectedSites } from './ConnectedSites';
 import './WalletSettings.css';
 
 interface WalletSettingsModalProps {
@@ -24,6 +27,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
     allWallets,
     onWalletsChange
 }) => {
+    const { t, language, setLanguage } = useTranslation();
     const [editingName, setEditingName] = useState(false);
     const [walletName, setWalletName] = useState<string>(wallet.name ?? '');
     const [showPrivateKey, setShowPrivateKey] = useState(false);
@@ -56,6 +60,9 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [deleting, setDeleting] = useState(false);
 
+    // Paper wallet states
+    const [showPaperWalletModal, setShowPaperWalletModal] = useState(false);
+
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
     const nameInputRef = useRef<HTMLInputElement>(null);
     const verificationInputRef = useRef<HTMLInputElement>(null);
@@ -74,7 +81,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
         return () => clearInterval(interval);
     }, [wallet]);
 
-    // Required phrase for private key access
+    // Required phrase for private key access (always English for security)
     const REQUIRED_PHRASE = "I understand the risks";
 
     // Focus input when editing starts
@@ -109,7 +116,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
             setShowVerificationInput(false);
             setError('');
         } else {
-            setError('Incorrect phrase. Please try again.');
+            setError(t('walletSettings.incorrectPhrase'));
         }
     };
 
@@ -166,7 +173,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
             setShowExportModal(false);
         } catch (error) {
             console.error('Export failed:', error);
-            setError('Failed to export wallet');
+            setError(t('walletSettings.failedToExportWallet'));
         } finally {
             setExporting(false);
         }
@@ -176,7 +183,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
         // Require exact wallet name confirmation
         const requiredText = wallet.name || 'Unnamed Wallet';
         if (deleteConfirmationText !== requiredText) {
-            setError('Please type the wallet name exactly as shown to confirm deletion.');
+            setError(t('walletSettings.typeWalletNameExactly'));
             return;
         }
 
@@ -206,7 +213,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
             onClose(); // Close the modal after successful deletion
         } catch (error) {
             console.error('Delete failed:', error);
-            setError('Failed to delete wallet');
+            setError(t('walletSettings.failedToDeleteWallet'));
         } finally {
             setDeleting(false);
         }
@@ -244,7 +251,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <SettingsIcon />
                         <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#fff' }}>
-                            Wallet Settings
+                            {t('walletSettings.title')}
                         </h2>
                     </div>
                     <button
@@ -279,7 +286,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Wallet Name
+                            {t('walletSettings.walletName')}
                         </label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {editingName ? (
@@ -373,7 +380,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Wallet Address
+                            {t('walletSettings.walletAddress')}
                         </label>
                         <div style={{
                             background: '#1a1a1a',
@@ -400,7 +407,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                 color: '#9ca3af',
                                 marginBottom: '8px'
                             }}>
-                                Public Key
+                                {t('walletSettings.publicKey')}
                             </label>
                             <div style={{
                                 background: '#1a1a1a',
@@ -427,7 +434,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Private Key
+                            {t('walletSettings.privateKey')}
                         </label>
 
                         {!showPrivateKey && !showVerificationInput && (
@@ -458,7 +465,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                         alignItems: 'center',
                                         transition: 'background 0.2s'
                                     }}
-                                    title={walletIsLocked ? "Unlock wallet to view private key" : "View private key"}
+                                    title={walletIsLocked ? t('walletSettings.unlockToView') : t('walletSettings.viewPrivateKey')}
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
                                 >
@@ -488,7 +495,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                             fontWeight: '500',
                                             color: '#f59e0b'
                                         }}>
-                                            Security Verification Required
+                                            {t('walletSettings.securityVerificationRequired')}
                                         </span>
                                     </div>
                                     <p style={{
@@ -497,7 +504,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                         margin: 0,
                                         lineHeight: '1.4'
                                     }}>
-                                        To view your private key, type the exact phrase below to confirm you understand the security implications:
+                                        {t('walletSettings.securityVerificationMessage')}
                                     </p>
                                 </div>
 
@@ -527,7 +534,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                         if (e.key === 'Enter') handleVerifyPhrase();
                                         if (e.key === 'Escape') setShowVerificationInput(false);
                                     }}
-                                    placeholder="Type the phrase exactly as shown above"
+                                    placeholder={t('walletSettings.typePhraseExactly')}
                                     style={{
                                         width: '100%',
                                         background: '#1a1a1a',
@@ -567,7 +574,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                             transition: 'background 0.2s'
                                         }}
                                     >
-                                        Verify & Show Key
+                                        {t('walletSettings.verifyAndShowKey')}
                                     </button>
                                     <button
                                         onClick={() => setShowVerificationInput(false)}
@@ -590,7 +597,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                             e.currentTarget.style.color = '#9ca3af';
                                         }}
                                     >
-                                        Cancel
+                                        {t('walletSettings.cancel')}
                                     </button>
                                 </div>
                             </div>
@@ -617,7 +624,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                             fontWeight: '500',
                                             color: '#ef4444'
                                         }}>
-                                            Private Key Revealed
+                                            {t('walletSettings.warningPrivateKey')}
                                         </span>
                                     </div>
                                     <p style={{
@@ -626,7 +633,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                         margin: 0,
                                         lineHeight: '1.4'
                                     }}>
-                                        Never share your private key with anyone. Anyone with access to this key can control your wallet.
+                                        {t('walletSettings.warningPrivateKeyMessage')}
                                     </p>
                                 </div>
 
@@ -698,7 +705,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Password Protection
+                            {t('walletSettings.passwordProtection')}
                         </label>
 
                         <div style={{
@@ -717,7 +724,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <LockClosedIcon />
                                     <span style={{ color: '#e5e7eb', fontSize: '14px' }}>
-                                        {wallet.isEncrypted ? 'Protected' : 'Unprotected'}
+                                        {wallet.isEncrypted ? t('walletSettings.passwordProtectionEnabled') : t('walletSettings.passwordProtectionDisabled')}
                                     </span>
                                 </div>
                                 <div style={{
@@ -739,10 +746,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                 margin: '0 0 16px 0',
                                 lineHeight: '1.4'
                             }}>
-                                {wallet.isEncrypted
-                                    ? 'Your wallet is protected with password encryption. Private keys are stored securely.'
-                                    : 'Your wallet is currently unprotected. Enable password protection to secure your private keys.'
-                                }
+                                {t('walletSettings.passwordProtectionDescription')}
                             </p>
 
                             {/* Actions */}
@@ -1069,6 +1073,88 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                         </div>
                     </div>
 
+                    {/* Language Selection Section */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            color: '#9ca3af',
+                            marginBottom: '8px'
+                        }}>
+                            {t('walletSettings.language')}
+                        </label>
+
+                        <div style={{
+                            background: '#1a1a1a',
+                            border: '1px solid #3a3a3a',
+                            borderRadius: '8px',
+                            padding: '16px'
+                        }}>
+                            <p style={{
+                                fontSize: '12px',
+                                color: '#9ca3af',
+                                margin: '0 0 12px 0',
+                                lineHeight: '1.4'
+                            }}>
+                                {t('walletSettings.selectLanguage')}
+                            </p>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(2, 1fr)',
+                                gap: '8px'
+                            }}>
+                                {SUPPORTED_LANGUAGES.map((lang) => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => setLanguage(lang.code)}
+                                        style={{
+                                            background: language === lang.code ? '#8b5cf6' : '#2a2a2a',
+                                            border: language === lang.code ? '2px solid #8b5cf6' : '1px solid #3a3a3a',
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            color: '#fff',
+                                            fontSize: '14px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            textAlign: 'left',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '4px'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (language !== lang.code) {
+                                                e.currentTarget.style.borderColor = '#8b5cf6';
+                                                e.currentTarget.style.background = '#333';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (language !== lang.code) {
+                                                e.currentTarget.style.borderColor = '#3a3a3a';
+                                                e.currentTarget.style.background = '#2a2a2a';
+                                            }
+                                        }}
+                                    >
+                                        <span style={{
+                                            fontWeight: '600',
+                                            fontSize: '14px',
+                                            color: language === lang.code ? '#fff' : '#e5e7eb'
+                                        }}>
+                                            {lang.nativeName}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '11px',
+                                            color: language === lang.code ? '#c4b5fd' : '#9ca3af'
+                                        }}>
+                                            {lang.name}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Export Section */}
                     <div style={{ marginBottom: '16px' }}>
                         <label style={{
@@ -1078,7 +1164,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Export Wallet
+                            {t('walletSettings.exportWallet')}
                         </label>
                         <p style={{
                             fontSize: '12px',
@@ -1086,33 +1172,58 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             margin: '0 0 12px 0',
                             lineHeight: '1.4'
                         }}>
-                            Download your wallet as a JSON file for backup or transfer purposes.
+                            {t('walletSettings.exportWalletDescription')}
                         </p>
 
                         {!showExportModal ? (
-                            <button
-                                onClick={() => setShowExportModal(true)}
-                                style={{
-                                    background: '#10b981',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    padding: '12px 16px',
-                                    color: 'white',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px'
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
-                            >
-                                <DownloadIcon /> Export Wallet to JSON
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => setShowExportModal(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: '#10b981',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '12px 16px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                                >
+                                    <DownloadIcon /> {t('walletSettings.exportAsJSON')}
+                                </button>
+                                <button
+                                    onClick={() => setShowPaperWalletModal(true)}
+                                    style={{
+                                        flex: 1,
+                                        background: '#8b5cf6',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        padding: '12px 16px',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
+                                >
+                                    <PrinterIcon /> {t('paperWallet.title')}
+                                </button>
+                            </div>
                         ) : (
                             <div style={{
                                 background: '#1f2937',
@@ -1222,6 +1333,11 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                         )}
                     </div>
 
+                    {/* Connected Sites Section */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <ConnectedSites walletAddress={wallet.address} />
+                    </div>
+
                     {/* Delete Wallet Section */}
                     <div style={{ marginBottom: '16px' }}>
                         <label style={{
@@ -1247,7 +1363,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                             }}>
                                 <span style={{ fontSize: '16px' }}>🗑️</span>
                                 <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#ef4444' }}>
-                                    Delete Wallet
+                                    {t('walletSettings.deleteWallet')}
                                 </h4>
                             </div>
                             <p style={{
@@ -1256,7 +1372,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                 margin: '0 0 16px 0',
                                 lineHeight: '1.4'
                             }}>
-                                ⚠️ This action cannot be undone. Once deleted, you will lose access to this wallet forever unless you have backed up your private key or seed phrase.
+                                {t('walletSettings.deleteWalletDescription')}
                             </p>
 
                             {!showDeleteConfirmation ? (
@@ -1277,7 +1393,7 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                     onMouseEnter={(e) => e.currentTarget.style.background = '#b91c1c'}
                                     onMouseLeave={(e) => e.currentTarget.style.background = '#dc2626'}
                                 >
-                                    Delete This Wallet
+                                    {t('walletSettings.deleteWalletButton')}
                                 </button>
                             ) : (
                                 <div style={{
@@ -1424,6 +1540,13 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                     }}
                     onClose={() => setShowUnlockModal(false)}
                     autoShow={false}
+                />
+            )}
+            {/* Paper Wallet Modal */}
+            {showPaperWalletModal && (
+                <PaperWalletModal
+                    wallet={wallet}
+                    onClose={() => setShowPaperWalletModal(false)}
                 />
             )}
         </div>

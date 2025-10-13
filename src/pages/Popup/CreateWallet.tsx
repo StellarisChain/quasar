@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PlusIcon, ArrowDownRightIcon, WalletIcon, FileUploadIcon, BackIcon, KeyIcon } from '../../components/Icons';
+import { useTranslation } from '../../lib/i18n';
 import './Popup.css';
 
 interface CreateWalletProps {
@@ -8,39 +9,37 @@ interface CreateWalletProps {
 }
 
 export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWallet }) => {
+  const { t } = useTranslation();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const walletOptions = [
     {
       id: 'new',
-      title: 'New Wallet',
-      description: 'Generate a new wallet with a fresh seed phrase',
       icon: <PlusIcon />,
-      color: '#8b5cf6',
-      recommended: true
+      title: t('createWallet.newWallet.title'),
+      description: t('createWallet.newWallet.description'),
+      color: '#8b5cf6'
     },
     {
       id: 'import-file',
-      title: 'Import from File',
-      description: 'Import wallet from a backup file or keystore',
       icon: <FileUploadIcon />,
-      color: '#10b981'
+      title: t('createWallet.importFile.title'),
+      description: t('createWallet.importFile.description'),
+      color: '#3b82f6'
     },
     {
       id: 'manual-import',
-      title: 'Manual Import',
-      description: 'Enter seed phrase or private key manually',
       icon: <KeyIcon />,
-      color: '#f59e0b'
+      title: t('createWallet.manualImport.title'),
+      description: t('createWallet.manualImport.description'),
+      color: '#10b981'
     }
-  ];
-
-  return (
+  ]; return (
     <div className="popup-content create-wallet-page" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
       {/* Header */}
       <div className="create-wallet-header">
-        <button 
-          className="back-btn back-btn-anim" 
+        <button
+          className="back-btn back-btn-anim"
           onClick={onBack}
           style={{
             background: 'none',
@@ -61,7 +60,7 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
           <BackIcon />
           <span>Back</span>
         </button>
-        
+
         <div className="create-wallet-title">
           <div className="wallet-icon-large" style={{
             width: '48px',
@@ -77,19 +76,22 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
             <WalletIcon />
           </div>
           <h2 style={{
-            fontSize: '24px',
-            fontWeight: '600',
+            fontSize: '20px',
+            fontWeight: '700',
+            color: '#fff',
             textAlign: 'center',
-            margin: '0 0 8px',
-            color: 'white'
-          }}>Create or Import Wallet</h2>
+            marginBottom: '8px'
+          }}>
+            {t('createWallet.title')}
+          </h2>
           <p style={{
             fontSize: '14px',
             color: '#9ca3af',
-            textAlign: 'center',
-            margin: '0 0 32px',
-            lineHeight: '1.5'
-          }}>Choose how you'd like to set up your wallet</p>
+            marginTop: '8px',
+            marginBottom: '0'
+          }}>
+            {t('createWallet.subtitle')}
+          </p>
         </div>
       </div>
 
@@ -128,7 +130,7 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
                 Recommended
               </div>
             )}
-            
+
             <div className="option-header" style={{
               display: 'flex',
               alignItems: 'center',
@@ -156,7 +158,7 @@ export const CreateWallet: React.FC<CreateWalletProps> = ({ onBack, onCreateWall
                 {option.title}
               </div>
             </div>
-            
+
             <div className="option-description" style={{
               fontSize: '14px',
               color: '#9ca3af',

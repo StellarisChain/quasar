@@ -6,10 +6,11 @@ import { Wallet, ChainData, ReceiveQR } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { createTransaction } from '../lib/wallet_client';
 import { Transaction } from '../lib/transaction/transaction';
-import { loadTokensXmlAsJson, filterTokensByCurve } from '../lib/token_loader';
+import { loadTokensXmlAsJson, filterTokensByCurve, matchesSymbol } from '../lib/token_loader';
 import { CurveType } from '../lib/wallet_generation_utils';
 import { getWalletCredentials, isWalletLocked } from '../pages/Popup/WalletUtils';
 import { QRScanner } from './QRScanner';
+import { useTranslation } from '../lib/i18n';
 import './WalletSettings.css';
 
 interface SendModalProps {
@@ -21,6 +22,7 @@ interface SendModalProps {
 type SendStep = 'select-asset' | 'enter-details' | 'confirm' | 'success';
 
 export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClose }) => {
+    const { t } = useTranslation();
     const [step, setStep] = useState<SendStep>('select-asset');
     const [selectedAsset, setSelectedAsset] = useState<ChainData | null>(null);
     const [recipientAddress, setRecipientAddress] = useState('');
@@ -57,11 +59,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
             try {
                 const allTokens = await loadTokensXmlAsJson('tokens.xml');
                 const walletCurve = wallet.curve || 'secp256k1';
-                const compatibleTokenSymbols = filterTokensByCurve(allTokens, walletCurve).map(token => token.Symbol);
+                const compatibleTokens = filterTokensByCurve(allTokens, walletCurve);
 
                 // Filter wallet chains to only include compatible ones
+                // Use matchesSymbol to handle aliases (e.g., wallet has "STR" but XML has "STR/STE")
                 const compatibleAssets = wallet.chains.filter(chain =>
-                    compatibleTokenSymbols.includes(chain.symbol)
+                    compatibleTokens.some(token => matchesSymbol(chain.symbol, token.Symbol))
                 );
 
                 setAvailableAssets(compatibleAssets);
@@ -120,9 +123,9 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     }
 
     const validateAddress = (address: string) => {
-        if (!address) return 'Address is required';
-        if (address.length < 20) return 'Invalid address format';
-        if (address === wallet.address) return 'Cannot send to your own address';
+        if (!address) return t('sendModal.errors.addressRequired');
+        if (address.length < 20) return t('sendModal.errors.invalidAddress');
+        if (address === wallet.address) return t('sendModal.errors.cannotSendToSelf');
         return '';
     };
 
@@ -156,11 +159,11 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     };
 
     const validateAmount = (amount: string) => {
-        if (!amount) return 'Amount is required';
+        if (!amount) return t('sendModal.errors.amountRequired');
         const numAmount = parseFloat(amount);
-        if (isNaN(numAmount) || numAmount <= 0) return 'Amount must be greater than 0';
+        if (isNaN(numAmount) || numAmount <= 0) return t('sendModal.errors.amountMustBePositive');
         if (selectedAsset && numAmount > parseFloat(selectedAsset.balance.replace(/,/g, ''))) {
-            return 'Insufficient balance';
+            return t('sendModal.errors.insufficientBalance');
         }
         return '';
     };
@@ -195,13 +198,13 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
         try {
             // Check if wallet is locked before attempting to get credentials
             if (isWalletLocked(wallet)) {
-                throw new Error('Wallet is locked. Please unlock your wallet and try again.');
+                throw new Error(t('sendModal.errors.walletLocked'));
             }
 
             // Get wallet credentials (handles both encrypted and unencrypted wallets)
             const credentials = getWalletCredentials(wallet);
             if (!credentials?.privateKey) {
-                throw new Error('Unable to access wallet private key. Please unlock your wallet and try again.');
+                throw new Error(t('sendModal.errors.cannotAccessPrivateKey'));
             }
 
             // Simulate transaction processing
@@ -213,10 +216,16 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 amount,
                 memo ? new TextEncoder().encode(memo) : null,
                 null,
-                tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined,
+                // Use matchesSymbol to handle aliases (e.g., wallet has "STR" but XML has "STR/STE")
+                tokenData ? tokenData.find(token => matchesSymbol(selectedAsset?.symbol || '', token.Symbol))?.Node ?? undefined : undefined,
                 (wallet.curve ?? 'secp256k1') as CurveType
             );
-            //await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Generate the transaction hash if not already set
+            if (result && !result.tx_hash) {
+                await result.hash();
+            }
+
             setTransactionHash(result?.tx_hash ?? 'n0x' + Math.random().toString(16).substring(2, 66));
             setTransactionFee(result?.fees ?? new Decimal(0));
             setIsProcessing(false);
@@ -224,7 +233,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
         } catch (error) {
             setIsProcessing(false);
             setErrors({
-                general: error instanceof Error ? error.message : 'Failed to send transaction'
+                general: error instanceof Error ? error.message : t('sendModal.errors.transactionFailed')
             });
         }
     };
@@ -347,7 +356,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', margin: 0 }}>
-                    Select Asset to Send
+                    {t('sendModal.selectAsset')}
                 </h3>
                 {wallet.curve && (
                     <div style={{
@@ -381,9 +390,9 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                     borderRadius: '12px',
                     color: '#9ca3af'
                 }}>
-                    <p style={{ margin: '0 0 8px', fontSize: '14px' }}>No compatible assets found</p>
+                    <p style={{ margin: '0 0 8px', fontSize: '14px' }}>{t('sendModal.noCompatibleAssets')}</p>
                     <p style={{ margin: 0, fontSize: '12px' }}>
-                        This wallet uses {wallet.curve?.toUpperCase() || 'UNKNOWN'} curve, but no assets support this curve type.
+                        {t('sendModal.walletUsesCurve', { curve: wallet.curve?.toUpperCase() || 'UNKNOWN' })}
                     </p>
                 </div>
             ) : (
@@ -450,7 +459,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     const renderEnterDetails = () => (
         <div>
             <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', marginBottom: '16px' }}>
-                Send {selectedAsset?.name}
+                {t('sendModal.sendAsset', { asset: selectedAsset?.name || '' })}
             </h3>
 
             {/* Selected Asset Display */}
@@ -488,7 +497,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         {selectedAsset?.name}
                     </div>
                     <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-                        Balance: {selectedAsset?.balance} {selectedAsset?.symbol}
+                        {t('common.balance')}: {selectedAsset?.balance} {selectedAsset?.symbol}
                     </div>
                 </div>
             </div>
@@ -501,7 +510,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         fontWeight: '500',
                         color: '#9ca3af',
                     }}>
-                        Recipient Address
+                        {t('sendModal.recipientAddress')}
                     </label>
                     {compatibleWallets.length > 0 && (
                         <div style={{ position: 'relative' }} ref={walletDropdownRef}>
@@ -527,7 +536,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                 onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
                             >
-                                My Wallets
+                                {t('sendModal.myWallets')}
                                 <ChevronDownIcon />
                             </button>
 
@@ -599,7 +608,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                     setErrors({ ...errors, address: '' });
                                 }
                             }}
-                            placeholder="Enter recipient address or select from your wallets"
+                            placeholder={t('sendModal.recipientAddressPlaceholder')}
                             style={{
                                 width: '100%',
                                 background: '#1a1a1a',
@@ -653,7 +662,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = '#8b5cf6'}
                         onMouseLeave={(e) => e.currentTarget.style.background = '#7c3aed'}
-                        title="Scan QR Code"
+                        title={t('sendModal.scanQRCode')}
                     >
                         <CameraIcon />
                     </button>
@@ -669,7 +678,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         fontSize: '12px',
                         color: '#10b981'
                     }}>
-                        Sending to: {selectedRecipientWallet.name || `Wallet ${selectedRecipientWallet.id}`}
+                        {t('sendModal.sendingTo', { wallet: selectedRecipientWallet.name || `Wallet ${selectedRecipientWallet.id}` })}
                     </div>
                 )}
 
@@ -689,7 +698,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                     color: '#9ca3af',
                     marginBottom: '8px'
                 }}>
-                    Amount
+                    {t('sendModal.amount')}
                 </label>
                 <div style={{ position: 'relative' }}>
                     <input
@@ -702,7 +711,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                 setErrors({ ...errors, amount: '' });
                             }
                         }}
-                        placeholder="0.00"
+                        placeholder={t('sendModal.amountPlaceholder')}
                         style={{
                             width: '100%',
                             background: '#1a1a1a',
@@ -747,7 +756,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         padding: '0'
                     }}
                 >
-                    Use Max
+                    {t('sendModal.useMax')}
                 </button>
             </div>
 
@@ -760,13 +769,13 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                     color: '#9ca3af',
                     marginBottom: '8px'
                 }}>
-                    Memo (Optional)
+                    {t('sendModal.memo')}
                 </label>
                 <input
                     type="text"
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
-                    placeholder="Add a note"
+                    placeholder={t('sendModal.memoPlaceholder')}
                     style={{
                         width: '100%',
                         background: '#1a1a1a',
@@ -788,7 +797,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
     const renderConfirm = () => (
         <div>
             <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#fff', marginBottom: '16px' }}>
-                Confirm Transaction
+                {t('sendModal.confirmTransaction')}
             </h3>
 
             <div style={{
@@ -800,7 +809,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
             }}>
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                        You're sending
+                        {t('sendModal.youreSending')}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{
@@ -829,7 +838,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
 
                 <div style={{ marginBottom: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                        To
+                        {t('sendModal.to')}
                     </div>
                     <div style={{
                         fontSize: '14px',
@@ -844,7 +853,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 {memo && (
                     <div style={{ marginBottom: '16px' }}>
                         <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                            Memo
+                            {t('sendModal.memo')}
                         </div>
                         <div style={{ fontSize: '14px', color: '#fff' }}>
                             {memo}
@@ -860,10 +869,10 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                     alignItems: 'center'
                 }}>
                     <span style={{ fontSize: '14px', color: '#9ca3af' }}>
-                        Network Fee
+                        {t('sendModal.networkFee')}
                     </span>
                     <span style={{ fontSize: '14px', color: '#fff' }}>
-                        {transactionFee?.toString() ?? 'NO FEE'} {selectedAsset?.symbol}
+                        {transactionFee?.toString() ?? t('sendModal.noFee')} {selectedAsset?.symbol}
                     </span>
                 </div>
             </div>
@@ -885,6 +894,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
         </div>
     );
 
+    const truncateHash = (hash: string, maxLength: number = 20): string => {
+        if (hash.length <= maxLength) return hash;
+        const halfLength = Math.floor((maxLength - 3) / 2);
+        return `${hash.substring(0, halfLength)}...${hash.substring(hash.length - halfLength)}`;
+    };
+
     const renderSuccess = () => (
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
             <div style={{
@@ -902,10 +917,10 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 ✓
             </div>
             <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#fff', marginBottom: '8px' }}>
-                Transaction Sent!
+                {t('sendModal.transactionSent')}
             </h3>
             <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>
-                Your transaction has been broadcast to the network
+                {t('sendModal.transactionBroadcast')}
             </p>
 
             <div style={{
@@ -916,16 +931,27 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 marginBottom: '20px'
             }}>
                 <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                    Transaction Hash
+                    {t('sendModal.transactionHash')}
                 </div>
-                <div style={{
-                    fontSize: '12px',
-                    color: '#8b5cf6',
-                    fontFamily: 'monospace',
-                    wordBreak: 'break-all'
-                }}>
-                    {transactionHash}
-                </div>
+                <a
+                    href={`https://stellaris-explorer.pages.dev/tx/${transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={transactionHash}
+                    style={{
+                        fontSize: '12px',
+                        color: '#8b5cf6',
+                        fontFamily: 'monospace',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        display: 'block',
+                        transition: 'color 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#a78bfa'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#8b5cf6'}
+                >
+                    {truncateHash(transactionHash)}
+                </a>
             </div>
         </div>
     );
@@ -963,7 +989,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <ArrowsRightLeftIcon />
                             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#fff' }}>
-                                Send Crypto
+                                {t('sendModal.title')}
                             </h2>
                         </div>
                         <button
@@ -1046,7 +1072,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                     e.currentTarget.style.color = '#9ca3af';
                                 }}
                             >
-                                Back
+                                {t('common.back')}
                             </button>
                         )}
 
@@ -1068,7 +1094,7 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                 onMouseEnter={(e) => e.currentTarget.style.background = '#7c3aed'}
                                 onMouseLeave={(e) => e.currentTarget.style.background = '#8b5cf6'}
                             >
-                                Done
+                                {t('common.done')}
                             </button>
                         ) : (
                             <button
@@ -1116,13 +1142,13 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                                             borderRadius: '50%',
                                             animation: 'spin 1s linear infinite'
                                         }} />
-                                        Processing...
+                                        {t('sendModal.processing')}
                                     </>
                                 ) : (
                                     <>
-                                        {step === 'select-asset' && 'Continue'}
-                                        {step === 'enter-details' && 'Review'}
-                                        {step === 'confirm' && 'Send'}
+                                        {step === 'select-asset' && t('sendModal.continue')}
+                                        {step === 'enter-details' && t('sendModal.review')}
+                                        {step === 'confirm' && t('sendModal.send')}
                                         <ArrowRightIcon />
                                     </>
                                 )}

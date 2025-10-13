@@ -55,9 +55,17 @@ export interface TransactionResponse {
     error?: string;
 }
 
+export interface WalletFilter {
+    curves?: string[]; // Filter by cryptographic curves (e.g., ['secp256k1', 'p256'])
+    assets?: string[]; // Filter by asset symbols (e.g., ['ETH', 'BTC', 'STRX'])
+    chains?: string[]; // Filter by chain names (e.g., ['Ethereum', 'Bitcoin', 'Stellaris'])
+    minBalance?: number; // Minimum balance required (in any asset)
+}
+
 export interface QuasarConnectionParams {
     address?: string;
     return_private_key?: boolean;
+    filter?: WalletFilter; // Wallet filtering options
 }
 
 export interface WalletEvents {
@@ -214,14 +222,14 @@ export class QuasarWallet {
     async connect(params?: QuasarConnectionParams | string): Promise<WalletAccount[]> {
         try {
             let payload: QuasarConnectionParams | undefined;
-            
+
             // Handle backward compatibility - if params is a string, treat it as address
             if (typeof params === 'string') {
                 payload = { address: params };
             } else {
                 payload = params;
             }
-            
+
             const result = await this.sendMessage('QUASAR_CONNECT', payload);
             if (result && result.accounts) {
                 this.isConnected = true;

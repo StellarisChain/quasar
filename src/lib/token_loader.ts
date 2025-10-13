@@ -19,6 +19,38 @@ export interface SubToken {
 }
 
 /**
+ * Extracts the primary symbol from a symbol that may contain aliases separated by "/"
+ * For example: "STR/STE" -> "STR", "HAL" -> "HAL"
+ * @param symbol - The symbol string potentially containing aliases
+ * @returns The primary (first) symbol
+ */
+export function getPrimarySymbol(symbol: string): string {
+    return symbol.split('/')[0].trim();
+}
+
+/**
+ * Gets all symbol aliases from a symbol string (including the primary one)
+ * For example: "STR/STE" -> ["STR", "STE"], "HAL" -> ["HAL"]
+ * @param symbol - The symbol string potentially containing aliases
+ * @returns Array of all symbol aliases
+ */
+export function getSymbolAliases(symbol: string): string[] {
+    return symbol.split('/').map(s => s.trim());
+}
+
+/**
+ * Checks if a symbol matches any of the aliases in the full symbol string
+ * For example: matchesSymbol("STE", "STR/STE") -> true, matchesSymbol("HAL", "STR/STE") -> false
+ * @param symbolToCheck - The symbol to check for (e.g., "STE" or "STR")
+ * @param fullSymbol - The full symbol string from token data (e.g., "STR/STE")
+ * @returns true if the symbol matches any alias
+ */
+export function matchesSymbol(symbolToCheck: string, fullSymbol: string): boolean {
+    const aliases = getSymbolAliases(fullSymbol);
+    return aliases.some(alias => alias.toUpperCase() === symbolToCheck.toUpperCase());
+}
+
+/**
  * Loads and parses the tokens.xml file from the public/static assets folder.
  * Returns a Promise resolving to the tokens as a JSON object.
  */
@@ -100,7 +132,7 @@ function getFallbackTokens(): Chain[] {
         },
         {
             Name: 'Stellaris',
-            Symbol: 'STE',
+            Symbol: 'STR',  // Use primary symbol only for display
             Color: '#9945FF',
             Node: 'https://stellaris-node.connor33341.dev',
             TokenSupport: true,

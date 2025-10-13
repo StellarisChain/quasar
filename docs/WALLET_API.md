@@ -31,9 +31,9 @@ window.addEventListener('quasar:ready', (event) => {
 
 ### Connection Management
 
-#### `connect(address?: string): Promise<WalletAccount[]>`
+#### `connect(params?: string | QuasarConnectionParams): Promise<WalletAccount[]>`
 
-Requests connection to the user's wallet. Shows a connection approval modal.
+Requests connection to the user's wallet. Shows a connection approval modal with optional wallet filtering.
 
 ```javascript
 // Connect to any available wallet
@@ -44,7 +44,7 @@ try {
     console.error('Connection failed:', error);
 }
 
-// Connect to a specific wallet address
+// Connect to a specific wallet address (backward compatible)
 try {
     const accounts = await window.quasar.connect('0x1234567890abcdef...');
     console.log('Connected to specific wallet:', accounts);
@@ -52,10 +52,94 @@ try {
     console.error('Connection to specific wallet failed:', error);
     // Error will be thrown if wallet with the address is not loaded in extension
 }
+
+// Connect with filtering options
+try {
+    const accounts = await window.quasar.connect({
+        filter: {
+            curves: ['p256'], // Only show P256 wallets
+            assets: ['ETH', 'BTC'], // Only show wallets that have ETH or BTC
+            chains: ['Ethereum'], // Only show wallets with Ethereum chain
+            minBalance: 100 // Only show wallets with at least $100 total value
+        }
+    });
+    console.log('Connected to filtered wallet:', accounts);
+} catch (error) {
+    console.error('No wallets match the filter criteria:', error);
+}
+
+// Request private key access (requires explicit user confirmation)
+try {
+    const accounts = await window.quasar.connect({
+        return_private_key: true
+    });
+    console.log('Connected with private key:', accounts[0].privateKey);
+} catch (error) {
+    console.error('Private key access denied:', error);
+}
+
+// Combine multiple options
+try {
+    const accounts = await window.quasar.connect({
+        address: '0x1234567890abcdef...',
+        filter: {
+            curves: ['secp256k1', 'p256']
+        },
+        return_private_key: false
+    });
+    console.log('Connected to specific filtered wallet:', accounts);
+} catch (error) {
+    console.error('Connection failed:', error);
+}
 ```
 
 **Parameters:**
-- `address` (optional): Specific wallet address to connect to. If provided, only that wallet will be shown in the connection dialog. If the wallet is not loaded in the extension, an error will be shown.
+- `params` (optional): Can be either:
+  - `string`: Specific wallet address to connect to (backward compatible)
+  - `QuasarConnectionParams` object with the following properties:
+    - `address` (optional): Specific wallet address to connect to
+    - `return_private_key` (optional): Request private key access (requires user confirmation)
+    - `filter` (optional): Wallet filtering options:
+      - `curves` (optional): Array of curve types to filter by (e.g., `['secp256k1', 'p256']`)
+      - `assets` (optional): Array of asset symbols to filter by (e.g., `['ETH', 'BTC', 'STRX']`)
+      - `chains` (optional): Array of chain names to filter by (e.g., `['Ethereum', 'Bitcoin', 'Stellaris']`)
+      - `minBalance` (optional): Minimum total wallet balance in USD
+
+**Filter Behavior:**
+- All filter criteria are combined with AND logic (wallet must match all specified filters)
+- If multiple values are provided in an array (e.g., multiple curves), any match is accepted (OR logic within the array)
+- If no wallets match the filter criteria, an error will be shown to the user
+- Filtering is case-insensitive for asset symbols and chain names
+
+**Examples:**
+
+```javascript
+// Only connect to P256 wallets
+await window.quasar.connect({
+    filter: { curves: ['p256'] }
+});
+
+// Only connect to wallets that have Stellaris assets
+await window.quasar.connect({
+    filter: { assets: ['STRX', 'STE'] }
+});
+
+// Only connect to wallets with significant balance on Ethereum
+await window.quasar.connect({
+    filter: { 
+        chains: ['Ethereum'],
+        minBalance: 1000
+    }
+});
+
+// For a DeFi app that only supports specific tokens
+await window.quasar.connect({
+    filter: {
+        chains: ['Ethereum'],
+        assets: ['USDC', 'USDT', 'DAI']
+    }
+});
+```
 
 #### `disconnect(): Promise<void>`
 

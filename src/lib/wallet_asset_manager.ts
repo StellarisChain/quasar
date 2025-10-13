@@ -1,5 +1,5 @@
-import React from 'react';
-import { loadTokensXmlAsJson, filterTokensByCurve, Chain } from './token_loader';
+import * as React from 'react';
+import { loadTokensXmlAsJson, filterTokensByCurve, Chain, matchesSymbol } from './token_loader';
 import { Wallet } from '../pages/Popup/DataTypes';
 
 export interface AssetFilterResult {
@@ -41,7 +41,7 @@ export class WalletAssetManager {
                 },
                 {
                     Name: 'Stellaris',
-                    Symbol: 'STE',
+                    Symbol: 'STR',
                     Color: '#9945FF',
                     Node: 'https://stellaris-node.connor33341.dev',
                     TokenSupport: true,
@@ -122,7 +122,8 @@ export class WalletAssetManager {
      */
     static async isAssetCompatible(wallet: Wallet, assetSymbol: string): Promise<boolean> {
         const { availableAssets } = await this.getCompatibleAssets(wallet);
-        return availableAssets.some(asset => asset.Symbol === assetSymbol);
+        // Use matchesSymbol to support alias matching (e.g., both "STR" and "STE" match "STR/STE")
+        return availableAssets.some(asset => matchesSymbol(assetSymbol, asset.Symbol));
     }
 
     /**
@@ -130,7 +131,8 @@ export class WalletAssetManager {
      */
     static async getCompatibleAsset(wallet: Wallet, assetSymbol: string): Promise<Chain | null> {
         const { availableAssets } = await this.getCompatibleAssets(wallet);
-        return availableAssets.find(asset => asset.Symbol === assetSymbol) || null;
+        // Use matchesSymbol to support alias matching (e.g., both "STR" and "STE" match "STR/STE")
+        return availableAssets.find(asset => matchesSymbol(assetSymbol, asset.Symbol)) || null;
     }
 
     /**

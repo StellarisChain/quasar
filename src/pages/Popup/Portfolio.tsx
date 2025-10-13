@@ -10,9 +10,10 @@ import { BulkExportModal } from '../../components/BulkExportModal';
 import { SendModal } from '../../components/SendModal';
 import { ReceiveModal } from '../../components/ReceiveModal';
 import { WalletUnlockModal } from '../../components/WalletUnlockModal';
-import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
+import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken, getPrimarySymbol, matchesSymbol } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
 import { fetchMultipleStellarisChainPrices, isStellarisBasedChain } from '../../lib/stellaris_price_api';
+import { useTranslation } from '../../lib/i18n';
 import './Popup.css';
 
 // Utility to shorten address
@@ -27,6 +28,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     setSelectedWallet: (wallet: Wallet | null) => void;
     setWallets: (wallets: Wallet[]) => void;
 }) => {
+    const { t } = useTranslation();
     // State
     const [loadingPrices, setLoadingPrices] = useState(false);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -96,7 +98,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
         // Convert selected tokens to ChainData format
         const newChains: ChainData[] = selectedTokens.map(token => ({
             name: token.Name,
-            symbol: token.Symbol,
+            symbol: getPrimarySymbol(token.Symbol), // Use primary symbol for display (e.g., STR from STR/STE)
             balance: '0.00', // Default balance
             fiatValue: 0,
             change24h: 0,
@@ -156,8 +158,15 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     }
                     let priceData: Record<string, { price: number; change24h: number; chartData?: number[] }> = {};
                     try {
-                        // Fetch prices for all symbols from CEX
-                        const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`);
+                        // Fetch prices for all symbols from CEX with timeout
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
+
+                        const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`, {
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+
                         priceData = await res.json();
                         // If the stub returns nothing or invalid, fallback
                         if (!priceData || typeof priceData !== 'object' || Object.keys(priceData).length === 0) {
@@ -176,8 +185,9 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     for (const wallet of wallets) {
                         for (const chain of wallet.chains || []) {
                             if (!priceData[chain.symbol]) {
-                                const tokenData = tokenFromXMLData.find(token => token.Symbol === chain.symbol);
-                                if (tokenData?.Node && isStellarisBasedChain(tokenData.Node)) {
+                                const tokenData = tokenFromXMLData.find(token => matchesSymbol(chain.symbol, token.Symbol));
+                                // Only add if node URL exists and is valid, and is Stellaris-based
+                                if (tokenData?.Node && tokenData.Node.trim() !== '' && isStellarisBasedChain(tokenData.Node)) {
                                     stellarisChainNodeMap[chain.symbol] = tokenData.Node;
                                 }
                             }
@@ -208,18 +218,19 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             };
                         }
                     });
+
                     // Update wallets with price info
                     const updatedWallets = await Promise.all(wallets.map(async wallet => {
                         const chains = await Promise.all(
                             (wallet.chains ?? []).map(async chain => {
                                 const chainPrice = priceData[chain.symbol]?.price ?? 0;
                                 const chainChange = priceData[chain.symbol]?.change24h ?? 0;
-                                const tokenData: TokenFromXML = tokenFromXMLData.find(token => token.Symbol === chain.symbol) || {
+                                const tokenData: TokenFromXML = tokenFromXMLData.find(token => matchesSymbol(chain.symbol, token.Symbol)) || {
                                     Name: 'Fallback',
                                     Symbol: chain.symbol,
                                     Color: '',
                                     TokenSupport: false,
-                                    Node: 'ur fucked',
+                                    Node: '',
                                     Curve: 'secp256k1', // Default curve
                                     // Add any other required properties with default values
                                 };
@@ -240,14 +251,17 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                                 // Load Balance - only if wallet is unlocked or not encrypted
                                 let balance = '0.00';
                                 if (!wallet.isEncrypted || !isWalletLocked(wallet)) {
-                                    try {
-                                        const [balanceResult] = await getBalanceInfo(
-                                            wallet.address || '',
-                                            tokenData.Node || ''
-                                        );
-                                        balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
-                                    } catch (error) {
-                                        console.warn('Failed to fetch balance for locked/encrypted wallet:', error);
+                                    // Only fetch balance if we have a valid node URL
+                                    if (tokenData.Node && tokenData.Node.trim() !== '') {
+                                        try {
+                                            const [balanceResult] = await getBalanceInfo(
+                                                wallet.address || '',
+                                                tokenData.Node
+                                            );
+                                            balance = (balanceResult !== null && balanceResult !== undefined) ? balanceResult.toString() : '0.00';
+                                        } catch (error) {
+                                            console.warn('Failed to fetch balance:', error);
+                                        }
                                     }
                                 }
                                 chain.balance = balance;
@@ -520,30 +534,30 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         }}
                     >
                         <ArrowsRightLeftIcon />
-                        <span>Send</span>
+                        <span>{t('portfolio.send')}</span>
                     </button>
                     <button
                         className="action-btn action-btn-anim"
                         onClick={() => setShowReceiveModal(true)}
                     >
                         <PlusIcon />
-                        <span>Receive</span>
+                        <span>{t('portfolio.receive')}</span>
                     </button>
                     <button className="action-btn action-btn-anim">
                         <CreditCardIcon />
-                        <span>Buy</span>
+                        <span>{t('portfolio.buy')}</span>
                     </button>
                 </div>
 
                 {/* Assets Section */}
                 <div className="assets-section">
                     <div className="assets-header">
-                        <span className="assets-label">Assets ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
+                        <span className="assets-label">{t('portfolio.assets')} ({selectedWallet && selectedWallet.chains ? selectedWallet.chains.length : 0})</span>
                         <button
                             className="manage-btn manage-btn-anim"
                             onClick={() => setShowManageAssets(true)}
                         >
-                            Manage
+                            {t('portfolio.manage')}
                         </button>
                     </div>
                     <div className="assets-list">
@@ -604,7 +618,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
                             onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
                         >
-                            <DownloadIcon /> Export All Wallets
+                            <DownloadIcon /> {t('portfolio.bulkExport')}
                         </button>
                     </div>
                 )}

@@ -4,6 +4,7 @@ import { Dropdown } from './Dropdown';
 import { ChevronDownIcon, ArrowUpRightIcon, ArrowDownRightIcon, WalletIcon, PlusIcon } from './Icons';
 import { defaultWallets } from '../pages/Popup/WalletUtils';
 import { saveWallets } from '../pages/Popup/WalletUtils';
+import { useTranslation } from '../lib/i18n';
 import './WalletSelector.css';
 
 // Config
@@ -17,6 +18,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
   onCreateWallet?: () => void;
   setWallets?: (wallets: Wallet[]) => void;
 }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   // Defensive: treat falsy, non-array, or empty array as no wallets
   const walletList = Array.isArray(wallets) && wallets ? wallets.filter(Boolean) : [];
@@ -27,7 +29,7 @@ export const WalletSelector = ({ wallets, selectedWallet, onWalletChange, onCrea
       trigger={
         <div className="wallet-selector wallet-selector-anim">
           <WalletIcon />
-          <span className="wallet-name">{selectedWallet && selectedWallet.name ? selectedWallet.name : 'No Wallets'}</span>
+          <span className="wallet-name">{selectedWallet && selectedWallet.name ? selectedWallet.name : t('walletSelector.noWallets')}</span>
           <ChevronDownIcon />
         </div>
       }

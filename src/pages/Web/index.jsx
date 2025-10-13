@@ -4,6 +4,7 @@ import { Buffer } from 'buffer';
 
 import WebWallet from './WebWallet';
 import './index.css';
+import { TranslationProvider } from '../../lib/i18n';
 
 const container = document.getElementById('app-container');
 const root = createRoot(container);
@@ -21,4 +22,8 @@ if (isMobile) {
     document.body.classList.add('desktop-device');
 }
 
-root.render(<WebWallet isMobile={isMobile} />);
+root.render(
+    <TranslationProvider>
+        <WebWallet isMobile={isMobile} />
+    </TranslationProvider>
+);

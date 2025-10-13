@@ -5,6 +5,7 @@ import { detectCurveFromWalletData } from '../../lib/curve_detection_utils';
 import { CurveSelector } from '../../components/CurveSelector';
 import { generate, generateFromPrivateKey, isValidMnemonic, CurveType } from '../../lib/wallet_generation_utils';
 import { loadTokensXmlAsJson, getAvailableCurves } from '../../lib/token_loader';
+import { useTranslation } from '../../lib/i18n/TranslationContext';
 import './Popup.css';
 
 export interface ImportWalletProps {
@@ -14,6 +15,7 @@ export interface ImportWalletProps {
 }
 
 export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fromFile }) => {
+    const { t } = useTranslation();
     const [walletData, setWalletData] = useState<Wallet | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -131,10 +133,10 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                             <KeyIcon />
                         </div>
                         <h2 style={{ fontSize: '24px', fontWeight: '600', textAlign: 'center', margin: '0 0 8px', color: 'white' }}>
-                            Load Wallet from File
+                            {t('importWallet.fromFile.title')}
                         </h2>
                         <p style={{ fontSize: '14px', color: '#9ca3af', textAlign: 'center', margin: '0 0 32px', lineHeight: '1.5' }}>
-                            Import your wallet using a .json file
+                            {t('importWallet.fromFile.subtitle')}
                         </p>
                     </div>
                 </div>
@@ -148,7 +150,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                     border: '1px solid #374151'
                 }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'white', margin: '0 0 16px' }}>
-                        Wallet Details
+                        {t('importWallet.walletDetails')}
                     </h3>
 
                     {/* Error Display */}
@@ -189,7 +191,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                 marginRight: '12px'
                             }}></div>
                             <span style={{ color: '#9ca3af', fontSize: '14px' }}>
-                                Loading wallet...
+                                {t('importWallet.loading')}
                             </span>
                         </div>
                     )}
@@ -210,7 +212,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                 <WalletIcon />
                             </div>
                             <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 16px' }}>
-                                No wallet loaded
+                                {t('importWallet.noWallet')}
                             </p>
                             <label
                                 htmlFor="wallet-file-input"
@@ -236,18 +238,18 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                     margin: '0 auto'
                                 }}
                             >
-                                Load from File
+                                {t('importWallet.loadFromFile')}
                             </label>
                         </div>
                     ) : (
                         <div>
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                                    Name
+                                    {t('importWallet.fields.name')}
                                 </label>
                                 <input
                                     type="text"
-                                    value={walletData.name || 'Unnamed Wallet'}
+                                    value={walletData.name || t('importWallet.unnamedWallet')}
                                     onChange={(e) => {
                                         const wallet = { ...walletData, name: e.target.value };
                                         setWalletData(wallet);
@@ -264,7 +266,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
 
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                                    Address
+                                    {t('importWallet.fields.address')}
                                 </label>
                                 <div style={{
                                     background: '#111827',
@@ -282,7 +284,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
 
                             <div style={{ marginBottom: '16px' }}>
                                 <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                                    Public Key
+                                    {t('importWallet.fields.publicKey')}
                                 </label>
                                 <div style={{
                                     background: '#111827',
@@ -301,7 +303,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                             {curveDetection && (
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                                        Detected Curve
+                                        {t('importWallet.fields.detectedCurve')}
                                     </label>
                                     <div style={{
                                         background: '#111827',
@@ -340,7 +342,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                             {walletData.chains && walletData.chains.length > 0 && (
                                 <div style={{ marginBottom: '16px' }}>
                                     <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
-                                        Supported Chains
+                                        {t('importWallet.fields.supportedChains')}
                                     </label>
                                     <div style={{
                                         background: '#111827',
@@ -386,7 +388,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                         flex: '1'
                                     }}
                                 >
-                                    Clear
+                                    {t('common.clear')}
                                 </button>
                                 <label
                                     htmlFor="wallet-file-input"
@@ -410,7 +412,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                                         textAlign: 'center'
                                     }}
                                 >
-                                    Load Different File
+                                    {t('importWallet.loadDifferentFile')}
                                 </label>
                             </div>
                         </div>
@@ -452,7 +454,7 @@ export const ImportWallet: React.FC<ImportWalletProps> = ({ onBack, onImport, fr
                             boxSizing: 'border-box'
                         }}
                     >
-                        {!walletData ? 'Load a wallet to continue' : 'Import Wallet'}
+                        {!walletData ? t('importWallet.loadToContinue') : t('importWallet.button')}
                     </button>
                 </div>
 
@@ -477,6 +479,7 @@ interface ManualImportPageProps {
 }
 
 const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport }) => {
+    const { t } = useTranslation();
     const [importType, setImportType] = useState<'mnemonic' | 'private-key'>('mnemonic');
     const [mnemonicInput, setMnemonicInput] = useState('');
     const [privateKeyInput, setPrivateKeyInput] = useState('');
@@ -655,10 +658,10 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                         <KeyIcon />
                     </div>
                     <h2 style={{ fontSize: '24px', fontWeight: '600', textAlign: 'center', margin: '0 0 8px', color: 'white' }}>
-                        Manual Import
+                        {t('importWallet.manual.title')}
                     </h2>
                     <p style={{ fontSize: '14px', color: '#9ca3af', textAlign: 'center', margin: '0 0 32px', lineHeight: '1.5' }}>
-                        Import your wallet using a seed phrase or private key
+                        {t('importWallet.manual.subtitle')}
                     </p>
                 </div>
             </div>
@@ -673,7 +676,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                         color: '#e5e7eb',
                         marginBottom: '12px'
                     }}>
-                        Import Method
+                        {t('importWallet.manual.importMethod')}
                     </label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <button
@@ -695,7 +698,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                                 transition: 'all 0.2s'
                             }}
                         >
-                            Seed Phrase
+                            {t('importWallet.manual.seedPhrase')}
                         </button>
                         <button
                             onClick={() => {
@@ -715,7 +718,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                                 transition: 'all 0.2s'
                             }}
                         >
-                            Private Key
+                            {t('importWallet.manual.privateKey')}
                         </button>
                     </div>
                 </div>
@@ -729,13 +732,13 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                         color: '#e5e7eb',
                         marginBottom: '8px'
                     }}>
-                        Wallet Name
+                        {t('importWallet.manual.walletName')}
                     </label>
                     <input
                         type="text"
                         value={walletName}
                         onChange={(e) => setWalletName(e.target.value)}
-                        placeholder="Enter a name for your wallet"
+                        placeholder={t('importWallet.manual.walletNamePlaceholder')}
                         style={{
                             width: '100%',
                             background: '#111827',
@@ -759,19 +762,19 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                             color: '#e5e7eb',
                             marginBottom: '8px'
                         }}>
-                            Seed Phrase
+                            {t('importWallet.manual.seedPhrase')}
                         </label>
                         <p style={{
                             fontSize: '12px',
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Enter your 12 or 24 word seed phrase. Words should be separated by spaces.
+                            {t('importWallet.manual.seedPhraseHelp')}
                         </p>
                         <textarea
                             value={mnemonicInput}
                             onChange={(e) => setMnemonicInput(e.target.value)}
-                            placeholder="Enter your seed phrase here..."
+                            placeholder={t('importWallet.manual.seedPhrasePlaceholder')}
                             rows={4}
                             style={{
                                 width: '100%',
@@ -796,20 +799,20 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                             color: '#e5e7eb',
                             marginBottom: '8px'
                         }}>
-                            Private Key
+                            {t('importWallet.manual.privateKey')}
                         </label>
                         <p style={{
                             fontSize: '12px',
                             color: '#9ca3af',
                             marginBottom: '8px'
                         }}>
-                            Enter your 64-character hexadecimal private key (with or without 0x prefix).
+                            {t('importWallet.manual.privateKeyHelp')}
                         </p>
                         <input
                             type="text"
                             value={privateKeyInput}
                             onChange={(e) => setPrivateKeyInput(e.target.value)}
-                            placeholder="Enter your private key here..."
+                            placeholder={t('importWallet.manual.privateKeyPlaceholder')}
                             style={{
                                 width: '100%',
                                 background: '#111827',
@@ -844,7 +847,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                                     accentColor: '#8b5cf6'
                                 }}
                             />
-                            Auto-detect curve from private key
+                            {t('importWallet.manual.autoDetectCurve')}
                         </label>
                     </div>
                 )}
@@ -941,7 +944,7 @@ const ManualImportPage: React.FC<ManualImportPageProps> = ({ onBack, onImport })
                             animation: 'spin 1s linear infinite'
                         }}></div>
                     )}
-                    {isGenerating ? 'Importing...' : 'Import Wallet'}
+                    {isGenerating ? t('importWallet.manual.importing') : t('importWallet.button')}
                 </button>
             </div>
 
