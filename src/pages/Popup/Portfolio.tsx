@@ -161,12 +161,12 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         // Fetch prices for all symbols from CEX with timeout
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
-                        
+
                         const res = await fetch(`https://api.cex.connor33341.dev/prices?symbols=${symbols.join(',')}`, {
                             signal: controller.signal
                         });
                         clearTimeout(timeoutId);
-                        
+
                         priceData = await res.json();
                         // If the stub returns nothing or invalid, fallback
                         if (!priceData || typeof priceData !== 'object' || Object.keys(priceData).length === 0) {

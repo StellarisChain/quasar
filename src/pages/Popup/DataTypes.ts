@@ -58,3 +58,23 @@ export interface ReceiveQR {
   label?: string;
   curve: string;
 }
+
+export interface SitePermissions {
+  returnPrivateKey?: boolean; // Whether private key access was granted
+  filter?: {
+    curves?: string[];
+    assets?: string[];
+    chains?: string[];
+    minBalance?: number;
+  };
+  specificAddress?: string; // If connected to a specific address
+}
+
+export interface SiteConnection {
+  origin: string; // Full origin (e.g., https://example.com)
+  hostname: string; // Just the hostname (e.g., example.com)
+  walletAddress: string; // The wallet address that was connected
+  permissions: SitePermissions;
+  connectedAt: number; // Timestamp
+  lastUsed: number; // Timestamp
+}

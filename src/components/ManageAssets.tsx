@@ -105,7 +105,7 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                 if (selectedWallet?.chains) {
                     const walletTokenSymbols = selectedWallet.chains.map(chain => chain.symbol);
                     // Use matchesSymbol to handle aliases - e.g., wallet has "STR" but XML has "STR/STE"
-                    const preSelected = filteredTokens.filter(token => 
+                    const preSelected = filteredTokens.filter(token =>
                         walletTokenSymbols.some(walletSymbol => matchesSymbol(walletSymbol, token.Symbol))
                     );
                     setSelectedTokens(preSelected);

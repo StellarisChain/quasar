@@ -4,18 +4,38 @@ console.log('Quasar Background Script - Starting...');
 console.log(`Browser detected: ${getBrowserType()}`);
 
 // Store connected sites and pending requests
-const connectedSites = new Set();
+const connectedSites = new Set(); // Legacy: store origins for backward compatibility
 const connectedSitesData = new Map(); // Cache wallet data for connected sites
 const pendingRequests = new Map();
+
+// NEW: Store site connections per wallet with permissions
+// Format: Map<walletAddress, Map<origin, SiteConnection>>
+const walletSiteConnections = new Map();
 
 // Example of using the cross-browser API
 async function initializeExtension() {
     try {
         // Get existing connected sites from storage
-        const existingData = await browserAPI.storage.local.get(['connectedSites']);
+        const existingData = await browserAPI.storage.local.get(['connectedSites', 'walletSiteConnections']);
+        
+        // Legacy connected sites
         if (existingData.connectedSites && Array.isArray(existingData.connectedSites)) {
             existingData.connectedSites.forEach(site => connectedSites.add(site));
             console.log('Restored connected sites:', existingData.connectedSites);
+        }
+
+        // NEW: Restore wallet site connections
+        if (existingData.walletSiteConnections) {
+            try {
+                const parsed = JSON.parse(existingData.walletSiteConnections);
+                Object.entries(parsed).forEach(([walletAddress, sites]) => {
+                    const sitesMap = new Map(Object.entries(sites));
+                    walletSiteConnections.set(walletAddress, sitesMap);
+                });
+                console.log('Restored wallet site connections:', walletSiteConnections.size, 'wallets');
+            } catch (e) {
+                console.error('Failed to parse walletSiteConnections:', e);
+            }
         }
 
         // Set up initial storage
@@ -30,6 +50,83 @@ async function initializeExtension() {
     } catch (error) {
         console.error('Failed to initialize extension:', error);
     }
+}
+
+// NEW: Helper to save wallet site connections to storage
+async function saveWalletSiteConnections() {
+    try {
+        // Convert Maps to plain objects for storage
+        const serializable = {};
+        walletSiteConnections.forEach((sitesMap, walletAddress) => {
+            serializable[walletAddress] = Object.fromEntries(sitesMap);
+        });
+        
+        await browserAPI.storage.local.set({
+            walletSiteConnections: JSON.stringify(serializable)
+        });
+    } catch (error) {
+        console.error('Failed to save wallet site connections:', error);
+    }
+}
+
+// NEW: Add a site connection for a wallet
+function addSiteConnection(walletAddress, origin, hostname, permissions) {
+    if (!walletSiteConnections.has(walletAddress)) {
+        walletSiteConnections.set(walletAddress, new Map());
+    }
+    
+    const now = Date.now();
+    const connection = {
+        origin,
+        hostname,
+        walletAddress,
+        permissions,
+        connectedAt: now,
+        lastUsed: now
+    };
+    
+    walletSiteConnections.get(walletAddress).set(origin, connection);
+    saveWalletSiteConnections();
+    
+    console.log(`Added site connection for wallet ${walletAddress}: ${hostname}`);
+}
+
+// NEW: Update last used time for a connection
+function updateSiteConnectionLastUsed(walletAddress, origin) {
+    if (walletSiteConnections.has(walletAddress)) {
+        const sitesMap = walletSiteConnections.get(walletAddress);
+        if (sitesMap.has(origin)) {
+            const connection = sitesMap.get(origin);
+            connection.lastUsed = Date.now();
+            sitesMap.set(origin, connection);
+            saveWalletSiteConnections();
+        }
+    }
+}
+
+// NEW: Remove a site connection for a wallet
+function removeSiteConnection(walletAddress, origin) {
+    if (walletSiteConnections.has(walletAddress)) {
+        const sitesMap = walletSiteConnections.get(walletAddress);
+        sitesMap.delete(origin);
+        
+        if (sitesMap.size === 0) {
+            walletSiteConnections.delete(walletAddress);
+        }
+        
+        saveWalletSiteConnections();
+        console.log(`Removed site connection for wallet ${walletAddress}: ${origin}`);
+        return true;
+    }
+    return false;
+}
+
+// NEW: Get all site connections for a wallet
+function getSiteConnectionsForWallet(walletAddress) {
+    if (!walletSiteConnections.has(walletAddress)) {
+        return [];
+    }
+    return Array.from(walletSiteConnections.get(walletAddress).values());
 }
 
 // Open popup for user interaction
@@ -201,6 +298,17 @@ async function handleConnectWallet(origin, hostname, connectionParams = null) {
                         if (result.walletData) {
                             connectedSitesData.set(origin, result.walletData);
                         }
+                        
+                        // NEW: Store per-wallet site connection with permissions
+                        if (result.walletAddress) {
+                            const permissions = {
+                                returnPrivateKey: connectionParams?.return_private_key || false,
+                                filter: connectionParams?.filter || undefined,
+                                specificAddress: connectionParams?.address || undefined
+                            };
+                            addSiteConnection(result.walletAddress, origin, hostname, permissions);
+                        }
+                        
                         browserAPI.storage.local.set({
                             connectedSites: Array.from(connectedSites)
                         });
@@ -441,6 +549,59 @@ if (browserAPI.runtime.onMessage) {
                 } else {
                     sendResponse({ success: false, error: 'Request not found' });
                 }
+                break;
+
+            case 'GET_WALLET_SITE_CONNECTIONS':
+                // Get all site connections for a specific wallet
+                if (!message.walletAddress) {
+                    sendResponse({ success: false, error: 'Wallet address required' });
+                    break;
+                }
+                const connections = getSiteConnectionsForWallet(message.walletAddress);
+                sendResponse({ success: true, connections });
+                break;
+
+            case 'REMOVE_WALLET_SITE_CONNECTION':
+                // Remove a specific site connection from a wallet
+                if (!message.walletAddress || !message.origin) {
+                    sendResponse({ success: false, error: 'Wallet address and origin required' });
+                    break;
+                }
+                const removed = removeSiteConnection(message.walletAddress, message.origin);
+                
+                // Also remove from legacy connectedSites if no other wallets are connected to this origin
+                let stillConnected = false;
+                // eslint-disable-next-line no-unused-vars
+                for (const [_walletAddr, sitesMap] of walletSiteConnections) {
+                    if (sitesMap.has(message.origin)) {
+                        stillConnected = true;
+                        break;
+                    }
+                }
+                if (!stillConnected) {
+                    connectedSites.delete(message.origin);
+                    connectedSitesData.delete(message.origin);
+                    browserAPI.storage.local.set({
+                        connectedSites: Array.from(connectedSites)
+                    });
+                }
+                
+                sendResponse({ success: removed });
+                break;
+
+            case 'STORE_SITE_CONNECTION':
+                // Store a new site connection with permissions
+                if (!message.walletAddress || !message.origin || !message.hostname) {
+                    sendResponse({ success: false, error: 'Wallet address, origin, and hostname required' });
+                    break;
+                }
+                addSiteConnection(
+                    message.walletAddress,
+                    message.origin,
+                    message.hostname,
+                    message.permissions || {}
+                );
+                sendResponse({ success: true });
                 break;
 
             default:

@@ -7,6 +7,7 @@ import { useTranslation, SUPPORTED_LANGUAGES } from '../lib/i18n';
 import { testCrypto } from '../lib/crypto';
 import { WalletUnlockModal } from './WalletUnlockModal';
 import { PaperWalletModal } from './PaperWalletModal';
+import { ConnectedSites } from './ConnectedSites';
 import './WalletSettings.css';
 
 interface WalletSettingsModalProps {
@@ -1330,6 +1331,11 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Connected Sites Section */}
+                    <div style={{ marginBottom: '24px' }}>
+                        <ConnectedSites walletAddress={wallet.address} />
                     </div>
 
                     {/* Delete Wallet Section */}

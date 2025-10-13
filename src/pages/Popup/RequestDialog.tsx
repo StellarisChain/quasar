@@ -99,22 +99,22 @@ async function filterWalletsAsync(wallets: Wallet[], filter?: WalletFilter): Pro
                 return walletAssets.some(walletAsset => {
                     // Direct match
                     if (walletAsset === requestedUpper) return true;
-                    
+
                     // If we have token data, check if requested symbol matches any token that has wallet symbol as alias
                     if (tokenData) {
                         // Find tokens that match either the requested or wallet symbol
-                        const matchingToken = tokenData.find(token => 
-                            matchesSymbol(requestedUpper, token.Symbol) || 
+                        const matchingToken = tokenData.find(token =>
+                            matchesSymbol(requestedUpper, token.Symbol) ||
                             matchesSymbol(walletAsset, token.Symbol)
                         );
-                        
+
                         // If we found a token that matches both, they're aliases of each other
                         if (matchingToken) {
-                            return matchesSymbol(requestedUpper, matchingToken.Symbol) && 
-                                   matchesSymbol(walletAsset, matchingToken.Symbol);
+                            return matchesSymbol(requestedUpper, matchingToken.Symbol) &&
+                                matchesSymbol(walletAsset, matchingToken.Symbol);
                         }
                     }
-                    
+
                     return false;
                 });
             });
@@ -171,7 +171,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
         if (requestData) {
             // Apply filters if provided (now async to support symbol alias matching)
             const filter = requestData.connectionParams?.filter;
-            
+
             filterWalletsAsync(wallets, filter).then(walletsToConsider => {
                 console.log('RequestDialog - Filtering wallets:', {
                     totalWallets: wallets.length,
@@ -309,6 +309,7 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
                     result = {
                         success: true,
                         accounts: accounts,
+                        walletAddress: walletToReturn.address, // NEW: Include wallet address
                         walletData: {
                             accounts: accounts,
                             assets: assets
