@@ -161,16 +161,16 @@ export const ExampleUsage = {
     // Check compatibility
     async checkCompatibility(wallet: Wallet) {
         const canUseHAL = await canTransactAsset(wallet, 'HAL');
-        const canUseSTE = await canTransactAsset(wallet, 'STE');
+        const canUseSTR = await canTransactAsset(wallet, 'STR');
         const canUseDNR = await canTransactAsset(wallet, 'DNR');
 
         console.log(`Wallet ${wallet.name} compatibility:`, {
             HAL: canUseHAL,
-            STE: canUseSTE,
+            STR: canUseSTR,
             DNR: canUseDNR
         });
 
-        return { HAL: canUseHAL, STE: canUseSTE, DNR: canUseDNR };
+        return { HAL: canUseHAL, STR: canUseSTR, DNR: canUseDNR };
     },
 
     // Display curve options

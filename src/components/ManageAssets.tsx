@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { loadTokensXmlAsJson, Chain, filterTokensByCurve } from '../lib/token_loader';
+import { loadTokensXmlAsJson, Chain, filterTokensByCurve, getPrimarySymbol, matchesSymbol } from '../lib/token_loader';
 import { Wallet } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { ChevronDownIcon, CopyIcon, SettingsIcon } from './Icons';
@@ -104,7 +104,10 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                 // Pre-select tokens that are already in the wallet
                 if (selectedWallet?.chains) {
                     const walletTokenSymbols = selectedWallet.chains.map(chain => chain.symbol);
-                    const preSelected = filteredTokens.filter(token => walletTokenSymbols.includes(token.Symbol));
+                    // Use matchesSymbol to handle aliases - e.g., wallet has "STR" but XML has "STR/STE"
+                    const preSelected = filteredTokens.filter(token => 
+                        walletTokenSymbols.some(walletSymbol => matchesSymbol(walletSymbol, token.Symbol))
+                    );
                     setSelectedTokens(preSelected);
                 }
             } catch (err) {
@@ -200,15 +203,15 @@ export const ManageAssets: React.FC<ManageAssetsProps> = ({ selectedWallet, onCl
                                         <div className="token-card-header">
                                             <div className="token-icon" style={{ backgroundColor: token.Color, overflow: 'hidden' }}>
                                                 <AssetIcon
-                                                    symbol={token.Symbol}
-                                                    alt={token.Symbol}
-                                                    fallback={token.Symbol.slice(0, 2)}
+                                                    symbol={getPrimarySymbol(token.Symbol)}
+                                                    alt={getPrimarySymbol(token.Symbol)}
+                                                    fallback={getPrimarySymbol(token.Symbol).slice(0, 2)}
                                                     color={token.Color}
                                                 />
                                             </div>
                                             <div className="token-details">
                                                 <div className="token-name">{token.Name}</div>
-                                                <div className="token-symbol">{token.Symbol} • {token.Curve?.toUpperCase() || 'UNKNOWN'}</div>
+                                                <div className="token-symbol">{getPrimarySymbol(token.Symbol)} • {token.Curve?.toUpperCase() || 'UNKNOWN'}</div>
                                             </div>
                                         </div>
                                         <div className="token-selection">

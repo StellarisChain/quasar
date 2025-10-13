@@ -1,7 +1,7 @@
 import { Wallet } from './DataTypes';
 import { curves, sha256, CurveType } from '../../lib/wallet_generation_utils';
 import { createTransaction } from '../../lib/wallet_client';
-import { loadTokensXmlAsJson } from '../../lib/token_loader';
+import { loadTokensXmlAsJson, matchesSymbol } from '../../lib/token_loader';
 import { Decimal } from 'decimal.js';
 
 export interface WalletOperation {
@@ -32,7 +32,8 @@ export class QuasarWalletOperations implements WalletOperation {
         let node: string | undefined;
         try {
             const tokenData = await loadTokensXmlAsJson('tokens.xml');
-            node = tokenData.find(token => token.Symbol === asset)?.Node;
+            // Match using symbol aliases - so both "STR" and "STE" will find "STR/STE"
+            node = tokenData.find(token => matchesSymbol(asset, token.Symbol))?.Node;
         } catch (error) {
             console.warn('Could not load token data, using fallback node:', error);
         }

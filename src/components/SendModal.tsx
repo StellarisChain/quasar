@@ -6,7 +6,7 @@ import { Wallet, ChainData, ReceiveQR } from '../pages/Popup/DataTypes';
 import { getTokenImagePath } from '../pages/Popup/TokenImageUtil';
 import { createTransaction } from '../lib/wallet_client';
 import { Transaction } from '../lib/transaction/transaction';
-import { loadTokensXmlAsJson, filterTokensByCurve } from '../lib/token_loader';
+import { loadTokensXmlAsJson, filterTokensByCurve, matchesSymbol } from '../lib/token_loader';
 import { CurveType } from '../lib/wallet_generation_utils';
 import { getWalletCredentials, isWalletLocked } from '../pages/Popup/WalletUtils';
 import { QRScanner } from './QRScanner';
@@ -59,11 +59,12 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
             try {
                 const allTokens = await loadTokensXmlAsJson('tokens.xml');
                 const walletCurve = wallet.curve || 'secp256k1';
-                const compatibleTokenSymbols = filterTokensByCurve(allTokens, walletCurve).map(token => token.Symbol);
+                const compatibleTokens = filterTokensByCurve(allTokens, walletCurve);
 
                 // Filter wallet chains to only include compatible ones
+                // Use matchesSymbol to handle aliases (e.g., wallet has "STR" but XML has "STR/STE")
                 const compatibleAssets = wallet.chains.filter(chain =>
-                    compatibleTokenSymbols.includes(chain.symbol)
+                    compatibleTokens.some(token => matchesSymbol(chain.symbol, token.Symbol))
                 );
 
                 setAvailableAssets(compatibleAssets);
@@ -215,7 +216,8 @@ export const SendModal: React.FC<SendModalProps> = ({ wallet, allWallets, onClos
                 amount,
                 memo ? new TextEncoder().encode(memo) : null,
                 null,
-                tokenData ? tokenData.find(token => token.Symbol === selectedAsset?.symbol)?.Node ?? undefined : undefined,
+                // Use matchesSymbol to handle aliases (e.g., wallet has "STR" but XML has "STR/STE")
+                tokenData ? tokenData.find(token => matchesSymbol(selectedAsset?.symbol || '', token.Symbol))?.Node ?? undefined : undefined,
                 (wallet.curve ?? 'secp256k1') as CurveType
             );
 

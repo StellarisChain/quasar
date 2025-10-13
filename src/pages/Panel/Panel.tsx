@@ -44,7 +44,7 @@ const Panel: React.FC = () => {
     const [transactionForm, setTransactionForm] = useState<TransactionParams>({
         to: '0x742d35cc6634c0532925a3b8d17c93fb',
         amount: '1.0',
-        asset: 'STE',
+        asset: 'STR',
         memo: 'Test transaction from devtools'
     });
 
@@ -422,7 +422,7 @@ const Panel: React.FC = () => {
                                 text: 'Send TX', action: () => (window as any).quasar?.sendTransaction({
                                     to: '0xTest...Address',
                                     amount: '0.1',
-                                    asset: 'STE',
+                                    asset: 'STR',
                                     memo: 'Test from page'
                                 })
                             },
@@ -558,13 +558,13 @@ const Panel: React.FC = () => {
             small: {
                 to: '0x742d35cc6634c0532925a3b8d17c93fb',
                 amount: '0.001',
-                asset: 'STE',
+                asset: 'STR',
                 memo: 'Small test transaction'
             },
             large: {
                 to: '0x742d35cc6634c0532925a3b8d17c93fb',
                 amount: '100.0',
-                asset: 'STE',
+                asset: 'STR',
                 memo: 'Large test transaction'
             },
             token: {
@@ -774,7 +774,7 @@ const Panel: React.FC = () => {
                         value={transactionForm.asset}
                         onChange={(e) => setTransactionForm({ ...transactionForm, asset: e.target.value })}
                     >
-                        <option value="STE">STE</option>
+                        <option value="STR">STR</option>
                         <option value="ETH">ETH</option>
                         <option value="BTC">BTC</option>
                         <option value="USDT">USDT</option>
@@ -967,7 +967,7 @@ const Panel: React.FC = () => {
                             onClick={() => testSendTransaction({
                                 to: '0x742d35cc6634c0532925a3b8d17c93fb',
                                 amount: '0.1',
-                                asset: 'STE',
+                                asset: 'STR',
                                 memo: 'Quick test transaction'
                             })}
                             disabled={!!loading}

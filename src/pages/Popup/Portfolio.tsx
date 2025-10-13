@@ -10,7 +10,7 @@ import { BulkExportModal } from '../../components/BulkExportModal';
 import { SendModal } from '../../components/SendModal';
 import { ReceiveModal } from '../../components/ReceiveModal';
 import { WalletUnlockModal } from '../../components/WalletUnlockModal';
-import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken } from '../../lib/token_loader';
+import { loadTokensXmlAsJson, Chain as TokenFromXML, SubToken, getPrimarySymbol, matchesSymbol } from '../../lib/token_loader';
 import { getBalanceInfo } from '../../lib/wallet_client';
 import { fetchMultipleStellarisChainPrices, isStellarisBasedChain } from '../../lib/stellaris_price_api';
 import { useTranslation } from '../../lib/i18n';
@@ -98,7 +98,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
         // Convert selected tokens to ChainData format
         const newChains: ChainData[] = selectedTokens.map(token => ({
             name: token.Name,
-            symbol: token.Symbol,
+            symbol: getPrimarySymbol(token.Symbol), // Use primary symbol for display (e.g., STR from STR/STE)
             balance: '0.00', // Default balance
             fiatValue: 0,
             change24h: 0,
@@ -178,7 +178,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                     for (const wallet of wallets) {
                         for (const chain of wallet.chains || []) {
                             if (!priceData[chain.symbol]) {
-                                const tokenData = tokenFromXMLData.find(token => token.Symbol === chain.symbol);
+                                const tokenData = tokenFromXMLData.find(token => matchesSymbol(chain.symbol, token.Symbol));
                                 if (tokenData?.Node && isStellarisBasedChain(tokenData.Node)) {
                                     stellarisChainNodeMap[chain.symbol] = tokenData.Node;
                                 }
@@ -210,13 +210,14 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                             };
                         }
                     });
+                    
                     // Update wallets with price info
                     const updatedWallets = await Promise.all(wallets.map(async wallet => {
                         const chains = await Promise.all(
                             (wallet.chains ?? []).map(async chain => {
                                 const chainPrice = priceData[chain.symbol]?.price ?? 0;
                                 const chainChange = priceData[chain.symbol]?.change24h ?? 0;
-                                const tokenData: TokenFromXML = tokenFromXMLData.find(token => token.Symbol === chain.symbol) || {
+                                const tokenData: TokenFromXML = tokenFromXMLData.find(token => matchesSymbol(chain.symbol, token.Symbol)) || {
                                     Name: 'Fallback',
                                     Symbol: chain.symbol,
                                     Color: '',

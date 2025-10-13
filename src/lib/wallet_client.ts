@@ -131,6 +131,7 @@ export async function getAddressInfo(
         const balance = new Decimal(String(result.balance));
         return [balance, txInputs, isPending, pendingSpentOutputs, pendingTransactionHashes, false];
     } catch (e) {
+        console.warn(address, node, privateKey, curve);
         console.error(e);
         return [null, null, null, null, null, true];
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, CheckIcon } from '../../components/Icons';
 import { walletOperations } from './WalletOperations';
+import { getPrimarySymbol, matchesSymbol, loadTokensXmlAsJson, Chain } from '../../lib/token_loader';
 import { Wallet } from './DataTypes';
 import './RequestDialog.css';
 
@@ -37,10 +38,21 @@ interface RequestDialogProps {
 
 /**
  * Filters wallets based on the provided filter criteria
+ * Now supports async token loading for proper symbol alias matching
  */
-function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
+async function filterWalletsAsync(wallets: Wallet[], filter?: WalletFilter): Promise<any[]> {
     if (!filter || !wallets || wallets.length === 0) {
         return wallets;
+    }
+
+    // Load token data if we need to filter by assets (for symbol alias matching)
+    let tokenData: Chain[] | null = null;
+    if (filter.assets && filter.assets.length > 0) {
+        try {
+            tokenData = await loadTokensXmlAsJson('tokens.xml');
+        } catch (error) {
+            console.warn('Failed to load token data for symbol matching:', error);
+        }
     }
 
     return wallets.filter(wallet => {
@@ -80,9 +92,32 @@ function filterWallets(wallets: Wallet[], filter?: WalletFilter): any[] {
                 });
             });
 
-            const hasMatchingAsset = filter.assets.some(asset =>
-                walletAssets.includes(asset.toUpperCase())
-            );
+            // Check if any requested asset matches any wallet asset using symbol aliases
+            // This allows "STE" to match wallet with "STR" (both are aliases of "STR/STE")
+            const hasMatchingAsset = filter.assets.some(requestedAsset => {
+                const requestedUpper = requestedAsset.toUpperCase();
+                return walletAssets.some(walletAsset => {
+                    // Direct match
+                    if (walletAsset === requestedUpper) return true;
+                    
+                    // If we have token data, check if requested symbol matches any token that has wallet symbol as alias
+                    if (tokenData) {
+                        // Find tokens that match either the requested or wallet symbol
+                        const matchingToken = tokenData.find(token => 
+                            matchesSymbol(requestedUpper, token.Symbol) || 
+                            matchesSymbol(walletAsset, token.Symbol)
+                        );
+                        
+                        // If we found a token that matches both, they're aliases of each other
+                        if (matchingToken) {
+                            return matchesSymbol(requestedUpper, matchingToken.Symbol) && 
+                                   matchesSymbol(walletAsset, matchingToken.Symbol);
+                        }
+                    }
+                    
+                    return false;
+                });
+            });
             if (!hasMatchingAsset) {
                 return false;
             }
@@ -134,47 +169,53 @@ export const RequestDialog: React.FC<RequestDialogProps> = ({
     // Initialize selected wallet for request based on the type and available wallets
     useEffect(() => {
         if (requestData) {
-            // Apply filters if provided
+            // Apply filters if provided (now async to support symbol alias matching)
             const filter = requestData.connectionParams?.filter;
-            const walletsToConsider = filterWallets(wallets, filter);
-            console.log('RequestDialog - Filtering wallets:', {
-                totalWallets: wallets.length,
-                filter: filter,
-                filteredCount: walletsToConsider.length,
-                filteredWallets: walletsToConsider.map(w => ({ id: w.id, name: w.name, curve: w.curve }))
-            });
-            setFilteredWallets(walletsToConsider);
+            
+            filterWalletsAsync(wallets, filter).then(walletsToConsider => {
+                console.log('RequestDialog - Filtering wallets:', {
+                    totalWallets: wallets.length,
+                    filter: filter,
+                    filteredCount: walletsToConsider.length,
+                    filteredWallets: walletsToConsider.map((w: any) => ({ id: w.id, name: w.name, curve: w.curve }))
+                });
+                setFilteredWallets(walletsToConsider);
 
-            if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
-                // If a specific address is requested, find that wallet
-                if (requestData.requestedAddress) {
-                    const requestedWallet = walletsToConsider.find(wallet =>
-                        wallet.address === requestData.requestedAddress ||
-                        wallet.address?.toLowerCase() === requestData.requestedAddress?.toLowerCase()
-                    );
+                if (requestData.type === 'CONNECT' || requestData.type === 'GET_WALLET_DATA') {
+                    // If a specific address is requested, find that wallet
+                    if (requestData.requestedAddress) {
+                        const requestedWallet = walletsToConsider.find((wallet: any) =>
+                            wallet.address === requestData.requestedAddress ||
+                            wallet.address?.toLowerCase() === requestData.requestedAddress?.toLowerCase()
+                        );
 
-                    if (requestedWallet) {
-                        setSelectedWalletForRequest(requestedWallet);
+                        if (requestedWallet) {
+                            setSelectedWalletForRequest(requestedWallet);
+                        } else {
+                            // Wallet with requested address not found (or doesn't match filters)
+                            setSelectedWalletForRequest(null);
+                            setError(`Wallet with address ${requestData.requestedAddress} is not loaded in the extension or does not match the requested filters`);
+                        }
                     } else {
-                        // Wallet with requested address not found (or doesn't match filters)
-                        setSelectedWalletForRequest(null);
-                        setError(`Wallet with address ${requestData.requestedAddress} is not loaded in the extension or does not match the requested filters`);
+                        // For CONNECT and GET_WALLET_DATA without specific address, use default selected wallet or first available from filtered list
+                        const defaultWallet = walletsToConsider.find((w: any) => w.id === selectedWallet?.id) ||
+                            (walletsToConsider.length > 0 ? walletsToConsider[0] : null);
+                        setSelectedWalletForRequest(defaultWallet);
+
+                        // Show error if no wallets match the filter
+                        if (walletsToConsider.length === 0) {
+                            setError('No wallets match the requested filter criteria');
+                        }
                     }
                 } else {
-                    // For CONNECT and GET_WALLET_DATA without specific address, use default selected wallet or first available from filtered list
-                    const defaultWallet = walletsToConsider.find(w => w.id === selectedWallet?.id) ||
-                        (walletsToConsider.length > 0 ? walletsToConsider[0] : null);
-                    setSelectedWalletForRequest(defaultWallet);
-
-                    // Show error if no wallets match the filter
-                    if (walletsToConsider.length === 0) {
-                        setError('No wallets match the requested filter criteria');
-                    }
+                    // For TRANSACTION/SIGN_MESSAGE, use selected wallet or first available
+                    setSelectedWalletForRequest(selectedWallet || (walletsToConsider.length > 0 ? walletsToConsider[0] : null));
                 }
-            } else {
-                // For TRANSACTION/SIGN_MESSAGE, use selected wallet or first available
-                setSelectedWalletForRequest(selectedWallet || (walletsToConsider.length > 0 ? walletsToConsider[0] : null));
-            }
+            }).catch(error => {
+                console.error('Error filtering wallets:', error);
+                // Fallback to unfiltered wallets
+                setFilteredWallets(wallets);
+            });
         }
     }, [requestData, selectedWallet, wallets]);
 
