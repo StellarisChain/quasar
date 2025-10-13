@@ -117,7 +117,7 @@ export async function getAddressInfo(
 
         // Process UTXOs in parallel batches for maximum speed
         const BATCH_SIZE = 100; // Process 100 UTXOs at a time
-        
+
         const processUTXO = (spendableTxInput: any): TransactionInput | null => {
             const isOutputPending = pendingSpentOutputs.some(
                 ([txHash, idx]) => txHash === spendableTxInput.tx_hash && idx === spendableTxInput.index
@@ -126,25 +126,25 @@ export async function getAddressInfo(
                 isPending = true;
                 return null;
             }
-            
+
             const txInput = new TransactionInput(
-                spendableTxInput.tx_hash, 
-                spendableTxInput.index, 
-                undefined, 
-                undefined, 
-                undefined, 
-                undefined, 
+                spendableTxInput.tx_hash,
+                spendableTxInput.index,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
                 curve
             );
             txInput.amount = new Decimal(String(spendableTxInput.amount));
-            
+
             if (!privateKey || !cachedPublicKey) {
                 throw new Error('privateKey is required to derive publicKey for transaction input');
             }
-            
+
             txInput.publicKey = cachedPublicKey;
             txInput.privateKey = privateKey;
-            
+
             return txInput;
         };
 
@@ -155,7 +155,7 @@ export async function getAddressInfo(
             const batchResults = await Promise.all(
                 batch.map((utxo: any) => Promise.resolve(processUTXO(utxo)))
             );
-            
+
             // Add valid inputs to the list
             for (const txInput of batchResults) {
                 if (txInput) {
