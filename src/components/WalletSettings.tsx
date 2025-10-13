@@ -7,8 +7,26 @@ import { useTranslation, SUPPORTED_LANGUAGES } from '../lib/i18n';
 import { testCrypto } from '../lib/crypto';
 import { WalletUnlockModal } from './WalletUnlockModal';
 import { PaperWalletModal } from './PaperWalletModal';
-import { ConnectedSites } from './ConnectedSites';
 import './WalletSettings.css';
+
+// Runtime check for extension context
+const isExtensionContext = () => {
+    try {
+        return !!(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+    } catch {
+        return false;
+    }
+};
+
+// Conditionally import ConnectedSites only in extension context
+let ConnectedSites: any = null;
+if (isExtensionContext()) {
+    try {
+        ConnectedSites = require('./ConnectedSites').ConnectedSites;
+    } catch (e) {
+        console.warn('Failed to load ConnectedSites:', e);
+    }
+}
 
 interface WalletSettingsModalProps {
     wallet: Wallet;
@@ -1333,10 +1351,12 @@ export const WalletSettingsModal: React.FC<WalletSettingsModalProps> = ({
                         )}
                     </div>
 
-                    {/* Connected Sites Section */}
-                    <div style={{ marginBottom: '24px' }}>
-                        <ConnectedSites walletAddress={wallet.address} />
-                    </div>
+                    {/* Connected Sites Section - Only in extension */}
+                    {ConnectedSites && (
+                        <div style={{ marginBottom: '24px' }}>
+                            <ConnectedSites walletAddress={wallet.address} />
+                        </div>
+                    )}
 
                     {/* Delete Wallet Section */}
                     <div style={{ marginBottom: '16px' }}>

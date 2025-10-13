@@ -101,25 +101,67 @@ export async function getAddressInfo(
             pendingSpentOutputs.push([value.tx_hash, value.index]);
         }
 
-        for (const spendableTxInput of result.spendable_outputs || []) {
+        // Sort spendable outputs by amount descending (largest first)
+        const spendableOutputs = (result.spendable_outputs || []).sort((a: any, b: any) => {
+            const aAmount = new Decimal(String(a.amount));
+            const bAmount = new Decimal(String(b.amount));
+            return bAmount.minus(aAmount).toNumber();
+        });
+
+        // Pre-compute publicKey once since it's the same for all UTXOs with same privateKey
+        let cachedPublicKey: Uint8Array | null = null;
+        if (privateKey) {
+            const curveInstance = curves[curve];
+            cachedPublicKey = curveInstance.getPublicKey(privateKey);
+        }
+
+        // Process UTXOs in parallel batches for maximum speed
+        const BATCH_SIZE = 100; // Process 100 UTXOs at a time
+
+        const processUTXO = (spendableTxInput: any): TransactionInput | null => {
             const isOutputPending = pendingSpentOutputs.some(
                 ([txHash, idx]) => txHash === spendableTxInput.tx_hash && idx === spendableTxInput.index
             );
             if (isOutputPending) {
                 isPending = true;
-                continue;
+                return null;
             }
-            const txInput = new TransactionInput(spendableTxInput.tx_hash, spendableTxInput.index, undefined, undefined, undefined, undefined, curve);
+
+            const txInput = new TransactionInput(
+                spendableTxInput.tx_hash,
+                spendableTxInput.index,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                curve
+            );
             txInput.amount = new Decimal(String(spendableTxInput.amount));
-            // Always set publicKey from privateKey, never from address
-            if (!privateKey) {
+
+            if (!privateKey || !cachedPublicKey) {
                 throw new Error('privateKey is required to derive publicKey for transaction input');
             }
-            const curveInstance = curves[curve];
-            txInput.publicKey = curveInstance.getPublicKey(privateKey);
-            txInput.privateKey = privateKey; // Set the private key directly
-            console.debug('TransactionInput - privateKey length:', privateKey.length, 'publicKey:', Buffer.from(txInput.publicKey).toString('hex'));
-            txInputs.push(txInput);
+
+            txInput.publicKey = cachedPublicKey;
+            txInput.privateKey = privateKey;
+
+            return txInput;
+        };
+
+        // Process all UTXOs in parallel batches
+        for (let i = 0; i < spendableOutputs.length; i += BATCH_SIZE) {
+            const batch = spendableOutputs.slice(i, i + BATCH_SIZE);
+            // Use Promise.all to process the batch in parallel
+            const batchResults = await Promise.all(
+                batch.map((utxo: any) => Promise.resolve(processUTXO(utxo)))
+            );
+
+            // Add valid inputs to the list
+            for (const txInput of batchResults) {
+                if (txInput) {
+                    txInputs.push(txInput);
+                }
+            }
         }
 
         if (isPending) {
@@ -167,11 +209,11 @@ export async function createTransaction(
     let pendingTransactionHashes: string[] | null = null;
 
     for (const key of privateKeys) {
-        const [bal, addressInputs, pending, _pendingSpent, pendingHashes, isError] = await getAddressInfo(sender, node!, key, curve);
+        const [bal, addressInputs, pending, , pendingHashes, isError] = await getAddressInfo(sender, node!, key, curve);
         console.debug('getAddressInfo result:', {
             key,
             bal: bal?.toString(),
-            addressInputs,
+            addressInputs: addressInputs?.length,
             pending,
             pendingHashes,
             isError
@@ -188,17 +230,13 @@ export async function createTransaction(
             }
             inputs = inputs.concat(addressInputs);
         }
-        // Check if enough inputs have been gathered
+        // Check if enough inputs have been gathered - early exit
         const sumInputs = inputs
-            .sort((a, b) => {
-                const aAmount = a.amount ?? new Decimal(0);
-                const bAmount = b.amount ?? new Decimal(0);
-                return aAmount.minus(bAmount).toNumber();
-            })
             .slice(0, 255)
             .reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));
-        console.debug('Accumulated sumInputs:', sumInputs.toString(), 'inputs:', inputs);
+        console.debug('Accumulated sumInputs:', sumInputs.toString(), 'from', inputs.length, 'inputs');
         if (sumInputs.greaterThanOrEqualTo(decAmount)) {
+            console.debug('Sufficient balance reached, stopping UTXO collection early');
             break;
         }
     }
@@ -231,21 +269,21 @@ export async function createTransaction(
         return null;
     }
 
-    // Select appropriate transaction inputs
+    // Select appropriate transaction inputs (already sorted by amount descending from getAddressInfo)
     const transactionInputs: TransactionInput[] = [];
     let runningSum = new Decimal(0);
-    for (const txInput of inputs.sort((a, b) => {
-        const aAmount = a.amount ?? new Decimal(0);
-        const bAmount = b.amount ?? new Decimal(0);
-        return aAmount.minus(bAmount).toNumber();
-    })) {
+    for (const txInput of inputs) {
         transactionInputs.push(txInput);
         runningSum = runningSum.plus(txInput.amount ?? new Decimal(0));
         if (runningSum.greaterThanOrEqualTo(decAmount)) {
             break;
         }
+        // Hard limit on max inputs per transaction
+        if (transactionInputs.length >= 255) {
+            break;
+        }
     }
-    console.debug('Selected transactionInputs:', transactionInputs);
+    console.debug('Selected', transactionInputs.length, 'transaction inputs totaling', runningSum.toString());
 
     // Ensure that the transaction amount is adequate
     const transactionAmount = transactionInputs.reduce((acc, input) => acc.plus(input.amount ?? new Decimal(0)), new Decimal(0));

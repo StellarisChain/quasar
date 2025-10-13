@@ -17,7 +17,7 @@ async function initializeExtension() {
     try {
         // Get existing connected sites from storage
         const existingData = await browserAPI.storage.local.get(['connectedSites', 'walletSiteConnections']);
-        
+
         // Legacy connected sites
         if (existingData.connectedSites && Array.isArray(existingData.connectedSites)) {
             existingData.connectedSites.forEach(site => connectedSites.add(site));
@@ -60,7 +60,7 @@ async function saveWalletSiteConnections() {
         walletSiteConnections.forEach((sitesMap, walletAddress) => {
             serializable[walletAddress] = Object.fromEntries(sitesMap);
         });
-        
+
         await browserAPI.storage.local.set({
             walletSiteConnections: JSON.stringify(serializable)
         });
@@ -74,7 +74,7 @@ function addSiteConnection(walletAddress, origin, hostname, permissions) {
     if (!walletSiteConnections.has(walletAddress)) {
         walletSiteConnections.set(walletAddress, new Map());
     }
-    
+
     const now = Date.now();
     const connection = {
         origin,
@@ -84,10 +84,10 @@ function addSiteConnection(walletAddress, origin, hostname, permissions) {
         connectedAt: now,
         lastUsed: now
     };
-    
+
     walletSiteConnections.get(walletAddress).set(origin, connection);
     saveWalletSiteConnections();
-    
+
     console.log(`Added site connection for wallet ${walletAddress}: ${hostname}`);
 }
 
@@ -109,11 +109,11 @@ function removeSiteConnection(walletAddress, origin) {
     if (walletSiteConnections.has(walletAddress)) {
         const sitesMap = walletSiteConnections.get(walletAddress);
         sitesMap.delete(origin);
-        
+
         if (sitesMap.size === 0) {
             walletSiteConnections.delete(walletAddress);
         }
-        
+
         saveWalletSiteConnections();
         console.log(`Removed site connection for wallet ${walletAddress}: ${origin}`);
         return true;
@@ -298,7 +298,7 @@ async function handleConnectWallet(origin, hostname, connectionParams = null) {
                         if (result.walletData) {
                             connectedSitesData.set(origin, result.walletData);
                         }
-                        
+
                         // NEW: Store per-wallet site connection with permissions
                         if (result.walletAddress) {
                             const permissions = {
@@ -308,7 +308,7 @@ async function handleConnectWallet(origin, hostname, connectionParams = null) {
                             };
                             addSiteConnection(result.walletAddress, origin, hostname, permissions);
                         }
-                        
+
                         browserAPI.storage.local.set({
                             connectedSites: Array.from(connectedSites)
                         });
@@ -568,7 +568,7 @@ if (browserAPI.runtime.onMessage) {
                     break;
                 }
                 const removed = removeSiteConnection(message.walletAddress, message.origin);
-                
+
                 // Also remove from legacy connectedSites if no other wallets are connected to this origin
                 let stillConnected = false;
                 // eslint-disable-next-line no-unused-vars
@@ -585,7 +585,7 @@ if (browserAPI.runtime.onMessage) {
                         connectedSites: Array.from(connectedSites)
                     });
                 }
-                
+
                 sendResponse({ success: removed });
                 break;
 
