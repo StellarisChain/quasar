@@ -23,7 +23,7 @@ export const ConnectedSites: React.FC<ConnectedSitesProps> = ({ walletAddress })
         try {
             setLoading(true);
             setError('');
-            
+
             const response = await browserAPI.runtime.sendMessage({
                 type: 'GET_WALLET_SITE_CONNECTIONS',
                 walletAddress
@@ -93,15 +93,15 @@ export const ConnectedSites: React.FC<ConnectedSitesProps> = ({ walletAddress })
 
     const getPermissionsSummary = (connection: SiteConnection): string[] => {
         const perms: string[] = [];
-        
+
         if (connection.permissions.returnPrivateKey) {
             perms.push('Private key access');
         }
-        
+
         if (connection.permissions.specificAddress) {
             perms.push('Specific address');
         }
-        
+
         if (connection.permissions.filter) {
             const f = connection.permissions.filter;
             if (f.curves) perms.push(`Curves: ${f.curves.join(', ')}`);
@@ -109,11 +109,11 @@ export const ConnectedSites: React.FC<ConnectedSitesProps> = ({ walletAddress })
             if (f.chains) perms.push(`Chains: ${f.chains.join(', ')}`);
             if (f.minBalance) perms.push(`Min: $${f.minBalance}`);
         }
-        
+
         if (perms.length === 0) {
             perms.push('Standard access');
         }
-        
+
         return perms;
     };
 
