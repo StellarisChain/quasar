@@ -60,20 +60,43 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
     // Hover state for address container
     const [isAddressHovered, setIsAddressHovered] = useState(false);
 
+    // Address format state (stellaris or ethereum)
+    const [addressFormat, setAddressFormat] = useState<'stellaris' | 'ethereum'>('stellaris');
+
     // Unlock modal state
     const [showUnlockModal, setShowUnlockModal] = useState(false);
 
     // Check if wallet is locked
     const walletIsLocked = selectedWallet ? isWalletLocked(selectedWallet) : false;
 
+    // Get the current address based on format selection
+    const getCurrentAddress = () => {
+        if (!selectedWallet) return '';
+        if (addressFormat === 'ethereum' && selectedWallet.address_ethereum) {
+            return selectedWallet.address_ethereum;
+        }
+        if (addressFormat === 'stellaris' && selectedWallet.address_stellaris) {
+            return selectedWallet.address_stellaris;
+        }
+        // Fallback to default address
+        return selectedWallet.address || '';
+    };
+
     // Copy address handler
     const handleCopyAddress = () => {
-        if (selectedWallet?.address) {
-            navigator.clipboard.writeText(selectedWallet.address);
+        const currentAddress = getCurrentAddress();
+        if (currentAddress) {
+            navigator.clipboard.writeText(currentAddress);
             setCopied(true);
             if (copyTimeout.current) clearTimeout(copyTimeout.current);
             copyTimeout.current = setTimeout(() => setCopied(false), 1200);
         }
+    };
+
+    // Toggle address format
+    const toggleAddressFormat = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent copy on toggle
+        setAddressFormat(prev => prev === 'stellaris' ? 'ethereum' : 'stellaris');
     };
 
     // Function to refresh selected wallet from localStorage to ensure we have latest data
@@ -383,63 +406,87 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
             <div className="popup-content" style={{ overflow: 'auto', maxHeight: 'calc(100vh - 64px)' }}>
                 {/* Wallet Address Display */}
                 {selectedWallet?.address && (
-                    <div
-                        className="wallet-address-container"
-                        title={selectedWallet.address}
-                        onClick={handleCopyAddress}
-                        onMouseEnter={() => setIsAddressHovered(true)}
-                        onMouseLeave={() => setIsAddressHovered(false)}
-                        style={{ position: 'relative' }}
-                    >
-                        <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
-                            <span className="wallet-address-text">
-                                {shortenAddress(selectedWallet.address, 6)}
-                                <span className="wallet-address-full">{selectedWallet.address}</span>
+                    <div>
+                        <div
+                            className="wallet-address-container"
+                            title={getCurrentAddress()}
+                            onClick={handleCopyAddress}
+                            onMouseEnter={() => setIsAddressHovered(true)}
+                            onMouseLeave={() => setIsAddressHovered(false)}
+                            style={{ position: 'relative' }}
+                        >
+                            <span className={`wallet-address-span${copied ? ' copied' : ''}`}>
+                                <span className="wallet-address-text">
+                                    {shortenAddress(getCurrentAddress(), 6)}
+                                    <span className="wallet-address-full">{getCurrentAddress()}</span>
+                                </span>
                             </span>
-                        </span>
 
-                        {/* Curve indicator dot - always visible */}
-                        {selectedWallet?.curve && (
-                            <span style={{
-                                width: '6px',
-                                height: '6px',
-                                borderRadius: '50%',
-                                background: selectedWallet.curve === 'secp256k1' ? '#10b981' : '#f59e0b',
-                                marginLeft: '8px',
-                                marginRight: '4px',
-                                opacity: isAddressHovered ? 0 : 0.7,
-                                transition: 'opacity 0.2s ease'
-                            }} />
-                        )}
+                            {/* Address format indicator and toggle */}
+                            {selectedWallet.address_stellaris && selectedWallet.address_ethereum && (
+                                <span 
+                                    onClick={toggleAddressFormat}
+                                    style={{
+                                        fontSize: '11px',
+                                        color: '#9ca3af',
+                                        marginLeft: '8px',
+                                        cursor: 'pointer',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        background: '#374151',
+                                        transition: 'background 0.2s ease',
+                                        userSelect: 'none'
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#4b5563')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = '#374151')}
+                                    title={`Click to switch to ${addressFormat === 'stellaris' ? 'Ethereum' : 'Stellaris'} format`}
+                                >
+                                    {addressFormat === 'stellaris' ? 'D/E' : '0x'}
+                                </span>
+                            )}
 
-                        {/* Lock indicator */}
-                        {walletIsLocked && (
-                            <span
-                                className="wallet-lock-indicator"
-                                style={{
-                                    color: '#fbbf24',
+                            {/* Curve indicator dot - always visible */}
+                            {selectedWallet?.curve && (
+                                <span style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    borderRadius: '50%',
+                                    background: selectedWallet.curve === 'secp256k1' ? '#10b981' : '#f59e0b',
                                     marginLeft: '8px',
                                     marginRight: '4px',
-                                    fontSize: '14px'
-                                }}
-                                title="Wallet is locked"
-                            >
-                                <LockClosedIcon />
-                            </span>
-                        )}
+                                    opacity: isAddressHovered ? 0 : 0.7,
+                                    transition: 'opacity 0.2s ease'
+                                }} />
+                            )}
 
-                        {/* Expanded curve text on hover */}
-                        {selectedWallet?.curve && (
-                            <span style={{
-                                fontSize: '12px',
-                                color: '#9ca3af',
-                                opacity: isAddressHovered ? 1 : 0,
-                                maxWidth: isAddressHovered ? '100px' : '0px',
-                                overflow: 'hidden',
-                                whiteSpace: 'nowrap',
-                                transition: 'all 0.2s ease',
-                                marginRight: isAddressHovered ? '8px' : '0px'
-                            }}>
+                            {/* Lock indicator */}
+                            {walletIsLocked && (
+                                <span
+                                    className="wallet-lock-indicator"
+                                    style={{
+                                        color: '#fbbf24',
+                                        marginLeft: '8px',
+                                        marginRight: '4px',
+                                        fontSize: '14px'
+                                    }}
+                                    title="Wallet is locked"
+                                >
+                                    <LockClosedIcon />
+                                </span>
+                            )}
+
+                            {/* Expanded curve text on hover */}
+                            {selectedWallet?.curve && (
+                                <span style={{
+                                    fontSize: '12px',
+                                    color: '#9ca3af',
+                                    opacity: isAddressHovered ? 1 : 0,
+                                    maxWidth: isAddressHovered ? '100px' : '0px',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    transition: 'all 0.2s ease',
+                                    marginRight: isAddressHovered ? '8px' : '0px'
+                                }}>
                                 {selectedWallet.curve.toUpperCase()}
                             </span>
                         )}
@@ -467,6 +514,7 @@ export const Portfolio = ({ wallets, selectedWallet, setSelectedWallet, setWalle
                         >
                             Copied!
                         </span>
+                    </div>
                     </div>
                 )}
 

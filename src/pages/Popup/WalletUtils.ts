@@ -1,5 +1,10 @@
 import { Wallet } from './DataTypes';
 import { encryptData, decryptData, hashPassword, generateSalt, generateIV, verifyPassword, secureClear } from '../../lib/crypto';
+import { stringToPoint, bytesToPoint } from '../../lib/wallet_generation_utils';
+import { generateAddresses, isValidStellarisAddress, isValidEthereumAddress } from '../../lib/address_format_utils';
+import { secp256k1 } from '@noble/curves/secp256k1';
+import { p256 } from '@noble/curves/p256';
+import bs58 from 'bs58';
 
 // LocalStorage Keys
 export const WALLET_STORAGE_KEY = 'quasar_wallets';
@@ -259,11 +264,87 @@ export const defaultWallets: Wallet[] = [
     },
 ];
 
+/**
+ * Migrate wallets to include both Stellaris and Ethereum address formats
+ * This function ensures backward compatibility with existing wallets
+ */
+function migrateWalletsToMultiFormat(wallets: Wallet[]): Wallet[] {
+    return wallets.map(wallet => {
+        // If wallet already has both address formats, return as-is
+        if (wallet.address_stellaris && wallet.address_ethereum) {
+            return wallet;
+        }
+
+        try {
+            // Determine curve type (default to secp256k1)
+            const curve = wallet.curve || 'secp256k1';
+            const curveInstance = curve === 'p256' ? p256 : secp256k1;
+
+            // If we have a public key, derive both addresses from it
+            if (wallet.public_key) {
+                try {
+                    // Parse the public key
+                    const publicKeyHex = wallet.public_key.replace(/^0x/, '');
+                    const publicKeyBytes = Buffer.from(publicKeyHex, 'hex');
+                    
+                    // Create point from public key
+                    const point = curveInstance.ProjectivePoint.fromHex(publicKeyBytes);
+                    
+                    // Generate both address formats
+                    const addresses = generateAddresses(point);
+                    
+                    return {
+                        ...wallet,
+                        address_stellaris: addresses.stellaris,
+                        address_ethereum: addresses.ethereum,
+                        // Keep the original address field for backward compatibility
+                        address: wallet.address || addresses.stellaris
+                    };
+                } catch (publicKeyError) {
+                    console.warn('Failed to parse public key for wallet migration:', wallet.id, publicKeyError);
+                }
+            }
+
+            // If wallet has an address, try to determine which format it is
+            if (wallet.address) {
+                if (isValidStellarisAddress(wallet.address)) {
+                    // Stellaris address - we can't derive Ethereum address without the full point
+                    // But we can at least set the Stellaris address explicitly
+                    return {
+                        ...wallet,
+                        address_stellaris: wallet.address,
+                        // Note: address_ethereum will remain undefined until wallet is unlocked
+                        // and we can regenerate it from the private key
+                    };
+                } else if (isValidEthereumAddress(wallet.address)) {
+                    // Ethereum address - similar limitation
+                    return {
+                        ...wallet,
+                        address_ethereum: wallet.address,
+                        // Note: address_stellaris will remain undefined until wallet is unlocked
+                    };
+                }
+            }
+
+            // If we can't migrate, return wallet as-is
+            console.warn('Unable to fully migrate wallet to multi-format:', wallet.id);
+            return wallet;
+        } catch (error) {
+            console.error('Error migrating wallet:', wallet.id, error);
+            return wallet;
+        }
+    });
+}
+
 // Load wallets from localStorage
 export const getStoredWallets = () => {
     try {
         const raw = localStorage.getItem(WALLET_STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
+        if (raw) {
+            const wallets = JSON.parse(raw);
+            // Migrate wallets to include both address formats if needed
+            return migrateWalletsToMultiFormat(wallets);
+        }
     } catch (e) { }
     console.warn('No wallets found in localStorage, using default wallets');
     return useDefaultWallets ? defaultWallets : [];
