@@ -13,18 +13,32 @@ interface ReceiveModalProps {
 export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) => {
     const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
+    const [addressFormat, setAddressFormat] = useState<'stellaris' | 'ethereum'>('stellaris');
     const copyTimeout = useRef<NodeJS.Timeout | null>(null);
     const qrCodeRef = useRef<HTMLDivElement>(null);
 
-    // Generate QR code when component mounts
+    // Get the current address based on format selection
+    const getCurrentAddress = () => {
+        if (addressFormat === 'ethereum' && wallet.address_ethereum) {
+            return wallet.address_ethereum;
+        }
+        if (addressFormat === 'stellaris' && wallet.address_stellaris) {
+            return wallet.address_stellaris;
+        }
+        // Fallback to default address
+        return wallet.address || '';
+    };
+
+    // Generate QR code when component mounts or address format changes
     useEffect(() => {
-        if (qrCodeRef.current && wallet.address) {
+        const currentAddress = getCurrentAddress();
+        if (qrCodeRef.current && currentAddress) {
             // Clear any existing QR code
             qrCodeRef.current.innerHTML = '';
 
             // Create ReceiveQR data
             const receiveData: ReceiveQR = {
-                address: wallet.address,
+                address: currentAddress,
                 label: wallet.name || 'Wallet',
                 curve: wallet.curve || 'secp256k1'
             };
@@ -49,12 +63,13 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
                 qrCodeRef.current.appendChild(img);
             }
         }
-    }, [wallet.address, wallet.name, wallet.curve]);
+    }, [wallet.address, wallet.address_ethereum, wallet.address_stellaris, wallet.name, wallet.curve, addressFormat]);
 
     // Copy address handler
     const handleCopyAddress = () => {
-        if (wallet.address) {
-            navigator.clipboard.writeText(wallet.address).then(() => {
+        const currentAddress = getCurrentAddress();
+        if (currentAddress) {
+            navigator.clipboard.writeText(currentAddress).then(() => {
                 setCopied(true);
 
                 // Clear any existing timeout
@@ -110,11 +125,47 @@ export const ReceiveModal: React.FC<ReceiveModalProps> = ({ wallet, onClose }) =
                         </div>
 
                         <div className="address-section">
-                            <label className="field-label">{t('receiveModal.walletAddress')}</label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <label className="field-label">{t('receiveModal.walletAddress')}</label>
+                                {wallet.address_stellaris && wallet.address_ethereum && (
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        <button
+                                            onClick={() => setAddressFormat('stellaris')}
+                                            style={{
+                                                padding: '4px 8px',
+                                                fontSize: '11px',
+                                                borderRadius: '4px',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                background: addressFormat === 'stellaris' ? '#3b82f6' : '#374151',
+                                                color: 'white',
+                                                transition: 'background 0.2s'
+                                            }}
+                                        >
+                                            D/E
+                                        </button>
+                                        <button
+                                            onClick={() => setAddressFormat('ethereum')}
+                                            style={{
+                                                padding: '4px 8px',
+                                                fontSize: '11px',
+                                                borderRadius: '4px',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                background: addressFormat === 'ethereum' ? '#3b82f6' : '#374151',
+                                                color: 'white',
+                                                transition: 'background 0.2s'
+                                            }}
+                                        >
+                                            0x
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                             <div className="address-container">
                                 <div className="address-display">
-                                    <span className="address-text" title={wallet.address}>
-                                        {formatAddress(wallet.address)}
+                                    <span className="address-text" title={getCurrentAddress()}>
+                                        {formatAddress(getCurrentAddress())}
                                     </span>
                                 </div>
                                 <button

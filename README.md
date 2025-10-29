@@ -19,11 +19,13 @@ A secure, feature-rich browser wallet extension for Stellaris and Stellaris-base
 - **🛡️ Secure Verification**: Two-layer password hashing (PBKDF2 + Scrypt-like), HMAC validation, and timing-safe comparisons
 - **🌐 Node Validation**: Built-in blockchain node validation and connection testing
 - **📱 Modern UI**: Clean, responsive interface with Tailwind CSS and Framer Motion
+- **🔄 Dual Address Format**: Support for both Stellaris native (D/E prefix) and Ethereum-compatible (0x prefix) addresses
 
 ## Key Features
 
 ### Wallet Functionality
 - **Multi-Chain Support**: Compatible with Stellaris and Stellaris-based networks
+- **Dual Address Format**: Generate and use both Stellaris native (D/E) and Ethereum-compatible (0x) addresses from the same keys
 - **Secure Key Management**: Browser-compatible cryptographic utilities with secure password hashing
 - **Transaction Handling**: Send, receive, and manage cryptocurrency transactions
 - **Asset Management**: Support for multiple tokens and assets
@@ -368,6 +370,13 @@ We welcome contributions to Quasar! Please follow these guidelines:
 
 ## Resources & Documentation
 
+### Feature Documentation
+- **[Dual Address Format Support](docs/DUAL_ADDRESS_FORMAT.md)** - Comprehensive guide to Stellaris and Ethereum address formats
+- **[Wallet Password Protection](docs/WALLET_PASSWORD_PROTECTION.md)** - Security features and password management
+- **[Cross-Browser Support](docs/CROSS_BROWSER_SUPPORT.md)** - Building for Chrome and Firefox
+- **[Manual Import Feature](docs/MANUAL_IMPORT_FEATURE.md)** - Importing wallets from various sources
+
+### External Resources
 - **[Stellaris Blockchain](https://stellaris.dev)** - Official Stellaris network documentation
 - **[Chrome Extension Development](https://developer.chrome.com/docs/extensions/)** - Official Chrome extension guides
 - **[Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)** - Browser cryptography documentation
