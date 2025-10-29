@@ -16,6 +16,7 @@ import { p256 } from '@noble/curves/p256';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { sha256 as nobleSha256 } from '@noble/hashes/sha256';
 import { HDKey } from "@scure/bip32"
+import { generateAddresses } from './address_format_utils';
 
 export type Endian = 'le' | 'be';
 export type CurveType = 'secp256k1' | 'p256';
@@ -297,6 +298,7 @@ export function generate({
     let publicKeyHex: string;
     let publicKeyPoint: any;
     let address: string;
+    let addresses: { stellaris: string; ethereum: string };
     const result: Wallet = {} as Wallet;
 
     if (deterministic) {
@@ -309,6 +311,9 @@ export function generate({
         publicKeyPoint = point;
         publicKeyHex = compressed;
         address = pointToString(publicKeyPoint, AddressFormat.COMPRESSED);
+        
+        // Generate both address formats
+        addresses = generateAddresses(publicKeyPoint);
 
         // Set default fields for deterministic generation
         if (!fields) fields = ['mnemonic', 'id', 'private_key', 'public_key', 'address'];
@@ -317,7 +322,11 @@ export function generate({
         if (fields.includes('id')) result.id = `${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
-        if (fields.includes('address')) result.address = address;
+        if (fields.includes('address')) {
+            result.address = address; // Keep default as Stellaris format for backward compatibility
+            result.address_stellaris = addresses.stellaris;
+            result.address_ethereum = addresses.ethereum;
+        }
         result.curve = curve; // Always set the curve type
     } else {
         // Use root key directly for non-deterministic generation
@@ -328,6 +337,9 @@ export function generate({
         publicKeyPoint = point;
         publicKeyHex = compressed;
         address = pointToString(publicKeyPoint, AddressFormat.COMPRESSED);
+        
+        // Generate both address formats
+        addresses = generateAddresses(publicKeyPoint);
 
         // Set default fields for non-deterministic generation
         if (!fields) fields = ['mnemonic', 'private_key', 'public_key', 'address'];
@@ -336,7 +348,11 @@ export function generate({
         if (fields.includes('id')) result.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         if (fields.includes('private_key')) result.private_key = privateKeyHex;
         if (fields.includes('public_key')) result.public_key = publicKeyHex;
-        if (fields.includes('address')) result.address = address;
+        if (fields.includes('address')) {
+            result.address = address; // Keep default as Stellaris format for backward compatibility
+            result.address_stellaris = addresses.stellaris;
+            result.address_ethereum = addresses.ethereum;
+        }
         result.curve = curve; // Always set the curve type
     }
 
@@ -346,11 +362,17 @@ export function generate({
 export function generateFromPrivateKey(privateKeyHex: string, fields?: string[], curve: CurveType = 'secp256k1'): any {
     const { point, compressed } = privateToPublicKey(privateKeyHex, curve);
     const address = pointToString(point);
+    const addresses = generateAddresses(point);
+    
     if (!fields) fields = ['private_key', 'public_key', 'address'];
     const result: any = {};
     if (fields.includes('private_key')) result.private_key = privateKeyHex;
     if (fields.includes('public_key')) result.public_key = compressed;
-    if (fields.includes('address')) result.address = address;
+    if (fields.includes('address')) {
+        result.address = address; // Keep default as Stellaris format for backward compatibility
+        result.address_stellaris = addresses.stellaris;
+        result.address_ethereum = addresses.ethereum;
+    }
     result.curve = curve; // Always set the curve type
     return result;
 }

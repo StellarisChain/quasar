@@ -23,6 +23,8 @@ export interface Wallet {
   id: string | number;
   name?: string;
   address: string;
+  address_ethereum?: string; // Ethereum-compatible address (0x prefix)
+  address_stellaris?: string; // Stellaris native address (D/E prefix)
   public_key: string;
   private_key?: string;
   mnemonic?: string;
