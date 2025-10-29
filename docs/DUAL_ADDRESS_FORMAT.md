@@ -102,15 +102,20 @@ import {
 } from './lib/address_format_utils';
 
 // Shorten for display
-console.log(shortenAddress('DhKf...MC5g', 6, 4)); // DhKfZH...MC5g
-console.log(shortenAddress('0x2A69...51bC', 6, 4)); // 0x2a6965...51bc
+const stellarisAddr = 'DhKfZHgKbkWwLrARdY5PcREbjeQdp65CKMxijGnuZMC5g';
+const ethereumAddr = '0x2A69659C089bc47444933286dE7e3d44A40451bC';
+
+console.log(shortenAddress(stellarisAddr, 6, 4)); // DhKfZH...MC5g
+console.log(shortenAddress(ethereumAddr, 6, 4));  // 0x2A69...51bC
 
 // Apply EIP-55 checksum to Ethereum addresses
-const checksummed = formatAddressWithChecksum('0x2a69659c089bc47444933286de7e3d44a40451bc');
+const lowercaseEth = '0x2a69659c089bc47444933286de7e3d44a40451bc';
+const checksummed = formatAddressWithChecksum(lowercaseEth);
 console.log(checksummed); // 0x2A69659C089bc47444933286dE7e3d44A40451bC
 
 // Get complete address information
-const info = getAddressInfo('0x2A69...51bC');
+const fullEthAddr = '0x2A69659C089bc47444933286dE7e3d44A40451bC';
+const info = getAddressInfo(fullEthAddr);
 console.log(info); 
 // {
 //   type: AddressType.ETHEREUM,
