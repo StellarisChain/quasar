@@ -475,6 +475,7 @@ body {
 .wallet-item {
   padding: 10px;
   border-radius: 10px;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: background 0.2s;
 }
